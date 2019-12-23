@@ -613,6 +613,7 @@ class RaGame():
 game = RaGame(
 	["Albert", "Belinda"], 
 	# move_history_file = "game1.txt",
-	outfile = "game3.txt")
+	outfile = "game3.txt"
+)
 game.start_game()
 
