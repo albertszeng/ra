@@ -385,7 +385,7 @@ class RaGame():
 					num_niles_owned = winning_player_collection[gi.INDEX_OF_NILE]
 
 					num_floods_to_discard = min(num_floods_owned, num_niles_to_discard)
-					num_niles_to_discard -= num_floods_to_discard
+					num_niles_to_discard = min(num_niles_to_discard - num_floods_to_discard, num_niles_owned)
 
 					self.game_state.remove_single_tiles_from_player(
 						[gi.INDEX_OF_FLOOD] * num_floods_to_discard + [gi.INDEX_OF_NILE] * num_niles_to_discard,
