@@ -288,14 +288,9 @@ class GameState():
         self.auction_winning_player = None
 
     # change the current player to a specifc player
-    def set_current_player(self, new_player_index, log = True):
-        if new_player_index == self.current_player:
-            if log:
-                print("Warning: new player is the current player")
-
+    def set_current_player(self, new_player_index):
         if new_player_index < 0 or new_player_index >= self.num_players:
             raise Exception("Invalid player given to set_current_player")
-
         self.current_player = new_player_index
 
     # mark that a player has no more usable sun
@@ -310,17 +305,17 @@ class GameState():
     # increases self.current_player to the next player
     def advance_current_player(self, skip_passed_players = True):
         if skip_passed_players:
-            self.current_player = self.get_next_active_player()
+            self.set_current_player(self.get_next_active_player())
         else:
-            self.current_player = (self.current_player + 1) % self.num_players
+            self.set_current_player((self.current_player + 1) % self.num_players)
 
     # mark that someone has started an auction
     def set_auction_start_player(self, player):
         self.auction_start_player = player
 
-    # removes who has started the auction (generally after the auction is done)
-    def remove_auction_start_player(self):
-        self.auction_start_player = None
+    # # removes who has started the auction (generally after the auction is done)
+    # def remove_auction_start_player(self):
+    #     self.auction_start_player = None
 
     # mark that an auction has started
     def start_auction(self, forced, start_player):

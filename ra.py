@@ -428,6 +428,12 @@ class RaGame():
             # clear auction suns and mark auction as over
             self.game_state.end_auction()
 
+            # if no disasters to be resolved, advance current player
+            if not self.game_state.disasters_must_be_resolved():
+                self.game_state.advance_current_player()
+            else: # otherwise, set current player to auction winner to resolve
+                self.game_state.set_current_player(self.game_state.get_auction_winning_player())
+
         # put the nth lowest sun up for auction
         def execute_bid(n):
             sun_to_bid = self.game_state.get_current_player_usable_sun()[n]
@@ -435,8 +441,8 @@ class RaGame():
             
             if self.game_state.get_current_player() == self.game_state.get_auction_start_player():
                 handle_auction_end()
-
-            self.game_state.advance_current_player() 
+            else:
+                self.game_state.advance_current_player() 
 
         # executes a single discard for resolving civilization disasters
         def execute_civ_discard(index_to_discard, log = True):
@@ -448,6 +454,13 @@ class RaGame():
             self.game_state.decrement_num_civs_to_discard()
             mark_player_passed_if_no_disasters(self.game_state.get_auction_winning_player())
 
+            # if no disasters to be resolved, resume play from after auction starter
+            if not self.game_state.disasters_must_be_resolved():
+                self.game_state.set_current_player(
+                    self.game_state.get_auction_start_player()
+                )
+                self.game_state.advance_current_player()
+
         # executes a single discard for resolving monument disasters
         def execute_monument_discard(index_to_discard, log = True):
             self.game_state.remove_single_tiles_from_player(
@@ -457,6 +470,13 @@ class RaGame():
             )
             self.game_state.decrement_num_mons_to_discard()
             mark_player_passed_if_no_disasters(self.game_state.get_auction_winning_player())
+
+            # if no disasters to be resolved, resume play from after auction starter
+            if not self.game_state.disasters_must_be_resolved():
+                self.game_state.set_current_player(
+                    self.game_state.get_auction_start_player()
+                )
+                self.game_state.advance_current_player()
 
         if action not in legal_actions:
             raise Exception(
@@ -486,7 +506,10 @@ class RaGame():
             return tile
 
         elif action == gi.AUCTION:
-            was_forced = self.game_state.get_num_auction_tiles() == self.game_state.get_max_auction_tiles()
+            was_forced = (
+                self.game_state.get_num_auction_tiles() == 
+                self.game_state.get_max_auction_tiles()
+            )
             self.game_state.start_auction(was_forced, self.game_state.get_current_player())
             self.game_state.advance_current_player()
 
@@ -519,7 +542,8 @@ class RaGame():
         elif action == gi.BID_NOTHING:
             if self.game_state.get_current_player() == self.game_state.get_auction_start_player():
                 handle_auction_end()
-            self.game_state.advance_current_player() 
+            else:
+                self.game_state.advance_current_player() 
 
         elif action == gi.DISCARD_ASTR:
             execute_civ_discard(gi.INDEX_OF_ASTR)
