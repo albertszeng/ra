@@ -13,9 +13,9 @@ STARTING_CENTER_SUN = 1
 # (players in game: starting sun sets) 
 # assert that the first move goes to the player with the first set in each list
 STARTING_SUN = {2: [[2, 5, 6, 9], [3, 4, 7, 8]],
-			3: [[2, 5, 8, 13], [3, 6, 9, 12], [4, 7, 10, 11]],
-			4: [[2, 6, 13], [3, 7, 12], [4, 8, 11], [5, 9, 10]],
-			5: [[2, 7, 16], [3, 8, 15], [4, 9, 14], [5, 10, 13], [6, 11, 12]]}
+            3: [[2, 5, 8, 13], [3, 6, 9, 12], [4, 7, 10, 11]],
+            4: [[2, 6, 13], [3, 7, 12], [4, 8, 11], [5, 9, 10]],
+            5: [[2, 7, 16], [3, 8, 15], [4, 9, 14], [5, 10, 13], [6, 11, 12]]}
 
 # num of players: number of ra tiles per round
 NUM_RAS_PER_ROUND = {2: 6, 3: 8, 4: 9, 6: 10}
@@ -36,16 +36,16 @@ NUM_DISCARDS_PER_DISASTER = 2
 ### Definitions of each tile type
 
 class TileTypeInfo():
-	def __init__(self, name, startingNum, toKeep, tileType):
-		self.name = name
-		self.startingNum = startingNum  # how many start in the bag
-		self.toKeep = toKeep  # how many start in the bag
-		self.tileType = tileType  # whether it's a collectible, disaster, etc.
+    def __init__(self, name, startingNum, toKeep, tileType):
+        self.name = name
+        self.startingNum = startingNum  # how many start in the bag
+        self.toKeep = toKeep  # how many start in the bag
+        self.tileType = tileType  # whether it's a collectible, disaster, etc.
 
 class TileType(Enum):
-	COLLECTIBLE = 1
-	DISASTER = 2
-	RA = 3
+    COLLECTIBLE = 1
+    DISASTER = 2
+    RA = 3
 
 
 GOD = TileTypeInfo("Golden God", 8, False, TileType.COLLECTIBLE)
@@ -83,26 +83,26 @@ RA = TileTypeInfo("Ra", 30, False, TileType.RA)
 # An index corresponds to the tile in this list
 # WARNING: changing this list changes everything below within this section
 TILE_INFO = [GOD, GOLD, PHAR, NILE, FLOOD, CIV_ASTR, CIV_AGR, \
-			CIV_WRI, CIV_REL, CIV_ART, MON_FORT, MON_OBEL, MON_PAL, \
-			MON_PYR, MON_TEM, MON_STAT, MON_STE, MON_SPH, DIS_PHAR, \
-			DIS_NILE, DIS_CIV, DIS_MON, RA]
+            CIV_WRI, CIV_REL, CIV_ART, MON_FORT, MON_OBEL, MON_PAL, \
+            MON_PYR, MON_TEM, MON_STAT, MON_STE, MON_SPH, DIS_PHAR, \
+            DIS_NILE, DIS_CIV, DIS_MON, RA]
 
 
 NUM_TILE_TYPES = len(TILE_INFO)  # total number of tiles types in the game
 
 STARTING_NUM_TILES = 0  # total number of tiles that start in the bag
 for tile in TILE_INFO:
-	STARTING_NUM_TILES += tile.startingNum
+    STARTING_NUM_TILES += tile.startingNum
 
 NUM_AUCTIONABLE_TILE_TYPES = 0
 for tile in TILE_INFO:
-	if tile.tileType != TileType.RA:
-		NUM_AUCTIONABLE_TILE_TYPES += 1
+    if tile.tileType != TileType.RA:
+        NUM_AUCTIONABLE_TILE_TYPES += 1
 
 NUM_COLLECTIBLE_TILE_TYPES = 0  # the number of tiles players can collect
 for tile in TILE_INFO:
-	if tile.tileType == TileType.COLLECTIBLE:
-		NUM_COLLECTIBLE_TILE_TYPES += 1 
+    if tile.tileType == TileType.COLLECTIBLE:
+        NUM_COLLECTIBLE_TILE_TYPES += 1 
 
 INDEX_OF_GOD = 0
 INDEX_OF_GOLD = 1
@@ -141,47 +141,47 @@ STARTING_INDEX_OF_DISASTERS = 18
 ### Helper functions for getting tile info
 
 def tile_starting_num(tile):
-	return tile.startingNum
+    return tile.startingNum
 
 def tile_name(tile):
-	return tile.name
+    return tile.name
 
 # given an index of TILE_INFO, give the TileTypeInfo
 def index_to_tile(index):
-	assert(index >= 0 and index <= 23)
-	return TILE_INFO[index]
+    assert(index >= 0 and index <= 23)
+    return TILE_INFO[index]
 
 # given an index of TILE_INFO, give the tilename of that tile type
 def index_to_tile_name(index):
-	return tile_name(index_to_tile(index))
+    return tile_name(index_to_tile(index))
 
 # given an index of TILE_INFO, give the tile starting num of that tile type
 def index_to_starting_num(index):
-	return tile_starting_num(index_to_tile(index))
+    return tile_starting_num(index_to_tile(index))
 
 # return whether the tile of an index is a collectible type
 def index_is_collectible(index):
-	return index_to_tile(index).tileType == TileType.COLLECTIBLE
+    return index_to_tile(index).tileType == TileType.COLLECTIBLE
 
 def index_is_disaster(index):
-	return index_to_tile(index).tileType == TileType.DISASTER
+    return index_to_tile(index).tileType == TileType.DISASTER
 
 def index_is_ra(index):
-	return index_to_tile(index).tileType == TileType.RA
+    return index_to_tile(index).tileType == TileType.RA
 
 def list_of_temporary_collectible_indexes():
-	temp_collectibles = []
-	for i in range(NUM_TILE_TYPES):
-		curr_tile = TILE_INFO[i]
-		if curr_tile.tileType == TileType.COLLECTIBLE and not curr_tile.toKeep:
-			temp_collectibles.append(i)
-	return temp_collectibles
+    temp_collectibles = []
+    for i in range(NUM_TILE_TYPES):
+        curr_tile = TILE_INFO[i]
+        if curr_tile.tileType == TileType.COLLECTIBLE and not curr_tile.toKeep:
+            temp_collectibles.append(i)
+    return temp_collectibles
 
 def get_civs_from_collection(collection):
-	return collection[STARTING_INDEX_OF_CIVS:(STARTING_INDEX_OF_CIVS + NUM_CIVS)]
+    return collection[STARTING_INDEX_OF_CIVS:(STARTING_INDEX_OF_CIVS + NUM_CIVS)]
 
 def get_monuments_from_collection(collection):
-	return collection[STARTING_INDEX_OF_MONUMENTS:(STARTING_INDEX_OF_MONUMENTS + NUM_MONUMENTS)]
+    return collection[STARTING_INDEX_OF_MONUMENTS:(STARTING_INDEX_OF_MONUMENTS + NUM_MONUMENTS)]
 
 
 ### Action definitions
@@ -280,43 +280,43 @@ DISCARD_SPH_DESC = "Discard the SPHINX monument tile"
 
 
 action_option_lst = [
-	(DRAW, DRAW_OPTIONS, DRAW_DESC),
-	(AUCTION, AUCTION_OPTIONS, AUCTION_DESC),
-	(GOD_1, GOD_1_OPTIONS, GOD_1_DESC),
-	(GOD_2, GOD_2_OPTIONS, GOD_2_DESC),
-	(GOD_3, GOD_3_OPTIONS, GOD_3_DESC),
-	(GOD_4, GOD_4_OPTIONS, GOD_4_DESC),
-	(GOD_5, GOD_5_OPTIONS, GOD_5_DESC),
-	(GOD_6, GOD_6_OPTIONS, GOD_6_DESC),
-	(GOD_7, GOD_7_OPTIONS, GOD_7_DESC),
-	(GOD_8, GOD_8_OPTIONS, GOD_8_DESC),
-	(BID_1, BID_1_OPTIONS, BID_1_DESC),
-	(BID_2, BID_2_OPTIONS, BID_2_DESC),
-	(BID_3, BID_3_OPTIONS, BID_3_DESC),
-	(BID_4, BID_4_OPTIONS, BID_4_DESC),
-	(BID_NOTHING, BID_NOTHING_OPTIONS, BID_NOTHING_DESC),
-	(DISCARD_ASTR, DISCARD_ASTR_OPTIONS, DISCARD_ASTR_DESC),
-	(DISCARD_AGR, DISCARD_AGR_OPTIONS, DISCARD_AGR_DESC),
-	(DISCARD_WRI, DISCARD_WRI_OPTIONS, DISCARD_WRI_DESC),
-	(DISCARD_REL, DISCARD_REL_OPTIONS, DISCARD_REL_DESC),
-	(DISCARD_ART, DISCARD_ART_OPTIONS, DISCARD_ART_DESC),
-	(DISCARD_FORT, DISCARD_FORT_OPTIONS, DISCARD_FORT_DESC),
-	(DISCARD_OBEL, DISCARD_OBEL_OPTIONS, DISCARD_OBEL_DESC),
-	(DISCARD_PAL, DISCARD_PAL_OPTIONS, DISCARD_PAL_DESC),
-	(DISCARD_PYR, DISCARD_PYR_OPTIONS, DISCARD_PYR_DESC),
-	(DISCARD_TEM, DISCARD_TEM_OPTIONS, DISCARD_TEM_DESC),
-	(DISCARD_STAT, DISCARD_STAT_OPTIONS, DISCARD_STAT_DESC),
-	(DISCARD_STE, DISCARD_STE_OPTIONS, DISCARD_STE_DESC),
-	(DISCARD_SPH, DISCARD_SPH_OPTIONS, DISCARD_SPH_DESC)
+    (DRAW, DRAW_OPTIONS, DRAW_DESC),
+    (AUCTION, AUCTION_OPTIONS, AUCTION_DESC),
+    (GOD_1, GOD_1_OPTIONS, GOD_1_DESC),
+    (GOD_2, GOD_2_OPTIONS, GOD_2_DESC),
+    (GOD_3, GOD_3_OPTIONS, GOD_3_DESC),
+    (GOD_4, GOD_4_OPTIONS, GOD_4_DESC),
+    (GOD_5, GOD_5_OPTIONS, GOD_5_DESC),
+    (GOD_6, GOD_6_OPTIONS, GOD_6_DESC),
+    (GOD_7, GOD_7_OPTIONS, GOD_7_DESC),
+    (GOD_8, GOD_8_OPTIONS, GOD_8_DESC),
+    (BID_1, BID_1_OPTIONS, BID_1_DESC),
+    (BID_2, BID_2_OPTIONS, BID_2_DESC),
+    (BID_3, BID_3_OPTIONS, BID_3_DESC),
+    (BID_4, BID_4_OPTIONS, BID_4_DESC),
+    (BID_NOTHING, BID_NOTHING_OPTIONS, BID_NOTHING_DESC),
+    (DISCARD_ASTR, DISCARD_ASTR_OPTIONS, DISCARD_ASTR_DESC),
+    (DISCARD_AGR, DISCARD_AGR_OPTIONS, DISCARD_AGR_DESC),
+    (DISCARD_WRI, DISCARD_WRI_OPTIONS, DISCARD_WRI_DESC),
+    (DISCARD_REL, DISCARD_REL_OPTIONS, DISCARD_REL_DESC),
+    (DISCARD_ART, DISCARD_ART_OPTIONS, DISCARD_ART_DESC),
+    (DISCARD_FORT, DISCARD_FORT_OPTIONS, DISCARD_FORT_DESC),
+    (DISCARD_OBEL, DISCARD_OBEL_OPTIONS, DISCARD_OBEL_DESC),
+    (DISCARD_PAL, DISCARD_PAL_OPTIONS, DISCARD_PAL_DESC),
+    (DISCARD_PYR, DISCARD_PYR_OPTIONS, DISCARD_PYR_DESC),
+    (DISCARD_TEM, DISCARD_TEM_OPTIONS, DISCARD_TEM_DESC),
+    (DISCARD_STAT, DISCARD_STAT_OPTIONS, DISCARD_STAT_DESC),
+    (DISCARD_STE, DISCARD_STE_OPTIONS, DISCARD_STE_DESC),
+    (DISCARD_SPH, DISCARD_SPH_OPTIONS, DISCARD_SPH_DESC)
 ]
 
 # sanity check to make sure no options overlap
 for i in range(len(action_option_lst)):
-	options_1 = action_option_lst[i][1]
-	for j in range(i + 1, len(action_option_lst)):
-		options_2 = action_option_lst[j][1]
-		if set(options_1) & set(options_2):
-			raise Exception(f"Options are overlapping: {options_1} and {options_2}")
+    options_1 = action_option_lst[i][1]
+    for j in range(i + 1, len(action_option_lst)):
+        options_2 = action_option_lst[j][1]
+        if set(options_1) & set(options_2):
+            raise Exception(f"Options are overlapping: {options_1} and {options_2}")
 
 
 
