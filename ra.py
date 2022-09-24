@@ -17,7 +17,7 @@ class RaGame():
             raise ValueError("Invalid number of players")
 
         self.outfile = f"{OUTFILE_FOLDER_NAME}/{outfile}"
-        self.move_history_file = None if move_history_file is None else f"{OUTFILE_FOLDER_NAME}/{move_history_file}"
+        self.move_history_file = move_history_file
         self.player_names = player_names
 
         if not os.path.exists(OUTFILE_FOLDER_NAME):
@@ -660,7 +660,7 @@ def get_args():
                         help="optional argument for player 5's name")
 
     parser.add_argument('--infile', '-i', default=None,
-                        help=f'An optional argument to read game history from. Must be in the {OUTFILE_FOLDER_NAME} folder.')
+                        help=f'An optional argument to read game history from.')
 
     default_outfile_name = DEFAULT_OUTFILE_PREFIX + "_" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + '.txt'
     parser.add_argument('--outfile', '-o', default=default_outfile_name,
