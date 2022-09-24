@@ -16,3 +16,7 @@ game.start_game()
 ## Testing TODO
 
 Testing for the `RaGame` class and for the newer functions of the `GameState` class are still needed. Existing tests can be found in the `tests` folder, where each file is a set of tests.
+
+## Specifications
+
+Runs on Python3.8.9. Probably works on any Python3 version, but not Python2. 
