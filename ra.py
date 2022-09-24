@@ -1,10 +1,11 @@
 import argparse
 from datetime import datetime
-# import numpy as np
+import os
 import random
 import game_info as gi
 import game_state as gs
 
+OUTFILE_FOLDER_NAME = "move_histories"
 DEFAULT_OUTFILE_PREFIX = "move_history"
 
 
@@ -15,9 +16,12 @@ class RaGame():
             print("Invalid number of players. Cannot create game instance...")
             raise ValueError("Invalid number of players")
 
-        self.outfile = outfile
-        self.move_history_file = move_history_file
+        self.outfile = f"{OUTFILE_FOLDER_NAME}/{outfile}"
+        self.move_history_file = None if move_history_file is None else f"{OUTFILE_FOLDER_NAME}/{move_history_file}"
         self.player_names = player_names
+
+        if not os.path.exists(OUTFILE_FOLDER_NAME):
+            os.makedirs(OUTFILE_FOLDER_NAME)
 
         if self.move_history_file is not None:
             with open(self.move_history_file, "r") as f:
@@ -656,11 +660,11 @@ def get_args():
                         help="optional argument for player 5's name")
 
     parser.add_argument('--infile', '-i', default=None,
-                        help='An optional argument to read game history from.')
+                        help=f'An optional argument to read game history from. Must be in the {OUTFILE_FOLDER_NAME} folder.')
 
     default_outfile_name = DEFAULT_OUTFILE_PREFIX + "_" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + '.txt'
     parser.add_argument('--outfile', '-o', default=default_outfile_name,
-                        help='An optional argument to write game history to.')
+                        help=f'An optional argument to write game history to. Is written to the {OUTFILE_FOLDER_NAME} folder.')
     return parser.parse_args()
 
 
