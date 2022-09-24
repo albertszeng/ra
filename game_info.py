@@ -10,7 +10,7 @@ MIN_NUM_PLAYERS = 2
 # the sun that starts in the middle
 STARTING_CENTER_SUN = 1
 
-# (players in game: starting sun sets) 
+# (players in game: starting sun sets)
 # assert that the first move goes to the player with the first set in each list
 STARTING_SUN = {2: [[2, 5, 6, 9], [3, 4, 7, 8]],
             3: [[2, 5, 8, 13], [3, 6, 9, 12], [4, 7, 10, 11]],
@@ -51,7 +51,7 @@ class TileType(Enum):
 GOD = TileTypeInfo("Golden God", 8, False, TileType.COLLECTIBLE)
 GOLD = TileTypeInfo("Gold", 5, False, TileType.COLLECTIBLE)
 
-PHAR = TileTypeInfo("Pharaoh", 25, True, TileType.COLLECTIBLE) 
+PHAR = TileTypeInfo("Pharaoh", 25, True, TileType.COLLECTIBLE)
 
 NILE = TileTypeInfo("Nile", 25, True, TileType.COLLECTIBLE)
 FLOOD = TileTypeInfo("Flood", 12, False, TileType.COLLECTIBLE)
@@ -102,7 +102,7 @@ for tile in TILE_INFO:
 NUM_COLLECTIBLE_TILE_TYPES = 0  # the number of tiles players can collect
 for tile in TILE_INFO:
     if tile.tileType == TileType.COLLECTIBLE:
-        NUM_COLLECTIBLE_TILE_TYPES += 1 
+        NUM_COLLECTIBLE_TILE_TYPES += 1
 
 INDEX_OF_GOD = 0
 INDEX_OF_GOLD = 1
@@ -199,24 +199,24 @@ GOD_8 = 9
 BID_1 = 10  # bid the lowest value sun
 BID_2 = 11  # bid the second lowest value sun
 BID_3 = 12  # bid the third lowest value sun
-BID_4 = 13  # bid the fourth lowest value sun 
+BID_4 = 13  # bid the fourth lowest value sun
 BID_NOTHING = 14  # bid nothing
 DISCARD_ASTR = 15  # discard astronomy civ
 DISCARD_AGR = 16  # discard agriculture civ
 DISCARD_WRI = 17  # discard writing civ
 DISCARD_REL = 18  # discard religion civ
 DISCARD_ART = 19  # discard art civ
-DISCARD_FORT = 20  # discard fortress monument 
-DISCARD_OBEL = 21  # discard obelisk monument 
-DISCARD_PAL = 22  # discard palace monument 
-DISCARD_PYR = 23  # discard pyramid monument 
-DISCARD_TEM = 24  # discard temple monument 
-DISCARD_STAT = 25  # discard statue monument 
-DISCARD_STE = 26  # discard step pyramid monument 
-DISCARD_SPH = 27  # discard sphinx monument 
+DISCARD_FORT = 20  # discard fortress monument
+DISCARD_OBEL = 21  # discard obelisk monument
+DISCARD_PAL = 22  # discard palace monument
+DISCARD_PYR = 23  # discard pyramid monument
+DISCARD_TEM = 24  # discard temple monument
+DISCARD_STAT = 25  # discard statue monument
+DISCARD_STE = 26  # discard step pyramid monument
+DISCARD_SPH = 27  # discard sphinx monument
 
 
-# Valid user inputs for each Action 
+# Valid user inputs for each Action
 DRAW_OPTIONS = ["0", "draw", "d"]
 AUCTION_OPTIONS = ["1", "auction", "a"]
 GOD_1_OPTIONS = ["2", "god 1", "g1", "g 1", "god1"]
@@ -231,7 +231,7 @@ BID_1_OPTIONS = ["10", "bid lowest", "b1", "b 1", "bid1", "bid 1"]
 BID_2_OPTIONS = ["11", "bid second lowest", "b2", "b 2", "bid2", "bid 2"]
 BID_3_OPTIONS = ["12", "bid third lowest", "b3", "b 3", "bid3", "bid 3"]
 BID_4_OPTIONS = ["13", "bid fourth lowest", "b4", "b 4", "bid4", "bid 4"]
-BID_NOTHING_OPTIONS = ["14", "b0", "b 0", "bid0", "bid 0", "bid nothing", "pass"]
+BID_NOTHING_OPTIONS = ["14", "b0", "b 0", "bid0", "bid 0", "bid nothing", "pass", "p"]
 DISCARD_ASTR_OPTIONS = ["15", "discard astronomy", "astronomy", "astr"]
 DISCARD_AGR_OPTIONS = ["16", "discard agriculture", "agriculture", "agr"]
 DISCARD_WRI_OPTIONS = ["17", "discard writing", "writing", "wri"]
