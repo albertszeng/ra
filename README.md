@@ -58,6 +58,14 @@ pyre
 
 Testing for the `RaGame` class and for the newer functions of the `GameState` class are still needed. Existing tests can be found in the `tests` folder, where each file is a set of tests.
 
+We use the `unittest` framework. To run the tests, run:
+
+```sh
+python -m unittest
+```
+
+Note that above automatically runs all tests found in `*_test.py` files.
+
 ## Specifications
 
 Runs on Python3.8.9. Probably works on any Python3 version, but not Python2. 
