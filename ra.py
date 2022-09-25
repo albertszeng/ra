@@ -342,7 +342,7 @@ class RaGame:
     # continually try to get an action until a legal action is given
     # an action-making function can be given to get an action
 
-    def get_action(self, legal_actions, action_making_func=None, log: bool=True):
+    def get_action(self, legal_actions: Optional[List[int]], action_making_func=None, log: bool=True):
         for _i in range(self.MAX_ACTION_ATTEMPTS):
             # get an action
             action = None
@@ -364,7 +364,7 @@ class RaGame:
     # assumes the action is made by the current player
     # returns the tile drawn if action is draw
 
-    def execute_action(self, action, legal_actions, tile_to_draw=None):
+    def execute_action(self, action, legal_actions, tile_to_draw=None) -> Optional[int]:
         # use god tile on the nth auction tile
         def execute_god(n):
             tile = self.game_state.remove_auction_tile(n)

@@ -211,7 +211,7 @@ class GameState():
             raise Exception(f"Cannot advance round beyond {self.current_round}")
 
     # draw a tile from the game bag and return the tile index
-    def draw_tile(self, tile = None, log: bool = True) -> Optional[int]:
+    def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
         return self.tile_bag.draw_tile(tile = tile, log = log)
 
     # increase the number of ras drawn this round by 1 if valid
