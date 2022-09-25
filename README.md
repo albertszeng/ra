@@ -45,14 +45,13 @@ pipenv install flask
 
 ## Type Checking
 
-For development purposes, you want to also install the dev dependencies by running `pipenv install -d`.
+For development purposes, you want to also install the dev dependencies by running `pipenv install -d`. For type-checking, we use `pyre`. See [here](https://pyre-check.org/docs/getting-started/) to install.
 
 You should be able to type check by running:
 
 ```sh
-# If you're already in the shell with pipenv shell, you can drop the part
-# before mypy
-pipenv run mypy *.py
+# Assumes you're in the right shell.
+pyre
 ```
 
 ## Testing TODO

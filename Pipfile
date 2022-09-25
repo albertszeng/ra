@@ -7,7 +7,7 @@ name = "pypi"
 flask = "*"
 
 [dev-packages]
-mypy = "*"
+pyre-check = "*"
 
 [requires]
 python_version = "3.8"

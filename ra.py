@@ -5,6 +5,8 @@ import random
 import game_info as gi
 import game_state as gs
 
+from typing import List
+
 OUTFILE_FOLDER_NAME = "move_histories"
 DEFAULT_OUTFILE_PREFIX = "move_history"
 
@@ -13,16 +15,16 @@ class RaGame:
     """Core logis for a game of Ra"""
     num_players: int
     outfile: str
-    move_history_file: str
+    move_history_file: Optional[str]
     player_names: List[str]
     game_state: gs.GameState
     MAX_ACTION_ATTEMPTS: int
 
     def __init__(self,
-                 player_names,
-                 randomize_play_order=True,
-                 outfile="history.txt",
-                 move_history_file=None):
+                 player_names: List[str],
+                 randomize_play_order: bool = True,
+                 outfile: str = "history.txt",
+                 move_history_file: Optional[str] = None):
         self.num_players = len(player_names)
         if not self.is_valid_num_players(self.num_players):
             print("Invalid number of players. Cannot create game instance...")
