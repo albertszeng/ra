@@ -29,6 +29,11 @@ pipenv install -d
 pipenv shell
 ```
 
+When installing future dependencies, just make sure you use `pipenv`. For example:
+```sh
+pipenv install flask
+```
+
 ## Testing TODO
 
 Testing for the `RaGame` class and for the newer functions of the `GameState` class are still needed. Existing tests can be found in the `tests` folder, where each file is a set of tests.
