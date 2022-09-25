@@ -1,6 +1,6 @@
 import dataclasses
 import enum
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 
 # Game Constants
@@ -218,38 +218,34 @@ NUM_DISASTERS: int = 4
 STARTING_INDEX_OF_DISASTERS: int = 18
 
 
-# Helper functions for getting tile info
-
 def tile_starting_num(tile: TileTypeInfo) -> int:
+    """Given a tile, return how many we start with."""
     return tile.startingNum
 
 
 def tile_name(tile: TileTypeInfo) -> str:
+    """Given a tile, return its name."""
     return tile.name
-
-# given an index of TILE_INFO, give the TileTypeInfo
 
 
 def index_to_tile(index: int) -> TileTypeInfo:
+    """Given an index of TILE_INFO, give the TileTypeInfo."""
     assert(index >= 0 and index <= 23)
     return TILE_INFO[index]
 
-# given an index of TILE_INFO, give the tilename of that tile type
-
 
 def index_to_tile_name(index: int) -> str:
+    """Given an index of TILE_INFO, give the tilename of that tile type."""
     return tile_name(index_to_tile(index))
-
-# given an index of TILE_INFO, give the tile starting num of that tile type
 
 
 def index_to_starting_num(index: int) -> int:
+    """Given an index of TILE_INFO, give tile starting num of that type."""
     return tile_starting_num(index_to_tile(index))
-
-# return whether the tile of an index is a collectible type
 
 
 def index_is_collectible(index: int) -> bool:
+    """Return whether the tile of an index is a collectible type."""
     return index_to_tile(index).tileType == TileType.COLLECTIBLE
 
 
@@ -433,8 +429,8 @@ POINTS_FOR_LEAST_PHAR: int = -2
 POINTS_FOR_MOST_PHAR: int = 5
 POINTS_PER_NILE: int = 1
 POINTS_PER_FLOOD: int = 1
-POINTS_FOR_CIVS: int = [-5, 0, 0, 5, 10, 15]
-POINTS_FOR_MON_DEPTH: int = [0, 0, 0, 5, 10, 15]
-POINTS_FOR_MON_BREADTH: int = [0, 1, 2, 3, 4, 5, 6, 10, 15]
+POINTS_FOR_CIVS: List[int] = [-5, 0, 0, 5, 10, 15]
+POINTS_FOR_MON_DEPTH: List[int] = [0, 0, 0, 5, 10, 15]
+POINTS_FOR_MON_BREADTH: List[int] = [0, 1, 2, 3, 4, 5, 6, 10, 15]
 POINTS_FOR_LEAST_SUN: int = -5
 POINTS_FOR_MOST_SUN: int = 5
