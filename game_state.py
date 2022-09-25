@@ -169,29 +169,22 @@ class PlayerState:
         return val
 
     def sun_as_str(self) -> str:
-        return textwrap.dedent(f"""\
+        return textwrap.dedent(f"""
             Sun of {self.player_name}
             Usable Sun: {self.usable_sun}
             Unusable Sun: {self.unusable_sun}
             """)
 
     def __str__(self) -> str:
-        return textwrap.dedent(f"""\
-            Player: {self.player_name}
-            {self.sun_as_str()}
-            {self.collections_as_str()}
-            Points: {self.points}
-            """)
+        return self.player_state_as_str()
 
     def player_state_as_str(self,
                             include_name: bool = True,
                             verbose: bool = False) -> str:
-        val = "Player: {self.player_name}\n" if include_name else ""
-        val += textwrap.dedent(f"""\
-            {self.sun_as_str()}
-            {self.collections_as_str(verbose)}
-            Points: {self.points}
-            """)
+        val = f"Player: {self.player_name}\n" if include_name else ""
+        val += f"{self.sun_as_str()}\n"
+        val += f"{self.collections_as_str(verbose)}\n"
+        val += f"Points: {self.points}\n"
         return val
 
     def print_player_state(self,
@@ -602,7 +595,7 @@ class GameState:
     def player_scores_as_str(self) -> str:
         val = "Scores: \n"
         for state in self.player_states:
-            val += f"\t{state.get_player_name()}: \
+            val += f"\t{state.get_player_name()}: \t\
                 {state.get_player_points()} points\n"
         return val
 
@@ -621,7 +614,7 @@ class GameState:
     def __str__(self) -> str:
         val = "-------------------------------------------------\n"
 
-        val += f"{self.player_states_as_str()}\n\n"
+        val += f"{self.player_states_as_str()}\n"
 
         val += f"Round: {self.current_round}\n"
         val += f"Num Ras This Round: {self.num_ras_this_round}\n"
@@ -631,8 +624,8 @@ class GameState:
         if self.is_auction_started():
             val += f"Auctioned Suns: {self.auction_suns}\n"
 
-        val += f"\nPlayer To Move: \
-        {self.player_names[self.current_player]}\n\n"
+        val += ("\nPlayer To Move: "
+                f"{self.player_names[self.current_player]}\n")
 
         return val
 

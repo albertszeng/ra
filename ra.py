@@ -337,9 +337,8 @@ class RaGame:
                 gi.action_option_lst[action][2] for action in legal_actions
             ]
             possible_actions_str = "\n\t".join(possible_actions_lst)
-            prompt = f"""
-            Possible actions:
-                {possible_actions_str}
+            prompt = f"""Possible actions:
+        {possible_actions_str}
 
             User Action: """
 

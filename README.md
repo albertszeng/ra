@@ -61,6 +61,7 @@ Testing for the `RaGame` class and for the newer functions of the `GameState` cl
 We use the `unittest` framework. To run the tests, run:
 
 ```sh
+# Assumes you're in the right shell.
 python -m unittest
 ```
 
