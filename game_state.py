@@ -4,15 +4,15 @@ import game_info as gi
 from typing import Optional, Sized
 
 
-### Gamestate class and helper classes 
+# Gamestate class and helper classes
 
-class TileBag():
+class TileBag:
     def __init__(self) -> None:
         # keeps track of how many of each tile are left
         self.bag = [gi.tile_starting_num(tile) for tile in gi.TILE_INFO]
 
         # total number of tiles left
-        self.num_tiles_left = gi.STARTING_NUM_TILES	
+        self.num_tiles_left = gi.STARTING_NUM_TILES
 
     # remove a random tile from self.bag and return its index
     # optionally specify what tile to draw
@@ -44,8 +44,7 @@ class TileBag():
                 self.num_tiles_left -= 1
                 return tile
 
-
-    ### getter functions
+    # getter functions
 
     def get_bag_contents(self):
         return self.bag[:]
@@ -53,7 +52,7 @@ class TileBag():
     def get_num_tiles_left(self):
         return self.num_tiles_left
 
-    ### logging functions
+    # logging functions
 
     def print_contents_of_bag(self) -> None:
         print("Bag Contents:")
@@ -112,7 +111,7 @@ class PlayerState():
     def add_points(self, points_to_add: int) -> None:
         self.points += points_to_add
 
-    ### getter functions
+    # getter functions
 
     def get_player_points(self) -> int:
         return self.points
@@ -132,7 +131,7 @@ class PlayerState():
     def get_all_sun(self):
         return self.usable_sun + self.unusable_sun
 
-    ### logging functions
+    # logging functions
 
     def print_collection(self, verbose: bool = False) -> None:
         print(f"Tiles of {self.player_name}:")
@@ -155,7 +154,7 @@ class PlayerState():
         if print_name:
             print("Player:", self.player_name)
         self.print_all_sun()
-        self.print_collection(verbose = verbose)
+        self.print_collection(verbose=verbose)
         print("Points:", self.points)
 
 
@@ -170,23 +169,25 @@ class GameState():
         self.num_ras_per_round = gi.NUM_RAS_PER_ROUND[num_players]
         self.num_players = num_players
         self.max_auction_tiles = gi.MAX_AUCTION_TILES
-        
+
         # current game state variables
         self.tile_bag = TileBag()
         self.current_round = 1
-        self.active_players = [True] * self.num_players  # players with sun still
+        self.active_players = [True] * \
+            self.num_players  # players with sun still
         self.num_ras_this_round = 0
         self.center_sun = gi.STARTING_CENTER_SUN
         self.auction_tiles = []
-        self.auction_suns = [None] * self.num_players  # what suns players have bid
+        # what suns players have bid
+        self.auction_suns = [None] * self.num_players
         self.auction_started = False
         self.auction_forced = False
         self.auction_start_player = None  # player that started the auction
-        self.current_player = 0 
+        self.current_player = 0
         self.num_mons_to_discard = 0
         self.num_civs_to_discard = 0
         self.auction_winning_player = None  # used only for resolving disasters
-        
+
         # player states
         self.player_states = []
         starting_sun_sets = gi.STARTING_SUN[num_players][:]
@@ -197,11 +198,12 @@ class GameState():
             self.player_states.append(
                 PlayerState(player_names[i], starting_sun_sets[i])
             )
-        self.player_names = [player_state.get_player_name() for player_state in self.player_states]
+        self.player_names = [player_state.get_player_name()
+                             for player_state in self.player_states]
 
         self.game_ended = False
 
-    ### variable manipulation function
+    # variable manipulation function
 
     # increase the round number by 1 if it's not the last round
     def increase_round_number(self) -> None:
@@ -212,7 +214,7 @@ class GameState():
 
     # draw a tile from the game bag and return the tile index
     def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
-        return self.tile_bag.draw_tile(tile = tile, log = log)
+        return self.tile_bag.draw_tile(tile=tile, log=log)
 
     # increase the number of ras drawn this round by 1 if valid
     def increase_num_ras_this_round(self) -> None:
@@ -255,29 +257,29 @@ class GameState():
     # remove a list of tiles from the current player
     def remove_single_tiles_from_current_player(self, tile_indexes, log: bool = True) -> None:
         self.player_states[self.current_player].remove_single_tiles_by_index(
-            tile_indexes, 
-            log = log
+            tile_indexes,
+            log=log
         )
 
     # remove a list of tiles from the specified player
     def remove_single_tiles_from_player(self, tile_indexes, player_index, log: bool = True) -> None:
         self.player_states[player_index].remove_single_tiles_by_index(
-            tile_indexes, 
-            log = log
+            tile_indexes,
+            log=log
         )
 
     # remove all tiles in the list of indexes from the current player
     def remove_all_tiles_by_index_from_current_player(self, tile_indexes, log: bool = True) -> None:
         self.player_states[self.current_player].remove_all_tiles_by_index(
             tile_indexes,
-            log = log
+            log=log
         )
 
     # remove all tiles in the list of indexes from the current player
     def remove_all_tiles_by_index_from_player(self, tile_indexes, player_index, log: bool = True) -> None:
         self.player_states[player_index].remove_all_tiles_by_index(
             tile_indexes,
-            log = log
+            log=log
         )
 
     # set who won an auction and must now resolve disasters
@@ -308,7 +310,8 @@ class GameState():
         if skip_passed_players:
             self.set_current_player(self.get_next_active_player())
         else:
-            self.set_current_player((self.current_player + 1) % self.num_players)
+            self.set_current_player(
+                (self.current_player + 1) % self.num_players)
 
     # mark that someone has started an auction
     def set_auction_start_player(self, player) -> None:
@@ -361,12 +364,12 @@ class GameState():
     # set how many monuments must be discarded due to a disaster
     def set_num_mons_to_discard(self, num_to_discard: int) -> None:
         self.num_mons_to_discard = num_to_discard
-    
+
     def decrement_num_civs_to_discard(self) -> None:
         self.num_civs_to_discard -= 1
         if self.num_civs_to_discard < 0:
             raise Exception("num_civs_to_discard cannot be negative")
-        
+
     def decrement_num_mons_to_discard(self) -> None:
         self.num_mons_to_discard -= 1
         if self.num_mons_to_discard < 0:
@@ -375,8 +378,7 @@ class GameState():
     def set_game_ended(self) -> None:
         self.game_ended = True
 
-
-    ### checking functions
+    # checking functions
 
     def is_final_round(self) -> bool:
         return self.current_round == self.total_rounds
@@ -404,10 +406,10 @@ class GameState():
     def disasters_must_be_resolved(self) -> bool:
         return self.num_mons_to_discard > 0 or self.num_civs_to_discard > 0
 
-
-    ### getter functions
+    # getter functions
 
     # get the next player who still has sun
+
     def get_next_active_player(self) -> Optional[int]:
         for i in range(1, self.num_players + 1):
             curr_player_to_check = (self.current_player + i) % self.num_players
@@ -441,10 +443,10 @@ class GameState():
         return self.num_ras_per_round
 
     # def get_current_player_state(self):
-    # 	return copy.deepcopy(self.player_states[self.current_player])
+    #   return copy.deepcopy(self.player_states[self.current_player])
 
     # def get_player_states(self):
-    # 	return self.player_states  # does this need to be deep copied?
+    #   return self.player_states  # does this need to be deep copied?
 
     def get_current_player_collection(self):
         return self.player_states[self.current_player].get_player_collection()
@@ -491,8 +493,7 @@ class GameState():
     def get_auction_winning_player(self):
         return self.auction_winning_player
 
-
-    ### logging functions
+    # logging functions
 
     def print_tile_bag(self) -> None:
         self.tile_bag.print_contents_of_bag()
@@ -507,7 +508,7 @@ class GameState():
 
     def print_player_states(self, verbose: bool = False) -> None:
         for state in self.player_states:
-            state.print_player_state(verbose = verbose)
+            state.print_player_state(verbose=verbose)
             print("")
 
     def print_auction_tiles(self) -> None:
@@ -530,18 +531,18 @@ class GameState():
         if self.is_auction_started():
             print("Auctioned Suns:", self.auction_suns)
 
-        print("\nPlayer To Move:", self.player_names[self.current_player], "\n")
+        print("\nPlayer To Move:",
+              self.player_names[self.current_player], "\n")
 
 
 # gs = GameState(2)
 # for _i in range(5):
-# 	tile_index = gs.draw_tile()
-# 	print(gi.index_to_tile_name(tile_index))
-# 	if gi.index_is_collectible(tile_index):
-# 		gs.add_tile_to_auction_tiles(tile_index)
+#   tile_index = gs.draw_tile()
+#   print(gi.index_to_tile_name(tile_index))
+#   if gi.index_is_collectible(tile_index):
+#       gs.add_tile_to_auction_tiles(tile_index)
 # gs.print_auction_tiles()
 
 # gs.print_player_state(0)
 # gs.player_wins_auction(0, 3)
 # gs.print_player_state(0)
-
