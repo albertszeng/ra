@@ -9,19 +9,19 @@ import game_state as gs
 
 ### Tile Bag Tests 
 class TileBagTests(unittest.TestCase):
-	def setUp(self):
+	def setUp(self) -> None:
 		self.num_iterations = 100
 		self.num_draws = 5
 
 	# test that bag starts with right number of tiles
-	def test_starting_num_tiles(self):
+	def test_starting_num_tiles(self) -> None:
 		t = gs.TileBag()
 		starting_num_tiles = t.get_num_tiles_left()
 		self.assertEqual(starting_num_tiles, gi.STARTING_NUM_TILES)
 		self.assertEqual(gi.NUM_TILE_TYPES, len(t.get_bag_contents()))
 
 	# test that drawing single tiles are recorded properly
-	def test_single_draws(self):
+	def test_single_draws(self) -> None:
 		for i in range(self.num_iterations):
 			t = gs.TileBag()
 			current_collection = t.get_bag_contents()
@@ -41,7 +41,7 @@ class TileBagTests(unittest.TestCase):
 				num_tiles_left = t.get_num_tiles_left()
 
 	# test that drawing all the tiles results in an empty tile bag
-	def test_drawing_all(self):
+	def test_drawing_all(self) -> None:
 		t = gs.TileBag()
 		starting_num_tiles = t.get_num_tiles_left()
 		for i in range(starting_num_tiles):
@@ -53,7 +53,7 @@ class TileBagTests(unittest.TestCase):
 
 ### Player State Tests
 class PlayerStateTests(unittest.TestCase):
-	def setUp(self):
+	def setUp(self) -> None:
 		self.num_adds = 50  # number of times we add tiles
 		self.num_iterations = 100
 		self.max_sun = 10
@@ -61,7 +61,7 @@ class PlayerStateTests(unittest.TestCase):
 		self.num_sun = 10
 		self.max_magnitude = 20  # max points we add to a player in a test
 
-	def test_add_tiles(self):
+	def test_add_tiles(self) -> None:
 		p_state = gs.PlayerState("Test Player", [1, 2, 3])
 		current_collection = p_state.get_player_collection()
 
@@ -86,7 +86,7 @@ class PlayerStateTests(unittest.TestCase):
 			p_state.add_tiles([random_indx_1, random_indx_2, random_indx_3])
 			self.assertEqual(current_collection, p_state.get_player_collection())
 
-	def test_remove_single_tiles_by_index(self):
+	def test_remove_single_tiles_by_index(self) -> None:
 		p_state = gs.PlayerState("Test Player", [1, 2, 3])
 		added_tile_indexes = []
 		for _i in range(self.num_adds):
@@ -116,7 +116,7 @@ class PlayerStateTests(unittest.TestCase):
 			p_state.remove_single_tiles_by_index([added_tile], log = False)
 			self.assertEqual(empty_collection, p_state.get_player_collection())
 
-	def test_remove_all_tiles_by_index(self):
+	def test_remove_all_tiles_by_index(self) -> None:
 		p_state = gs.PlayerState("Test Player", [1, 2, 3])
 		added_tile_indexes = []
 		for _i in range(self.num_adds):
@@ -147,7 +147,7 @@ class PlayerStateTests(unittest.TestCase):
 			self.assertEqual(empty_collection, p_state.get_player_collection())
 		return
 
-	def test_exchange_sun(self):
+	def test_exchange_sun(self) -> None:
 		test_sun = []
 		for i in range(self.num_sun):
 			test_sun.append(random.randint(self.min_sun, self.max_sun))
@@ -173,7 +173,7 @@ class PlayerStateTests(unittest.TestCase):
 			self.assertEqual(sorted(p_state.get_usable_sun() + removed_sun), test_sun)
 			self.assertEqual(p_state.get_unusable_sun(), sorted(added_sun))
 
-	def test_make_all_suns_usable(self):
+	def test_make_all_suns_usable(self) -> None:
 		test_sun = []
 		for i in range(self.num_sun):
 			test_sun.append(random.randint(self.min_sun, self.max_sun))
@@ -199,7 +199,7 @@ class PlayerStateTests(unittest.TestCase):
 		self.assertEqual(sum(p_state.get_unusable_sun()), 0)
 
 
-	def test_add_points(self):
+	def test_add_points(self) -> None:
 		p_state = gs.PlayerState("Test Player", [1, 2, 3])
 		current_points = p_state.get_player_points()
 
@@ -213,12 +213,12 @@ class PlayerStateTests(unittest.TestCase):
 
 ### Game State Tests
 class GameStateTests(unittest.TestCase):
-	def setUp(self):
+	def setUp(self) -> None:
 		self.num_iterations = 100
 		self.num_draws = 5
 
 
-	def test_increase_round_number(self):
+	def test_increase_round_number(self) -> None:
 		g_state = gs.GameState(["Test Player 1", "Test Player 2"])
 		max_rounds = g_state.get_total_rounds()
 		starting_round = g_state.get_current_round()
@@ -235,7 +235,7 @@ class GameStateTests(unittest.TestCase):
 		except Exception:
 			self.assertTrue(True)
 
-	def test_single_draws(self):
+	def test_single_draws(self) -> None:
 		# test that drawing single tiles are recorded properly
 		for i in range(self.num_iterations):
 			g_state = gs.GameState(["Test Player 1", "Test Player 2"])
@@ -255,7 +255,7 @@ class GameStateTests(unittest.TestCase):
 				current_collection = new_collection
 				num_tiles_left = g_state.get_num_tiles_left()
 
-	def test_drawing_all(self):
+	def test_drawing_all(self) -> None:
 		g_state = gs.GameState(["Test Player 1", "Test Player 2"])
 
 		# test that drawing all the tiles results in an empty tile bag
@@ -271,7 +271,7 @@ class GameStateTests(unittest.TestCase):
 		# test that trying to draw a tile after none are left returns none
 		self.assertEqual(None, g_state.draw_tile(log = False))
 
-	def test_increase_num_ras_this_round(self):
+	def test_increase_num_ras_this_round(self) -> None:
 		g_state = gs.GameState(["Test Player 1", "Test Player 2"])
 
 		max_ras = g_state.get_num_ras_per_round()
@@ -292,7 +292,7 @@ class GameStateTests(unittest.TestCase):
 		except Exception:
 			self.assertTrue(True)
 
-	def test_reset_num_ras_this_round(self):
+	def test_reset_num_ras_this_round(self) -> None:
 		g_state = gs.GameState(["Test Player 1", "Test Player 2"])
 
 		max_ras = g_state.get_num_ras_per_round()
@@ -311,7 +311,7 @@ class GameStateTests(unittest.TestCase):
 			self.assertEqual(0, g_state.get_current_num_ras())
 
 	# testing: add_tile_to_auction_tiles, remove_auction_tile
-	def test_add_remove_auction_tiles(self):
+	def test_add_remove_auction_tiles(self) -> None:
 		g_state = gs.GameState(["Test Player 1", "Test Player 2"])
 		max_index = gi.NUM_AUCTIONABLE_TILE_TYPES - 1
 		max_auction_tiles = g_state.get_max_auction_tiles()
@@ -343,7 +343,7 @@ class GameStateTests(unittest.TestCase):
 
 				self.assertEqual(tiles_added, g_state.get_auction_tiles())
 
-	def test_clear_auction_tiles(self):
+	def test_clear_auction_tiles(self) -> None:
 		g_state = gs.GameState(["Test Player 1", "Test Player 2"])
 		max_index = gi.NUM_AUCTIONABLE_TILE_TYPES
 		max_auction_tiles = g_state.get_max_auction_tiles()
@@ -363,7 +363,7 @@ class GameStateTests(unittest.TestCase):
 			g_state.clear_auction_tiles()
 			self.assertEqual(g_state.get_auction_tiles(), [])
 
-	def test_give_tiles_to_player(self):
+	def test_give_tiles_to_player(self) -> None:
 		g_state = gs.GameState(["Test Player 1", "Test Player 2"])
 
 		for _i in range(self.num_iterations):
@@ -392,7 +392,7 @@ class GameStateTests(unittest.TestCase):
 				)
 
 
-	def test_set_current_player(self):
+	def test_set_current_player(self) -> None:
 		g_state = gs.GameState(["Test Player 1", "Test Player 2", "Test Player 3"])
 		num_players = g_state.get_num_players()
 
@@ -415,7 +415,7 @@ class GameStateTests(unittest.TestCase):
 		except Exception:
 			self.assertTrue(True)
 
-	def test_mark_player_passed(self):
+	def test_mark_player_passed(self) -> None:
 		for _i in range(self.num_iterations):
 			g_state = gs.GameState(["Test Player 1", "Test Player 2", "Test Player 3"])
 			player_indexes = [0, 1, 2]
@@ -426,7 +426,7 @@ class GameStateTests(unittest.TestCase):
 				g_state.mark_player_passed(index)
 				self.assertTrue(not g_state.is_player_active(index))
 
-	def test_reset_active_players(self):
+	def test_reset_active_players(self) -> None:
 		for _i in range(self.num_iterations):
 			g_state = gs.GameState(["Test Player 1", "Test Player 2", "Test Player 3"])
 

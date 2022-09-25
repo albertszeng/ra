@@ -5,7 +5,7 @@ import random
 import game_info as gi
 import game_state as gs
 
-from typing import List
+from typing import Optional, List
 
 OUTFILE_FOLDER_NAME = "move_histories"
 DEFAULT_OUTFILE_PREFIX = "move_history"
@@ -24,7 +24,7 @@ class RaGame:
                  player_names: List[str],
                  randomize_play_order: bool = True,
                  outfile: str = "history.txt",
-                 move_history_file: Optional[str] = None):
+                 move_history_file: Optional[str] = None) -> None:
         self.num_players = len(player_names)
         if not self.is_valid_num_players(self.num_players):
             print("Invalid number of players. Cannot create game instance...")
@@ -54,14 +54,14 @@ class RaGame:
 
     # write player names to the outfile, overwriting if necessary
 
-    def write_player_names_to_outfile(self):
+    def write_player_names_to_outfile(self) -> None:
         with open(self.outfile, "w+") as outfile:
             # write the player names to the outfile
             outfile.write(f"{' '.join(self.player_names)}\n")
 
     # gives points to each player based on their tiles
 
-    def base_round_scoring(self, player_states):
+    def base_round_scoring(self, player_states) -> None:
         def least_and_most_num_pharoahs(player_states):
             least_so_far = float("inf")
             most_so_far = float("-inf")
@@ -107,7 +107,7 @@ class RaGame:
 
     # gives points to each player based on final round scoring
 
-    def final_round_scoring(self, player_states):
+    def final_round_scoring(self, player_states) -> None:
         def sum_suns(player_state):
             return sum(player_state.get_all_sun())
 
@@ -146,7 +146,7 @@ class RaGame:
 
     # ends the round and transitions to the next one if necessary
 
-    def end_round(self):
+    def end_round(self) -> None:
         # clear auction tiles
         self.game_state.clear_auction_tiles()
 
@@ -193,7 +193,7 @@ class RaGame:
 
     # returns a list of legal actions
 
-    def get_possible_actions(self):
+    def get_possible_actions(self) -> Optional[List[int]]:
         if self.game_state.is_game_ended():
             return None
 
@@ -308,7 +308,7 @@ class RaGame:
 
     # get an action from a human user
 
-    def get_action_from_user(self, legal_actions, helpful_prompt=True):
+    def get_action_from_user(self, legal_actions: Optional[List[int]], helpful_prompt: bool=True):
         def parse_action(action: str):
             action_lower = action.lower()
 
@@ -342,7 +342,7 @@ class RaGame:
     # continually try to get an action until a legal action is given
     # an action-making function can be given to get an action
 
-    def get_action(self, legal_actions, action_making_func=None, log=True):
+    def get_action(self, legal_actions, action_making_func=None, log: bool=True):
         for _i in range(self.MAX_ACTION_ATTEMPTS):
             # get an action
             action = None
@@ -666,7 +666,7 @@ class RaGame:
 
     # play the game and log action history to the outfile
 
-    def play(self):
+    def play(self) -> None:
         with open(self.outfile, "a+") as outfile:
             while not self.game_state.is_game_ended():
                 self.game_state.print_game_state()
@@ -682,7 +682,7 @@ class RaGame:
     # execute a list of actions. draw actions must have a specified tile to
     # draw each action is a string lst of length 1 or 2
 
-    def load_actions(self, action_lst):
+    def load_actions(self, action_lst) -> None:
         self.write_player_names_to_outfile()
 
         with open(self.outfile, "a+") as outfile:
@@ -710,7 +710,7 @@ class RaGame:
     # execute a list of actions from an infile
     # the format of the infile should be the same as is produced when playing
 
-    def load_actions_from_infile(self, infile):
+    def load_actions_from_infile(self, infile) -> None:
         with open(infile, "r") as f:
             action_lst = [action.split(" ") for action in f.readlines()][1:]
         self.load_actions(action_lst)
@@ -718,7 +718,7 @@ class RaGame:
     # function to call to start the game
     # is only valid if the game has not been played yet
 
-    def start_game(self):
+    def start_game(self) -> None:
         if self.move_history_file is not None:
             self.load_actions_from_infile(self.move_history_file)
         else:
@@ -726,11 +726,11 @@ class RaGame:
 
         self.play()
 
-    def print_player_scores(self):
+    def print_player_scores(self) -> None:
         self.game_state.print_player_scores()
 
 
-def get_args():
+def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Ra Game Instance')
 
     parser.add_argument('--num_players', '-n', type=int, default=2,
@@ -760,7 +760,7 @@ def get_args():
 
 
 if __name__ == '__main__':
-    args = get_args()
+    args: argparse.Namespace = get_args()
     player_names = [
         args.player1,
         args.player2,

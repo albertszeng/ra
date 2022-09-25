@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List, Tuple
 
 
 ### Game Constants
@@ -36,7 +37,7 @@ NUM_DISCARDS_PER_DISASTER = 2
 ### Definitions of each tile type
 
 class TileTypeInfo():
-    def __init__(self, name, startingNum, toKeep, tileType):
+    def __init__(self, name, startingNum, toKeep, tileType) -> None:
         self.name = name
         self.startingNum = startingNum  # how many start in the bag
         self.toKeep = toKeep  # how many start in the bag
@@ -82,13 +83,13 @@ RA = TileTypeInfo("Ra", 30, False, TileType.RA)
 # a list of all tile types
 # An index corresponds to the tile in this list
 # WARNING: changing this list changes everything below within this section
-TILE_INFO = [GOD, GOLD, PHAR, NILE, FLOOD, CIV_ASTR, CIV_AGR, \
+TILE_INFO: List[TileTypeInfo] = [GOD, GOLD, PHAR, NILE, FLOOD, CIV_ASTR, CIV_AGR, \
             CIV_WRI, CIV_REL, CIV_ART, MON_FORT, MON_OBEL, MON_PAL, \
             MON_PYR, MON_TEM, MON_STAT, MON_STE, MON_SPH, DIS_PHAR, \
             DIS_NILE, DIS_CIV, DIS_MON, RA]
 
 
-NUM_TILE_TYPES = len(TILE_INFO)  # total number of tiles types in the game
+NUM_TILE_TYPES: int = len(TILE_INFO)  # total number of tiles types in the game
 
 STARTING_NUM_TILES = 0  # total number of tiles that start in the bag
 for tile in TILE_INFO:
@@ -147,7 +148,7 @@ def tile_name(tile):
     return tile.name
 
 # given an index of TILE_INFO, give the TileTypeInfo
-def index_to_tile(index):
+def index_to_tile(index) -> TileTypeInfo:
     assert(index >= 0 and index <= 23)
     return TILE_INFO[index]
 
@@ -169,7 +170,7 @@ def index_is_disaster(index):
 def index_is_ra(index):
     return index_to_tile(index).tileType == TileType.RA
 
-def list_of_temporary_collectible_indexes():
+def list_of_temporary_collectible_indexes() -> List[int]:
     temp_collectibles = []
     for i in range(NUM_TILE_TYPES):
         curr_tile = TILE_INFO[i]
@@ -279,7 +280,7 @@ DISCARD_SPH_DESC = "Discard the SPHINX monument tile"
 
 
 
-action_option_lst = [
+action_option_lst: List[Tuple[int, List[str], str]] = [
     (DRAW, DRAW_OPTIONS, DRAW_DESC),
     (AUCTION, AUCTION_OPTIONS, AUCTION_DESC),
     (GOD_1, GOD_1_OPTIONS, GOD_1_DESC),
