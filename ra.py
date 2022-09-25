@@ -10,6 +10,14 @@ DEFAULT_OUTFILE_PREFIX = "move_history"
 
 
 class RaGame:
+    """Core logis for a game of Ra"""
+    num_players: int
+    outfile: str
+    move_history_file: str
+    player_names: List[str]
+    game_state: gs.GameState
+    MAX_ACTION_ATTEMPTS: int
+
     def __init__(self,
                  player_names,
                  randomize_play_order=True,
