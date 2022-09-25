@@ -60,101 +60,101 @@ class TileTypeInfo:
 GOD = TileTypeInfo(name="Golden God",
                    startingNum=8,
                    toKeep=False,
-                   TileType.COLLECTIBLE)
+                   tileType=TileType.COLLECTIBLE)
 GOLD = TileTypeInfo(name="Gold",
                     startingNum=5,
                     toKeep=False,
-                    TileType.COLLECTIBLE)
+                    tileType=TileType.COLLECTIBLE)
 
 PHAR = TileTypeInfo(name="Pharaoh",
                     startingNum=25,
                     toKeep=True,
-                    TileType.COLLECTIBLE)
+                    tileType=TileType.COLLECTIBLE)
 
 NILE = TileTypeInfo(name="Nile",
                     startingNum=25,
                     toKeep=True,
-                    TileType.COLLECTIBLE)
+                    tileType=TileType.COLLECTIBLE)
 FLOOD = TileTypeInfo(name="Flood",
                      startingNum=12,
                      toKeep=False,
-                     TileType.COLLECTIBLE)
+                     tileType=TileType.COLLECTIBLE)
 
 CIV_ASTR = TileTypeInfo(name="Civilization -- Astronomy",
                         startingNum=5,
                         toKeep=False,
-                        TileType.COLLECTIBLE)
+                        tileType=TileType.COLLECTIBLE)
 CIV_AGR = TileTypeInfo(name="Civilization -- Agriculture",
                        startingNum=5,
                        toKeep=False,
-                       TileType.COLLECTIBLE)
+                       tileType=TileType.COLLECTIBLE)
 CIV_WRI = TileTypeInfo(name="Civilization -- Writing",
                        startingNum=5,
                        toKeep=False,
-                       TileType.COLLECTIBLE)
+                       tileType=TileType.COLLECTIBLE)
 CIV_REL = TileTypeInfo(name="Civilization -- Religion",
                        startingNum=5,
                        toKeep=False,
-                       TileType.COLLECTIBLE)
+                       tileType=TileType.COLLECTIBLE)
 CIV_ART = TileTypeInfo(name="Civilization -- Art",
                        startingNum=5,
                        toKeep=False,
-                       TileType.COLLECTIBLE)
+                       tileType=TileType.COLLECTIBLE)
 
 MON_FORT = TileTypeInfo(name="Monument -- Fortress",
                         startingNum=5,
                         toKeep=True,
-                        TileType.COLLECTIBLE)
+                        tileType=TileType.COLLECTIBLE)
 MON_OBEL = TileTypeInfo(name="Monument -- Obelisk",
                         startingNum=5,
                         toKeep=True,
-                        TileType.COLLECTIBLE)
+                        tileType=TileType.COLLECTIBLE)
 MON_PAL = TileTypeInfo(name="Monument -- Palace",
                        startingNum=5,
                        toKeep=True,
-                       TileType.COLLECTIBLE)
+                       tileType=TileType.COLLECTIBLE)
 MON_PYR = TileTypeInfo(name="Monument -- Pyramid",
                        startingNum=5,
                        toKeep=True,
-                       TileType.COLLECTIBLE)
+                       tileType=TileType.COLLECTIBLE)
 MON_TEM = TileTypeInfo(name="Monument -- Temple",
                        startingNum=5,
                        toKeep=True,
-                       TileType.COLLECTIBLE)
+                       tileType=TileType.COLLECTIBLE)
 MON_STAT = TileTypeInfo(name="Monument -- Statue",
                         startingNum=5,
                         toKeep=True,
-                        TileType.COLLECTIBLE)
+                        tileType=TileType.COLLECTIBLE)
 MON_STE = TileTypeInfo(name="Monument -- Step Pyramid",
                        startingNum=5,
                        toKeep=True,
-                       TileType.COLLECTIBLE)
+                       tileType=TileType.COLLECTIBLE)
 MON_SPH = TileTypeInfo(name="Monument -- Sphinx",
                        startingNum=5,
                        toKeep=True,
-                       TileType.COLLECTIBLE)
+                       tileType=TileType.COLLECTIBLE)
 
 DIS_PHAR = TileTypeInfo(name="Disaster -- Funeral",
                         startingNum=2,
                         toKeep=False,
-                        TileType.DISASTER)
+                        tileType=TileType.DISASTER)
 DIS_NILE = TileTypeInfo(name="Disaster -- Drought",
                         startingNum=2,
                         toKeep=False,
-                        TileType.DISASTER)
+                        tileType=TileType.DISASTER)
 DIS_CIV = TileTypeInfo(name="Disaster -- War",
                        startingNum=4,
                        toKeep=False,
-                       TileType.DISASTER)
+                       tileType=TileType.DISASTER)
 DIS_MON = TileTypeInfo(name="Disaster -- Earthquake",
                        startingNum=2,
                        toKeep=False,
-                       TileType.DISASTER)
+                       tileType=TileType.DISASTER)
 
 RA = TileTypeInfo(name="Ra",
                   startingNum=30,
                   toKeep=False,
-                  TileType.RA)
+                  tileType=TileType.RA)
 
 
 # a list of all tile types
