@@ -43,7 +43,7 @@ When installing future dependencies, just make sure you use `pipenv`. For exampl
 pipenv install flask
 ```
 
-## Type Checking
+## Type Checking and Linter
 
 For development purposes, you want to also install the dev dependencies by running `pipenv install -d`. For type-checking, we use `pyre`. See [here](https://pyre-check.org/docs/getting-started/) to install.
 
@@ -53,6 +53,13 @@ You should be able to type check by running:
 # Assumes you're in the right shell.
 pyre
 ```
+
+And you should run the linter with:
+```
+flake8 . --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
+```
+
+Note that these commands will be run when push to the `master` branch on github as well. You'll be able to see the results on Github Actions.
 
 ## Testing TODO
 
