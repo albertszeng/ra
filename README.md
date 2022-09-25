@@ -13,6 +13,22 @@ game = RaGame(["Albert", "Belinda"], outfile = "game3.txt")
 game.start_game()
 ```
 
+## Development Setup
+
+Install `pipenv` and `pyenv`. If you already have `brew` installed, just run:
+
+```sh
+brew install pipenv pyenv
+```
+
+Once installed, initialize your local, self-contained development environment by running:
+
+```sh
+pipenv install -d
+# This drops you into a shell that is running the right version of Python + required deps.
+pipenv shell
+```
+
 ## Testing TODO
 
 Testing for the `RaGame` class and for the newer functions of the `GameState` class are still needed. Existing tests can be found in the `tests` folder, where each file is a set of tests.
