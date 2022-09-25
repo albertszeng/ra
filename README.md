@@ -64,7 +64,7 @@ We use the `unittest` framework. To run the tests, run:
 python -m unittest
 ```
 
-Note that above automatically runs all tests found in `*_test.py` files.
+Note that above automatically runs all tests found in `test_*.py` files.
 
 ## Specifications
 
