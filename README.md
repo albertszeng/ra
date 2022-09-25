@@ -13,25 +13,46 @@ game = RaGame(["Albert", "Belinda"], outfile = "game3.txt")
 game.start_game()
 ```
 
-## Development Setup
+## Python Requirements
 
-Install `pipenv` and `pyenv`. If you already have `brew` installed, just run:
+### `pipenv` and `pyenv`
+
+As of the latest update, we recommend leveraging `pipenv` and `pyenv` to maintain a hermetic static for dependencies. The other options are left here only for reference as they are not maintained/tested often.
+
+On Mac, make sure you have [Homebrew](https://brew.sh/) installed. You can install `pipenv` and `pyenv` with:
 
 ```sh
-brew install pipenv pyenv
+brew install pipenv
+brew install pyenv
+````
+
+After installing, you navigate to the root of the project directory, and run:
+
+```sh
+pipenv install
 ```
 
-Once installed, initialize your local, self-contained development environment by running:
+This will install all the required dependencies as well as the appropriate Python version (using pyenv). You can then run:
 
 ```sh
-pipenv install -d
-# This drops you into a shell that is running the right version of Python + required deps.
 pipenv shell
-```
+````
 
 When installing future dependencies, just make sure you use `pipenv`. For example:
 ```sh
 pipenv install flask
+```
+
+## Type Checking
+
+For development purposes, you want to also install the dev dependencies by running `pipenv install -d`.
+
+You should be able to type check by running:
+
+```sh
+# If you're already in the shell with pipenv shell, you can drop the part
+# before mypy
+pipenv run mypy *.py
 ```
 
 ## Testing TODO

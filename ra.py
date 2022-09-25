@@ -9,8 +9,12 @@ OUTFILE_FOLDER_NAME = "move_histories"
 DEFAULT_OUTFILE_PREFIX = "move_history"
 
 
-class RaGame():
-    def __init__(self, player_names, randomize_play_order = True, outfile = "history.txt", move_history_file = None):
+class RaGame:
+    def __init__(self,
+                 player_names,
+                 randomize_play_order=True,
+                 outfile="history.txt",
+                 move_history_file=None):
         self.num_players = len(player_names)
         if not self.is_valid_num_players(self.num_players):
             print("Invalid number of players. Cannot create game instance...")
@@ -25,7 +29,8 @@ class RaGame():
 
         if self.move_history_file is not None:
             with open(self.move_history_file, "r") as f:
-                self.player_names = [name.rstrip() for name in f.readline().split(" ")]
+                self.player_names = [name.rstrip()
+                                     for name in f.readline().split(" ")]
         elif randomize_play_order:
             random.shuffle(self.player_names)
 
@@ -33,41 +38,47 @@ class RaGame():
 
         self.MAX_ACTION_ATTEMPTS = 10  # max num times we try to get an action
 
-
     def is_valid_num_players(self, num_players):
-        return num_players >= gi.MIN_NUM_PLAYERS and num_players <= gi.MAX_NUM_PLAYERS
-
+        return (num_players >= gi.MIN_NUM_PLAYERS and
+                num_players <= gi.MAX_NUM_PLAYERS)
 
     # write player names to the outfile, overwriting if necessary
+
     def write_player_names_to_outfile(self):
         with open(self.outfile, "w+") as outfile:
             # write the player names to the outfile
             outfile.write(f"{' '.join(self.player_names)}\n")
 
-
     # gives points to each player based on their tiles
+
     def base_round_scoring(self, player_states):
         def least_and_most_num_pharoahs(player_states):
             least_so_far = float("inf")
             most_so_far = float("-inf")
             for player_state in player_states:
-                least_so_far = min(least_so_far, player_state.collection[gi.INDEX_OF_PHAR])
-                most_so_far = max(most_so_far, player_state.collection[gi.INDEX_OF_PHAR])
+                least_so_far = min(
+                    least_so_far, player_state.collection[gi.INDEX_OF_PHAR])
+                most_so_far = max(
+                    most_so_far, player_state.collection[gi.INDEX_OF_PHAR])
             return least_so_far, most_so_far
 
         def num_distinct_civs(player_state):
-            collection_of_civs = gi.get_civs_from_collection(player_state.collection)
+            collection_of_civs = gi.get_civs_from_collection(
+                player_state.collection)
             return len([n for n in collection_of_civs if n > 0])
 
         for player_state in player_states:
             # golden gods
-            player_state.add_points(player_state.collection[gi.INDEX_OF_GOD] * gi.POINTS_PER_GOD)
+            player_state.add_points(
+                player_state.collection[gi.INDEX_OF_GOD] * gi.POINTS_PER_GOD)
 
             # gold
-            player_state.add_points(player_state.collection[gi.INDEX_OF_GOLD] * gi.POINTS_PER_GOLD)
+            player_state.add_points(
+                player_state.collection[gi.INDEX_OF_GOLD] * gi.POINTS_PER_GOLD)
 
             # pharoahs
-            least_num_pharoahs, most_num_pharoahs = least_and_most_num_pharoahs(player_states)
+            least_num_pharoahs, most_num_pharoahs = (
+                least_and_most_num_pharoahs(player_states))
             if player_state.collection[gi.INDEX_OF_PHAR] == least_num_pharoahs:
                 player_state.add_points(gi.POINTS_FOR_LEAST_PHAR)
             if player_state.collection[gi.INDEX_OF_PHAR] == most_num_pharoahs:
@@ -76,14 +87,16 @@ class RaGame():
             # niles and floods
             if player_state.collection[gi.INDEX_OF_FLOOD] > 0:
                 player_state.add_points(
-                    player_state.collection[gi.INDEX_OF_NILE] + player_state.collection[gi.INDEX_OF_FLOOD]
+                    player_state.collection[gi.INDEX_OF_NILE] +
+                    player_state.collection[gi.INDEX_OF_FLOOD]
                 )
 
             # civilizations
-            player_state.add_points(gi.POINTS_FOR_CIVS[num_distinct_civs(player_state)])
-
+            player_state.add_points(
+                gi.POINTS_FOR_CIVS[num_distinct_civs(player_state)])
 
     # gives points to each player based on final round scoring
+
     def final_round_scoring(self, player_states):
         def sum_suns(player_state):
             return sum(player_state.get_all_sun())
@@ -99,7 +112,8 @@ class RaGame():
         def monument_points(player_state):
             monument_points = 0
             # monument copies
-            monument_collection = gi.get_monuments_from_collection(player_state.collection)
+            monument_collection = gi.get_monuments_from_collection(
+                player_state.collection)
             for amount in monument_collection:
                 monument_points += gi.POINTS_FOR_MON_DEPTH[amount]
 
@@ -120,8 +134,8 @@ class RaGame():
             if sum_suns(player_state) == most_suns:
                 player_state.add_points(gi.POINTS_FOR_MOST_SUN)
 
-
     # ends the round and transitions to the next one if necessary
+
     def end_round(self):
         # clear auction tiles
         self.game_state.clear_auction_tiles()
@@ -167,8 +181,8 @@ class RaGame():
 
         return
 
-
     # returns a list of legal actions
+
     def get_possible_actions(self):
         if self.game_state.is_game_ended():
             return None
@@ -180,18 +194,22 @@ class RaGame():
             auction_suns = self.game_state.get_auction_suns()
             max_auction_sun = float("-inf")
             if len([el for el in auction_suns if el is not None]) > 0:
-                max_auction_sun = max([el for el in auction_suns if el is not None])
+                max_auction_sun = max(
+                    [el for el in auction_suns if el is not None])
 
-            # add a legal action for every player sun greater than the max bid sun
-            current_player_usable_sun = self.game_state.get_current_player_usable_sun()
+            # add a legal action for every player sun greater than the max
+            # bid sun
+            current_player_usable_sun = (
+                self.game_state.get_current_player_usable_sun())
             possible_bid_actions = [gi.BID_1, gi.BID_2, gi.BID_3, gi.BID_4]
             for i in range(len(current_player_usable_sun)):
                 if current_player_usable_sun[i] > max_auction_sun:
                     legal_actions.append(possible_bid_actions[i])
 
-            # if current player is not the auction starter or auction was forced
-            # or someone else has bid, then player can pass
-            if (self.game_state.get_current_player() != self.game_state.get_auction_start_player() or
+            # if current player is not the auction starter or auction was
+            # forced or someone else has bid, then player can pass
+            currPlayer = self.game_state.get_current_player()
+            if (currPlayer != self.game_state.get_auction_start_player() or
                     self.game_state.auction_was_forced() or
                     self.game_state.get_num_auction_suns() > 0):
                 legal_actions.append(gi.BID_NOTHING)
@@ -201,9 +219,10 @@ class RaGame():
             if (self.game_state.get_num_mons_to_discard() > 0 or
                     self.game_state.get_num_civs_to_discard() > 0):
 
-                winning_player_collection = self.game_state.get_player_collection(
-                    self.game_state.get_auction_winning_player()
-                )
+                winning_player_collection = (
+                    self.game_state.get_player_collection(
+                        self.game_state.get_auction_winning_player()
+                    ))
 
                 # if there are civilizations to be discarded
                 if self.game_state.get_num_civs_to_discard() > 0:
@@ -214,8 +233,10 @@ class RaGame():
                         gi.DISCARD_REL,
                         gi.DISCARD_ART
                     ]
-                    for i in range(gi.NUM_CIVS):  # the number of civilization tiles
-                        if winning_player_collection[gi.STARTING_INDEX_OF_CIVS + i] > 0:
+                    # the number of civilization tiles
+                    for i in range(gi.NUM_CIVS):
+                        if winning_player_collection[
+                                gi.STARTING_INDEX_OF_CIVS + i] > 0:
                             legal_actions.append(possible_discards[i])
 
                 # if there are monuments to be discarded
@@ -230,25 +251,33 @@ class RaGame():
                         gi.DISCARD_STE,
                         gi.DISCARD_SPH
                     ]
-                    for i in range(gi.NUM_MONUMENTS):  # the number of civilization tiles
-                        if winning_player_collection[gi.STARTING_INDEX_OF_MONUMENTS + i] > 0:
+                    # the number of civilization tiles
+                    for i in range(gi.NUM_MONUMENTS):
+                        if winning_player_collection[
+                                gi.STARTING_INDEX_OF_MONUMENTS + i] > 0:
                             legal_actions.append(possible_discards[i])
 
                 # this should never be reached
                 else:
-                    raise Exception("Error getting possible actions for disaster resolution")
+                    raise Exception(
+                        "Error getting possible actions for disaster "
+                        "resolution")
 
             # if no disaster to resolve
             else:
                 # add start auction option
                 legal_actions.append(gi.AUCTION)
 
-                if self.game_state.get_num_auction_tiles() < self.game_state.get_max_auction_tiles():
+                num_auction_tiles = self.game_state.get_num_auction_tiles()
+                max_auction_tiles = self.game_state.get_max_auction_tiles()
+                if num_auction_tiles < max_auction_tiles:
                     # add draw option if auction tiles not full
                     legal_actions.append(gi.DRAW)
 
-                    # if golden god exists, add god options for each auction tile
-                    if self.game_state.get_current_player_collection()[gi.INDEX_OF_GOD] > 0:
+                    # if golden god exists, add god options for each auction
+                    # tile
+                    players = self.game_state.get_current_player_collection()
+                    if players[gi.INDEX_OF_GOD] > 0:
                         possible_takes = [
                             gi.GOD_1,
                             gi.GOD_2,
@@ -261,16 +290,16 @@ class RaGame():
                         ]
 
                         auction_tiles = self.game_state.get_auction_tiles()
-                        for i in range(self.game_state.get_num_auction_tiles()):
+                        for i in range(num_auction_tiles):
                             if not gi.index_is_disaster(auction_tiles[i]):
                                 legal_actions.append(possible_takes[i])
 
         return sorted(legal_actions)
 
-
     # get an action from a human user
-    def get_action_from_user(self, legal_actions, helpful_prompt = True):
-        def parse_action(action : str):
+
+    def get_action_from_user(self, legal_actions, helpful_prompt=True):
+        def parse_action(action: str):
             action_lower = action.lower()
 
             # try to parse action
@@ -290,16 +319,20 @@ class RaGame():
                 gi.action_option_lst[action][2] for action in legal_actions
             ]
             possible_actions_str = "\n\t".join(possible_actions_lst)
-            prompt = f"Possible actions:\n\t{possible_actions_str}\n\nUser Action: "
+            prompt = f"""
+            Possible actions:
+                {possible_actions_str}
+
+            User Action: """
 
         action = input(prompt)
 
         return parse_action(action)
 
-
     # continually try to get an action until a legal action is given
     # an action-making function can be given to get an action
-    def get_action(self, legal_actions, action_making_func = None, log = True):
+
+    def get_action(self, legal_actions, action_making_func=None, log=True):
         for _i in range(self.MAX_ACTION_ATTEMPTS):
             # get an action
             action = None
@@ -314,42 +347,49 @@ class RaGame():
             else:
                 if log:
                     print(f"Invalid action given: {action}\n")
-        raise Exception(f"Unable to get legal action after {self.MAX_ACTION_ATTEMPTS} attempts")
-
+        raise Exception("Unable to get legal action after "
+                        f"{self.MAX_ACTION_ATTEMPTS} attempts")
 
     # execute an action given it is valid for the current game state
     # assumes the action is made by the current player
     # returns the tile drawn if action is draw
-    def execute_action(self, action, legal_actions, tile_to_draw = None):
+
+    def execute_action(self, action, legal_actions, tile_to_draw=None):
         # use god tile on the nth auction tile
         def execute_god(n):
             tile = self.game_state.remove_auction_tile(n)
-            self.game_state.give_tiles_to_player(self.game_state.get_current_player(), [tile])
-            self.game_state.remove_single_tiles_from_current_player([gi.INDEX_OF_GOD])
+            self.game_state.give_tiles_to_player(
+                self.game_state.get_current_player(), [tile])
+            self.game_state.remove_single_tiles_from_current_player(
+                [gi.INDEX_OF_GOD])
             self.game_state.advance_current_player()
 
-        # mark a player passed and end round if no disasters need to be resolved
+        # mark a player passed and end round if no disasters need to be
+        # resolved
         def mark_player_passed_if_no_disasters(auction_winning_player):
             # mark player passed if no disasters must be resolved
             if not self.game_state.disasters_must_be_resolved():
-                if len(self.game_state.get_player_usable_sun(auction_winning_player)) == 0:
+                if len(self.game_state.get_player_usable_sun(
+                        auction_winning_player)) == 0:
                     self.game_state.mark_player_passed(auction_winning_player)
 
                 # if all playesr passed, end the round
                 if self.game_state.are_all_players_passed():
                     self.end_round()
 
-        # give auction tiles to the winning bidder or discard them if no winner
-        # assumes all players have bid already
+        # give auction tiles to the winning bidder or discard them if no
+        # winner assumes all players have bid already
         def handle_auction_end():
             auction_suns = self.game_state.get_auction_suns()
             max_sun = None
             if len([el for el in auction_suns if el is not None]) > 0:
                 max_sun = max([el for el in auction_suns if el is not None])
 
-            # if no suns were bid and the auction tiles are full, clear the tiles
+            # if no suns were bid and the auction tiles are full, clear
+            # the tiles
             if max_sun is None:
-                if self.game_state.get_num_auction_tiles() == self.game_state.get_max_auction_tiles():
+                if (self.game_state.get_num_auction_tiles() ==
+                        self.game_state.get_max_auction_tiles()):
                     self.game_state.clear_auction_tiles()
 
             # if a sun was bid, give auction tiles to the winner
@@ -369,17 +409,22 @@ class RaGame():
                 self.game_state.clear_auction_tiles()
                 self.game_state.give_tiles_to_player(
                     winning_player,
-                    [tile for tile in auction_tiles if gi.index_is_collectible(tile)]
+                    [tile for tile in auction_tiles if gi.index_is_collectible(
+                        tile)]
                 )
 
-                winning_player_collection = self.game_state.get_player_collection(winning_player)
+                winning_player_collection = (
+                    self.game_state.get_player_collection(winning_player))
 
                 # resolve pharoah disasters
                 num_phars_to_discard = gi.NUM_DISCARDS_PER_DISASTER \
-                    * len([tile for tile in auction_tiles if tile == gi.INDEX_OF_DIS_PHAR])
+                    * len([tile for tile in auction_tiles
+                           if tile == gi.INDEX_OF_DIS_PHAR])
                 if num_phars_to_discard > 0:
-                    num_phars_owned = winning_player_collection[gi.INDEX_OF_PHAR]
-                    num_phars_to_discard = min(num_phars_to_discard, num_phars_owned)
+                    num_phars_owned = winning_player_collection[
+                        gi.INDEX_OF_PHAR]
+                    num_phars_to_discard = min(
+                        num_phars_to_discard, num_phars_owned)
                     self.game_state.remove_single_tiles_from_player(
                         [gi.INDEX_OF_PHAR] * num_phars_to_discard,
                         winning_player
@@ -387,46 +432,66 @@ class RaGame():
 
                 # resolve nile disasters
                 num_niles_to_discard = gi.NUM_DISCARDS_PER_DISASTER \
-                    * len([tile for tile in auction_tiles if tile == gi.INDEX_OF_DIS_NILE])
+                    * len([tile for tile in auction_tiles
+                           if tile == gi.INDEX_OF_DIS_NILE])
                 if num_niles_to_discard > 0:
-                    num_floods_owned = winning_player_collection[gi.INDEX_OF_FLOOD]
-                    num_niles_owned = winning_player_collection[gi.INDEX_OF_NILE]
+                    num_floods_owned = winning_player_collection[
+                        gi.INDEX_OF_FLOOD]
+                    num_niles_owned = winning_player_collection[
+                        gi.INDEX_OF_NILE]
 
-                    num_floods_to_discard = min(num_floods_owned, num_niles_to_discard)
-                    num_niles_to_discard = min(num_niles_to_discard - num_floods_to_discard, num_niles_owned)
+                    num_floods_to_discard = min(
+                        num_floods_owned, num_niles_to_discard)
+                    num_niles_to_discard = min(
+                        num_niles_to_discard - num_floods_to_discard,
+                        num_niles_owned)
 
                     self.game_state.remove_single_tiles_from_player(
-                        [gi.INDEX_OF_FLOOD] * num_floods_to_discard + [gi.INDEX_OF_NILE] * num_niles_to_discard,
+                        [gi.INDEX_OF_FLOOD] * num_floods_to_discard +
+                        [gi.INDEX_OF_NILE] * num_niles_to_discard,
                         winning_player
                     )
 
                 # resolve civ disasters
                 num_civs_to_discard = gi.NUM_DISCARDS_PER_DISASTER \
-                    * len([tile for tile in auction_tiles if tile == gi.INDEX_OF_DIS_CIV])
+                    * len([tile for tile in auction_tiles
+                           if tile == gi.INDEX_OF_DIS_CIV])
                 if num_civs_to_discard > 0:
-                    num_civs_owned = sum(gi.get_civs_from_collection(winning_player_collection))
+                    num_civs_owned = sum(
+                        gi.get_civs_from_collection(
+                            winning_player_collection))
                     if num_civs_owned <= num_civs_to_discard:
                         self.game_state.remove_all_tiles_by_index_from_player(
-                            range(gi.STARTING_INDEX_OF_CIVS, gi.STARTING_INDEX_OF_CIVS + gi.NUM_CIVS),
+                            range(gi.STARTING_INDEX_OF_CIVS,
+                                  gi.STARTING_INDEX_OF_CIVS + gi.NUM_CIVS),
                             winning_player
                         )
                     else:
-                        self.game_state.set_num_civs_to_discard(num_civs_to_discard)
-                        self.game_state.set_auction_winning_player(winning_player)
+                        self.game_state.set_num_civs_to_discard(
+                            num_civs_to_discard)
+                        self.game_state.set_auction_winning_player(
+                            winning_player)
 
                 # resolve monument disasters
                 num_mons_to_discard = gi.NUM_DISCARDS_PER_DISASTER \
-                    * len([tile for tile in auction_tiles if tile == gi.INDEX_OF_DIS_MON])
+                    * len([tile for tile in auction_tiles
+                           if tile == gi.INDEX_OF_DIS_MON])
                 if num_mons_to_discard > 0:
-                    num_mons_owned = sum(gi.get_monuments_from_collection(winning_player_collection))
+                    num_mons_owned = sum(
+                        gi.get_monuments_from_collection(
+                            winning_player_collection))
                     if num_mons_owned <= num_mons_to_discard:
                         self.game_state.remove_all_tiles_by_index_from_player(
-                            range(gi.STARTING_INDEX_OF_MONUMENTS, gi.STARTING_INDEX_OF_MONUMENTS + gi.NUM_MONS),
+                            range(
+                                gi.STARTING_INDEX_OF_MONUMENTS,
+                                gi.STARTING_INDEX_OF_MONUMENTS + gi.NUM_MONS),
                             winning_player
                         )
                     else:
-                        self.game_state.set_num_mons_to_discard(num_mons_to_discard)
-                        self.game_state.set_auction_winning_player(winning_player)
+                        self.game_state.set_num_mons_to_discard(
+                            num_mons_to_discard)
+                        self.game_state.set_auction_winning_player(
+                            winning_player)
 
                 mark_player_passed_if_no_disasters(winning_player)
 
@@ -436,30 +501,35 @@ class RaGame():
             # if no disasters to be resolved, advance current player
             if not self.game_state.disasters_must_be_resolved():
                 self.game_state.advance_current_player()
-            else: # otherwise, set current player to auction winner to resolve
-                self.game_state.set_current_player(self.game_state.get_auction_winning_player())
+            else:  # otherwise, set current player to auction winner to resolve
+                self.game_state.set_current_player(
+                    self.game_state.get_auction_winning_player())
 
         # put the nth lowest sun up for auction
         def execute_bid(n):
             sun_to_bid = self.game_state.get_current_player_usable_sun()[n]
-            self.game_state.add_auction_sun(self.game_state.get_current_player(), sun_to_bid)
+            self.game_state.add_auction_sun(
+                self.game_state.get_current_player(), sun_to_bid)
 
-            if self.game_state.get_current_player() == self.game_state.get_auction_start_player():
+            if (self.game_state.get_current_player() ==
+                    self.game_state.get_auction_start_player()):
                 handle_auction_end()
             else:
                 self.game_state.advance_current_player()
 
         # executes a single discard for resolving civilization disasters
-        def execute_civ_discard(index_to_discard, log = True):
+        def execute_civ_discard(index_to_discard, log=True):
             self.game_state.remove_single_tiles_from_player(
                 [index_to_discard],
                 self.game_state.get_auction_winning_player(),
-                log = log
+                log=log
             )
             self.game_state.decrement_num_civs_to_discard()
-            mark_player_passed_if_no_disasters(self.game_state.get_auction_winning_player())
+            mark_player_passed_if_no_disasters(
+                self.game_state.get_auction_winning_player())
 
-            # if no disasters to be resolved, resume play from after auction starter
+            # if no disasters to be resolved, resume play from after
+            # auction starter
             if not self.game_state.disasters_must_be_resolved():
                 self.game_state.set_current_player(
                     self.game_state.get_auction_start_player()
@@ -467,16 +537,18 @@ class RaGame():
                 self.game_state.advance_current_player()
 
         # executes a single discard for resolving monument disasters
-        def execute_monument_discard(index_to_discard, log = True):
+        def execute_monument_discard(index_to_discard, log=True):
             self.game_state.remove_single_tiles_from_player(
                 [index_to_discard],
                 self.game_state.get_auction_winning_player(),
-                log = log
+                log=log
             )
             self.game_state.decrement_num_mons_to_discard()
-            mark_player_passed_if_no_disasters(self.game_state.get_auction_winning_player())
+            mark_player_passed_if_no_disasters(
+                self.game_state.get_auction_winning_player())
 
-            # if no disasters to be resolved, resume play from after auction starter
+            # if no disasters to be resolved, resume play from after
+            # auction starter
             if not self.game_state.disasters_must_be_resolved():
                 self.game_state.set_current_player(
                     self.game_state.get_auction_start_player()
@@ -485,22 +557,25 @@ class RaGame():
 
         if action not in legal_actions:
             raise Exception(
-                f"Cannot execute non-legal action '{action}'. Legal actions: '{legal_actions}'"
+                f"Cannot execute non-legal action '{action}'. "
+                f"Legal actions: '{legal_actions}'"
             )
 
         if action == gi.DRAW:
-            tile = self.game_state.draw_tile(tile = tile_to_draw)
+            tile = self.game_state.draw_tile(tile=tile_to_draw)
 
             # if tile is ra, start auction (or end the round)
             if tile == gi.INDEX_OF_RA:
                 self.game_state.increase_num_ras_this_round()
 
                 # if this is the last ra, end the round
-                if self.game_state.get_num_ras_per_round() == self.game_state.get_current_num_ras():
+                if (self.game_state.get_num_ras_per_round() ==
+                        self.game_state.get_current_num_ras()):
                     self.end_round()
                     return tile
                 else:
-                    self.game_state.start_auction(True, self.game_state.get_current_player())
+                    self.game_state.start_auction(
+                        True, self.game_state.get_current_player())
 
             # otherwise, add tile to auction tiles
             else:
@@ -515,7 +590,8 @@ class RaGame():
                 self.game_state.get_num_auction_tiles() ==
                 self.game_state.get_max_auction_tiles()
             )
-            self.game_state.start_auction(was_forced, self.game_state.get_current_player())
+            self.game_state.start_auction(
+                was_forced, self.game_state.get_current_player())
             self.game_state.advance_current_player()
 
         elif action == gi.GOD_1:
@@ -545,7 +621,8 @@ class RaGame():
             execute_bid(3)
 
         elif action == gi.BID_NOTHING:
-            if self.game_state.get_current_player() == self.game_state.get_auction_start_player():
+            if (self.game_state.get_current_player() ==
+                    self.game_state.get_auction_start_player()):
                 handle_auction_end()
             else:
                 self.game_state.advance_current_player()
@@ -577,8 +654,8 @@ class RaGame():
         elif action == gi.DISCARD_SPH:
             execute_monument_discard(gi.INDEX_OF_SPH)
 
-
     # play the game and log action history to the outfile
+
     def play(self):
         with open(self.outfile, "a+") as outfile:
             while not self.game_state.is_game_ended():
@@ -592,9 +669,9 @@ class RaGame():
                 else:
                     outfile.write(f"{action}\n")
 
+    # execute a list of actions. draw actions must have a specified tile to
+    # draw each action is a string lst of length 1 or 2
 
-    # execute a list of actions. draw actions must have a specified tile to draw
-    # each action is a string lst of length 1 or 2
     def load_actions(self, action_lst):
         self.write_player_names_to_outfile()
 
@@ -610,7 +687,9 @@ class RaGame():
                 # if action is to draw
                 elif len(action) == 2:
                     t = self.execute_action(
-                        int(action[0]), legal_actions, tile_to_draw = int(action[1])
+                        int(action[0]),
+                        legal_actions,
+                        tile_to_draw=int(action[1])
                     )
                     outfile.write(f"{gi.DRAW_OPTIONS[0]} {t}\n")
 
@@ -618,17 +697,17 @@ class RaGame():
                 else:
                     raise ValueError(f"Cannot load invalid action {action}")
 
-
     # execute a list of actions from an infile
     # the format of the infile should be the same as is produced when playing
+
     def load_actions_from_infile(self, infile):
         with open(infile, "r") as f:
             action_lst = [action.split(" ") for action in f.readlines()][1:]
         self.load_actions(action_lst)
 
-
     # function to call to start the game
     # is only valid if the game has not been played yet
+
     def start_game(self):
         if self.move_history_file is not None:
             self.load_actions_from_infile(self.move_history_file)
@@ -636,7 +715,6 @@ class RaGame():
             self.write_player_names_to_outfile()
 
         self.play()
-
 
     def print_player_scores(self):
         self.game_state.print_player_scores()
@@ -660,11 +738,14 @@ def get_args():
                         help="optional argument for player 5's name")
 
     parser.add_argument('--infile', '-i', default=None,
-                        help=f'An optional argument to read game history from.')
+                        help='An optional argument to read game history'
+                        ' from.')
 
-    default_outfile_name = DEFAULT_OUTFILE_PREFIX + "_" + datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + '.txt'
+    default_outfile_name = DEFAULT_OUTFILE_PREFIX + "_" + \
+        datetime.now().strftime("%d-%m-%Y_%H-%M-%S") + '.txt'
     parser.add_argument('--outfile', '-o', default=default_outfile_name,
-                        help=f'An optional argument to write game history to. Is written to the {OUTFILE_FOLDER_NAME} folder.')
+                        help='An optional argument to write game history to.'
+                        f' Is written to the {OUTFILE_FOLDER_NAME} folder.')
     return parser.parse_args()
 
 
@@ -680,6 +761,6 @@ if __name__ == '__main__':
 
     game = RaGame(
         player_names,
-        move_history_file = args.infile,
-        outfile = args.outfile)
+        move_history_file=args.infile,
+        outfile=args.outfile)
     game.start_game()
