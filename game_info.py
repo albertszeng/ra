@@ -267,13 +267,13 @@ def list_of_temporary_collectible_indexes() -> List[int]:
 
 
 def get_civs_from_collection(
-        collection: List[TileTypeInfo]) -> List[TileTypeInfo]:
+        collection: List[int]) -> List[int]:
     return collection[
         STARTING_INDEX_OF_CIVS:(STARTING_INDEX_OF_CIVS + NUM_CIVS)]
 
 
 def get_monuments_from_collection(
-        collection: List[TileTypeInfo]) -> List[TileTypeInfo]:
+        collection: List[int]) -> List[int]:
     return collection[
         STARTING_INDEX_OF_MONUMENTS:(
             STARTING_INDEX_OF_MONUMENTS + NUM_MONUMENTS)]

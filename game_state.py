@@ -575,7 +575,9 @@ class GameState:
     def get_player_usable_sun(self, player_index: int) -> List[int]:
         return self.player_states[player_index].get_usable_sun()
 
-    def get_auction_start_player(self) -> Optional[int]:
+    def get_auction_start_player(self) -> int:
+        if self.auction_start_player is None:
+            raise ValueError('No auction run.')
         return self.auction_start_player
 
     def get_num_mons_to_discard(self) -> int:
@@ -584,13 +586,18 @@ class GameState:
     def get_num_civs_to_discard(self) -> int:
         return self.num_civs_to_discard
 
-    def get_auction_winning_player(self) -> Optional[int]:
+    def get_auction_winning_player(self) -> int:
+        if self.auction_winning_player is None:
+            raise ValueError('No auction run.')
         return self.auction_winning_player
 
     # logging functions
 
     def print_tile_bag(self) -> None:
         self.tile_bag.print_contents_of_bag()
+
+    def print_player_scores(self, verbose: bool = False) -> None:
+        print(self.player_states_as_str(verbose))
 
     def player_scores_as_str(self) -> str:
         val = "Scores: \n"
