@@ -364,7 +364,7 @@ class RaGame:
     # assumes the action is made by the current player
     # returns the tile drawn if action is draw
 
-    def execute_action(self, action, legal_actions, tile_to_draw=None) -> Optional[int]:
+    def execute_action(self, action, legal_actions, tile_to_draw: Optional[int]=None) -> Optional[int]:
         # use god tile on the nth auction tile
         def execute_god(n):
             tile = self.game_state.remove_auction_tile(n)
