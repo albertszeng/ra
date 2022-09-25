@@ -42,8 +42,9 @@ jobs:
           pipenv run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
 
       - name: Run type checking
+        continue-on-error: true
         run: |
-          pyre
+          pyre check
 
       - name: Run unit tests.
         run: |
