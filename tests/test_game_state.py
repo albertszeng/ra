@@ -1,5 +1,3 @@
-import os
-import sys
 import random
 import unittest
 import game_info as gi

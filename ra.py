@@ -201,7 +201,7 @@ class RaGame:
 
         return
 
-    def get_possible_actions(self) -> Optional[List[int]]:
+    def get_possible_actions(self) -> Optional[List[int]]:  # noqa: C901
         """Returns a list of legal actions."""
         if self.game_state.is_game_ended():
             return None
@@ -372,7 +372,7 @@ class RaGame:
         raise Exception("Unable to get legal action after "
                         f"{self.MAX_ACTION_ATTEMPTS} attempts")
 
-    def execute_action(
+    def execute_action(  # noqa: C901
             self,
             action: int,
             legal_actions: Iterable[int],

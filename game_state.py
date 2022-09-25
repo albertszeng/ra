@@ -1,10 +1,9 @@
-import copy
 import game_info as gi
 import logging
 import random
 import textwrap
 
-from typing import cast, Dict, Iterable, List, Optional
+from typing import cast, Iterable, List, Optional
 
 
 # Gamestate class and helper classes
@@ -296,7 +295,7 @@ class GameState:
         self.num_ras_this_round = 0
 
     def add_tile_to_auction_tiles(self, tile_index: int) -> int:
-        """Add a tile to the list of auction tiles. 
+        """Add a tile to the list of auction tiles.
 
         Return: the number of auction tiles
         """

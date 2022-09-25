@@ -230,7 +230,7 @@ def tile_name(tile: TileTypeInfo) -> str:
 
 def index_to_tile(index: int) -> TileTypeInfo:
     """Given an index of TILE_INFO, give the TileTypeInfo."""
-    assert(index >= 0 and index <= 23)
+    assert index >= 0 and index <= 23
     return TILE_INFO[index]
 
 
