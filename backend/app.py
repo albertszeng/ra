@@ -28,8 +28,8 @@ def start():
         return {'message': 'Cannot start game. Need player names.'}
 
     game = ra.RaGame(
-        player_names=data["player_names"],
-        outfile=f"./games/{gameId}/history.txt"
+        player_names=players,
+        outfile=f"{gameId}.txt"
     )
     game.init_game()
     _GAMES[gameId] = game
@@ -57,8 +57,9 @@ def action():
     if not (gameId := requests.json.get('gameId')):
         return {'message' : f'Cannot act on non-existing game: {gameId}'}
 
-    if not (action := request.json.get("command")):
+    if not (action := requests.json.get("command")):
         return { 'message': 'No action' }
+    
     action = ra.parse_action(action)
     if isinstance(action, str):
         return { 'message' : f'Unrecognized action: {action}' }
@@ -79,6 +80,5 @@ def action():
             outfile.write(f"{action}\n")
     
     return {
-        'data': request.json.get("command"),
         'gameState': str(game.game_state),
     }
