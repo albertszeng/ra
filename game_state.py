@@ -1,4 +1,5 @@
-import game_info as gi
+from . import game_info as gi
+
 import logging
 import random
 import textwrap

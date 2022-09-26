@@ -1,9 +1,11 @@
+from . import game_info as gi
+from . import game_state as gs
+
 import argparse
 from datetime import datetime
 import os
 import random
-import game_info as gi
-import game_state as gs
+
 
 from typing import (
     Callable,
@@ -17,6 +19,18 @@ from typing import (
 
 OUTFILE_FOLDER_NAME: str = "move_histories"
 DEFAULT_OUTFILE_PREFIX: str = "move_history"
+
+
+def parse_action(action: str) -> Union[int, str]:
+    action_lower = action.lower()
+
+    # try to parse action
+    for a, a_options, a_desc in gi.action_option_lst:
+        if action_lower in a_options:
+            return a
+
+    # return unrecognized action
+    return action_lower
 
 
 class RaGame:
@@ -320,17 +334,6 @@ class RaGame:
     def get_action_from_user(self,
                              legal_actions: List[int],
                              helpful_prompt: bool = True) -> Union[int, str]:
-        def parse_action(action: str) -> Union[int, str]:
-            action_lower = action.lower()
-
-            # try to parse action
-            for a, a_options, a_desc in gi.action_option_lst:
-                if action_lower in a_options:
-                    return a
-
-            # return unrecognized action
-            return action_lower
-
         prompt = "User Action: "
         if helpful_prompt:
             possible_actions_lst = [
@@ -747,16 +750,19 @@ class RaGame:
             action_lst = [action.split(" ") for action in f.readlines()][1:]
         self.load_actions(action_lst)
 
+    
+    def init_game(self) -> None:
+        if self.move_history_file is not None:
+            self.load_actions_from_infile(self.move_history_file)
+        else:
+            self.write_player_names_to_outfile()
+    
     def start_game(self) -> None:
         """Function to call to start the game.
 
         It is only valid if the game has not been played yet.
         """
-        if self.move_history_file is not None:
-            self.load_actions_from_infile(self.move_history_file)
-        else:
-            self.write_player_names_to_outfile()
-
+        self.init_game()    
         self.play()
 
     def print_player_scores(self) -> None:
