@@ -84,7 +84,6 @@ function App() {
     }
     setForm((form) => ({...form, data: ''}));
     setGame((game) => ({...game, data: gameState }));
-    
   };
   const handleStart = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -101,6 +100,15 @@ function App() {
     const { message } = await deleteGame(form.gameId);
     alert(message);
   };
+  const handleLoad = async (e: FormEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const { message, gameState } = await handleCommand(form.gameId, 'LOAD');
+    if (message || !gameState) {
+      alert(message);
+      return;
+    }
+    setGame((game) => ({...game, data: gameState }));
+  }
 
   return (
     <div className="form-container">
@@ -127,6 +135,9 @@ function App() {
         </button>
         <button className="form-field" onClick={handleStart}>
           Start New Game
+        </button>
+        <button className="form-field" onClick={handleLoad}>
+          Load Game
         </button>
         <button className="form-field" onClick={handleDelete}>
           Delete Game

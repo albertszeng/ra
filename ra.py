@@ -339,7 +339,9 @@ class RaGame:
             possible_actions_lst = [
                 gi.action_option_lst[action][2] for action in legal_actions
             ]
-            possible_actions_str = "\n\t".join(possible_actions_lst)
+            possible_actions_str = "\n\t".join([
+                f"{i}: {action}"
+                for i, action in enumerate(possible_actions_lst)])
             prompt = f"""Possible actions:
         {possible_actions_str}
 

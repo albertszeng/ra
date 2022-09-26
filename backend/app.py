@@ -95,25 +95,32 @@ def delete():
 
 @app.route("/action", methods=["POST"])
 def action():
+    _SERVER_ACTIONS = ['LOAD']
     if not (gameId := request.json.get('gameId')):
         return {'message': f'Cannot act on non-existing game: {gameId}'}
     gameId = uuid.UUID(gameId)
     if not (action := request.json.get("command")):
         return {'message': 'No action'}
 
-    action = ra.parse_action(action)
-    if isinstance(action, str):
-        return {'message': f'Unrecognized action: {action}'}
+
+    if action not in _SERVER_ACTIONS:
+        action = ra.parse_action(action)
+        if isinstance(action, str):
+            return {'message': f'Unrecognized action: {action}'}
 
     if not (dbGame := db.session.get(Game, gameId.hex)):
         return {'message': f'No active game with id: {gameId}'}
     game = dbGame.data
-    if game.game_state.is_game_ended():
-        return {'message': f'Game {gameId} has ended. '}
+    if game.game_state.is_game_ended() or action == 'LOAD':
+        return {
+            'gameState': get_game_repr(game),
+        }
 
     legal_actions = game.get_possible_actions()
     if not legal_actions:
         return {'message': 'Internal Error: No valid actions. '}
+    if action not in legal_actions:
+        return {'message': f'Only legal actions are: {legal_actions}'}
     t = game.execute_action(action, legal_actions)
     dbGame.data = copy.copy(game)
     db.session.commit()
