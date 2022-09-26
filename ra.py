@@ -331,9 +331,9 @@ class RaGame:
 
     # get an action from a human user
 
-    def get_action_from_user(self,
-                             legal_actions: List[int],
-                             helpful_prompt: bool = True) -> Union[int, str]:
+    def get_action_prompt(self,
+                          legal_actions: List[int],
+                          helpful_prompt: bool = True) -> str:
         prompt = "User Action: "
         if helpful_prompt:
             possible_actions_lst = [
@@ -345,6 +345,13 @@ class RaGame:
 
             User Action: """
 
+        return prompt
+
+    def get_action_from_user(self,
+                             legal_actions: List[int],
+                             helpful_prompt: bool = True) -> Union[int, str]:
+
+        prompt = self.get_action_prompt(legal_actions, helpful_prompt)
         action = input(prompt)
 
         return parse_action(action)
@@ -750,19 +757,18 @@ class RaGame:
             action_lst = [action.split(" ") for action in f.readlines()][1:]
         self.load_actions(action_lst)
 
-    
     def init_game(self) -> None:
         if self.move_history_file is not None:
             self.load_actions_from_infile(self.move_history_file)
         else:
             self.write_player_names_to_outfile()
-    
+
     def start_game(self) -> None:
         """Function to call to start the game.
 
         It is only valid if the game has not been played yet.
         """
-        self.init_game()    
+        self.init_game()
         self.play()
 
     def print_player_scores(self) -> None:

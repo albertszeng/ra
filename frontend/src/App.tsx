@@ -63,7 +63,7 @@ function App() {
     e.persist();
     setForm((form) => ({
       ...form,
-      action: e.target.value,
+      command: e.target.value,
     }));
   };
   const onGameIdChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -105,12 +105,12 @@ function App() {
   return (
     <div className="form-container">
       <form className="register-form" onSubmit={handleSubmit}>
-        {game.data && <div className='success-message'>{game.data}</div>}
+        {game.data && <div className='display-linebreak'>{game.data}</div>}
         <input
           id="gameId"
           className="form-field"
           type="text"
-          placeholder="Player Names"
+          placeholder="Player Names/Game ID"
           value={form.gameId}
           onChange={onGameIdChange}
         />
