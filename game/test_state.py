@@ -1,7 +1,7 @@
 import random
 import unittest
-import game_info as gi
-import game_state as gs
+from . import info as gi
+from . import state as gs
 
 
 class TileBagTests(unittest.TestCase):

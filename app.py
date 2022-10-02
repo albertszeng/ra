@@ -1,5 +1,5 @@
-from .. import ra
-from .. import game_info
+from .game import ra
+from .game import info
 
 import copy
 import flask
@@ -135,8 +135,8 @@ def action() -> Union[Message, ActResponse]:
     db.session.commit()
 
     with open(game.outfile, "a+") as outfile:
-        if action == game_info.DRAW:
-            outfile.write(f"{game_info.DRAW_OPTIONS[0]} {t}\n")
+        if action == info.DRAW:
+            outfile.write(f"{info.DRAW_OPTIONS[0]} {t}\n")
         else:
             outfile.write(f"{action}\n")
 

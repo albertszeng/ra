@@ -1,4 +1,4 @@
-from . import game_info as gi
+from . import info as gi
 
 import logging
 import random

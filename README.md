@@ -2,9 +2,9 @@
 
 ## How to Run the Game
 
-Currently, the game can be run using the command: `python3 ra.py -n 2 --p1 Albert --p2 Belinda`
+Currently, the game can be run using the command: `python3 game/ra.py -n 2 --p1 Albert --p2 Belinda`
 
-See `python3 ra.py -h` for more options to start the game with.
+See `python3 game/ra.py -h` for more options to start the game with.
 
 In general, a `RaGame` instance must be initialized, then the function `start_game` function should be called from within the instance. For example, the below code initializes a two-player game between "Albert" and "Belinda":
 
@@ -73,6 +73,18 @@ python -m unittest
 ```
 
 Note that above automatically runs all tests found in `test_*.py` files.
+
+
+# Ra Server
+
+To launch the backend server for debugging, run:
+```sh
+flask --debug run
+```
+
+# Ra Website
+
+See `frontend/README.md`.
 
 ## Specifications
 
