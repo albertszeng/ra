@@ -257,6 +257,81 @@ class GameStateTests(unittest.TestCase):
         self.num_iterations = 100
         self.num_draws = 5
 
+    def test_serialize_default(self) -> None:
+        self.maxDiff = None
+        g_state = gs.GameState(["Player 1", "Player 2"])
+        self.assertEqual(g_state.serialize(), g_state.serialize() | dict(
+            current_round=1,
+            active_players=[True, True],
+            num_ras_this_round=0,
+            center_sun=gi.STARTING_CENTER_SUN,
+            auction_tiles=[],
+            auction_suns=[None, None],
+            auction_started=False,
+            current_player=0,
+            auction_winning_player=None,
+            game_ended=False,
+        ))
+        # Check player states.
+        self.assertCountEqual(g_state.serialize()['player_states'], [dict(
+            collection=[],
+            player_name='Player 1',
+            points=10,
+            unusable_sun=[],
+            usable_sun=[2, 5, 6, 9],
+        ),
+            dict(
+                collection=[],
+                player_name='Player 2',
+                points=10,
+                unusable_sun=[],
+                usable_sun=[3, 4, 7, 8],
+        )])
+
+    def test_serialize_changes(self) -> None:
+        self.maxDiff = None
+        g_state = gs.GameState(["Player 1", "Player 2"])
+        g_state.increase_round_number()
+        self.assertEqual(g_state.serialize(),
+                         g_state.serialize() | dict(current_round=2))
+
+        g_state.increase_num_ras_this_round()
+        self.assertEqual(g_state.serialize(), g_state.serialize()
+                         | dict(num_ras_this_round=1))
+
+        g_state.add_tile_to_auction_tiles(gi.INDEX_OF_GOD)
+        self.assertEqual(g_state.serialize(),
+                         g_state.serialize() | dict(auction_tiles=[
+                             gi.TILE_INFO[gi.INDEX_OF_GOD]]))
+
+        g_state.set_auction_winning_player(winning_player=1)
+        self.assertEqual(g_state.serialize(), g_state.serialize()
+                         | dict(auction_winning_player=1))
+
+        g_state.set_current_player(new_player_index=1)
+        self.assertEqual(g_state.serialize(), g_state.serialize()
+                         | dict(current_player=1))
+
+        g_state.mark_player_passed(player_index=1)
+        self.assertEqual(g_state.serialize(), g_state.serialize()
+                         | dict(active_players=[True, False]))
+
+        g_state.start_auction(forced=True, start_player=0)
+        self.assertEqual(g_state.serialize(), g_state.serialize()
+                         | dict(auction_started=True))
+
+        g_state.add_auction_sun(player=1, sun=4)
+        self.assertEqual(g_state.serialize(), g_state.serialize()
+                         | dict(auction_suns=[None, 4]))
+
+        g_state.set_center_sun(new_sun=4)
+        self.assertEqual(g_state.serialize(), g_state.serialize()
+                         | dict(center_sun=4))
+
+        g_state.set_game_ended()
+        self.assertEqual(g_state.serialize(), g_state.serialize()
+                         | dict(game_ended=True))
+
     def test_increase_round_number(self) -> None:
         g_state = gs.GameState(["Test Player 1", "Test Player 2"])
         max_rounds = g_state.get_total_rounds()

@@ -230,7 +230,7 @@ class SerializedGameState(TypedDict):
     center_sun: int
     # The tiles currently up for auction.
     auction_tiles: List[gi.TileTypeInfo]
-    # For each player i, how much sun have they bid.
+    # For each player i, how much sun have they bid if any.
     auction_suns: List[Optional[int]]
     # Whether or not an action has started.
     auction_started: bool
