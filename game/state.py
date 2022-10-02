@@ -4,7 +4,7 @@ import logging
 import random
 import textwrap
 
-from typing import cast, Iterable, List, Optional
+from typing import cast, Iterable, List, TypedDict, Optional
 
 
 # Gamestate class and helper classes
@@ -75,6 +75,20 @@ class TileBag:
         return val
 
 
+class SerializedPlayerState(TypedDict):
+    """A data-only representation of the current player state."""
+    # The tiles the player currently has in his collection.
+    collection: List[gi.TileTypeInfo]
+    # The current point total of the player.
+    points: int
+    # The full name of the player.
+    player_name: str
+    # The list of sun the player can bid.
+    usable_sun: List[int]
+    # The List of sun the player has previously bid.
+    unusable_sun: List[int]
+
+
 class PlayerState:
     collection: List[int]
     points: int
@@ -92,6 +106,15 @@ class PlayerState:
         self.usable_sun = starting_sun[:]
         self.usable_sun.sort()
         self.unusable_sun = []
+
+    def serialize(self) -> SerializedPlayerState:
+        return SerializedPlayerState(
+            player_name=self.player_name,
+            points=self.points,
+            usable_sun=self.usable_sun,
+            unusable_sun=self.unusable_sun,
+            collection=[gi.index_to_tile(idx) for idx in self.collection]
+        )
 
     def add_tiles(self, lst_of_indexes: Iterable[int]) -> None:
         """Add a list of tile indexes to the player's collection"""
@@ -193,6 +216,36 @@ class PlayerState:
         print(self.player_state_as_str(print_name, verbose))
 
 
+class SerializedGameState(TypedDict):
+    """Fully summarizes in a data-only format the current GameState."""
+    # The current round.
+    current_round: int
+    # If true, the player[i] is active.
+    active_players: List[bool]
+    # The number of Ra tiles revealed so far.
+    num_ras_this_round: int
+    # The value of the sun tile in the center.
+    center_sun: int
+    # The tiles currently up for auction.
+    auction_tiles: List[gi.TileTypeInfo]
+    # For each player i, how much sun have they bid.
+    auction_suns: List[Optional[int]]
+    # Whether or not an action has started.
+    auction_started: bool
+    # The index of the player that started the auction, if any.
+    auction_start_player: Optional[int]
+    # The index of the current player.
+    current_player: int
+    # The index of the player that won the auction, if any.
+    auction_winning_player: Optional[int]
+
+    # The serialized player states.
+    player_states: List[SerializedPlayerState]
+
+    # True if the game is over.
+    game_ended: bool
+
+
 class GameState:
     total_rounds: int
     num_ras_per_round: int
@@ -269,6 +322,23 @@ class GameState:
                              for player_state in self.player_states]
 
         self.game_ended = False
+
+    def serialize(self) -> SerializedGameState:
+        return SerializedGameState(
+            current_round=self.current_round,
+            active_players=self.active_players,
+            num_ras_this_round=self.num_ras_this_round,
+            center_sun=self.center_sun,
+            auction_tiles=[gi.index_to_tile(idx)
+                           for idx in self.auction_tiles],
+            auction_suns=self.auction_suns,
+            auction_started=self.auction_started,
+            auction_start_player=self.auction_start_player,
+            current_player=self.current_player,
+            auction_winning_player=self.auction_winning_player,
+            player_states=[state.serialize() for state in self.player_states],
+            game_ended=self.game_ended,
+        )
 
     def increase_round_number(self) -> None:
         """Increase the round number by 1 if it's not the last round."""
@@ -605,7 +675,7 @@ class GameState:
             val += f"{state.player_state_as_str(verbose=verbose)}\n"
         return val
 
-    def auctin_tiles_as_str(self) -> str:
+    def auction_tiles_as_str(self) -> str:
         val = "Auction Tiles: \n"
         for tile_index in self.auction_tiles:
             val += f"\t{gi.index_to_tile_name(tile_index)}\n"
@@ -620,7 +690,7 @@ class GameState:
         val += f"Num Ras This Round: {self.num_ras_this_round}\n"
         val += f"Center Sun: {self.center_sun}\n"
         val += f"{self.player_scores_as_str()}\n"
-        val += f"{self.auctin_tiles_as_str()}\n"
+        val += f"{self.auction_tiles_as_str()}\n"
         if self.is_auction_started():
             val += f"Auctioned Suns: {self.auction_suns}\n"
 

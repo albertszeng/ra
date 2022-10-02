@@ -1,6 +1,6 @@
 import dataclasses
 import enum
-from typing import Dict, List, Tuple
+from typing import Dict, List, TypedDict, Tuple
 
 
 # Game Constants
@@ -40,14 +40,13 @@ NUM_DISCARDS_PER_DISASTER: int = 2
 # Definitions of each tile type
 
 @enum.unique
-class TileType(enum.Enum):
-    COLLECTIBLE = 1
-    DISASTER = 2
-    RA = 3
+class TileType(str, enum.Enum):
+    COLLECTIBLE = 'COLLECTIBLE'
+    DISASTER = 'DISASTER'
+    RA = 'RA'
 
 
-@dataclasses.dataclass
-class TileTypeInfo:
+class TileTypeInfo(TypedDict):
     name: str
     # how many start in the bag
     startingNum: int
@@ -172,16 +171,16 @@ NUM_TILE_TYPES: int = len(TILE_INFO)  # total number of tiles types in the game
 
 STARTING_NUM_TILES: int = 0  # total number of tiles that start in the bag
 for tile in TILE_INFO:
-    STARTING_NUM_TILES += tile.startingNum
+    STARTING_NUM_TILES += tile['startingNum']
 
 NUM_AUCTIONABLE_TILE_TYPES: int = 0
 for tile in TILE_INFO:
-    if tile.tileType != TileType.RA:
+    if tile['tileType'] != TileType.RA:
         NUM_AUCTIONABLE_TILE_TYPES += 1
 
 NUM_COLLECTIBLE_TILE_TYPES: int = 0  # the number of tiles players can collect
 for tile in TILE_INFO:
-    if tile.tileType == TileType.COLLECTIBLE:
+    if tile['tileType'] == TileType.COLLECTIBLE:
         NUM_COLLECTIBLE_TILE_TYPES += 1
 
 INDEX_OF_GOD: int = 0
@@ -220,12 +219,12 @@ STARTING_INDEX_OF_DISASTERS: int = 18
 
 def tile_starting_num(tile: TileTypeInfo) -> int:
     """Given a tile, return how many we start with."""
-    return tile.startingNum
+    return tile['startingNum']
 
 
 def tile_name(tile: TileTypeInfo) -> str:
     """Given a tile, return its name."""
-    return tile.name
+    return tile['name']
 
 
 def index_to_tile(index: int) -> TileTypeInfo:
@@ -246,22 +245,22 @@ def index_to_starting_num(index: int) -> int:
 
 def index_is_collectible(index: int) -> bool:
     """Return whether the tile of an index is a collectible type."""
-    return index_to_tile(index).tileType == TileType.COLLECTIBLE
+    return index_to_tile(index)['tileType'] == TileType.COLLECTIBLE
 
 
 def index_is_disaster(index: int) -> bool:
-    return index_to_tile(index).tileType == TileType.DISASTER
+    return index_to_tile(index)['tileType'] == TileType.DISASTER
 
 
 def index_is_ra(index: int) -> bool:
-    return index_to_tile(index).tileType == TileType.RA
+    return index_to_tile(index)['tileType'] == TileType.RA
 
 
 def list_of_temporary_collectible_indexes() -> List[int]:
     temp_collectibles = []
     for i in range(NUM_TILE_TYPES):
         curr_tile = TILE_INFO[i]
-        if curr_tile.tileType == TileType.COLLECTIBLE and not curr_tile.toKeep:
+        if curr_tile['tileType'] == TileType.COLLECTIBLE and not curr_tile['toKeep']:
             temp_collectibles.append(i)
     return temp_collectibles
 

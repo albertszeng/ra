@@ -10,9 +10,11 @@ import random
 from typing import (
     Callable,
     Iterable,
+    Final,
     List,
     Optional,
     Tuple,
+    TypedDict,
     Union
 )
 
@@ -33,6 +35,16 @@ def parse_action(action: str) -> Union[int, str]:
     return action_lower
 
 
+class SerializedRaGame(TypedDict):
+    """
+    This is data-only (non-functionality) structure that encapsulates the
+    entire state of a RaGame for display purposes.
+    """
+    # The players and their respective play-order.
+    player_names: List[str]
+    game_state: gs.SerializedGameState
+
+
 class RaGame:
     """Core logis for a game of Ra"""
     num_players: int
@@ -40,7 +52,7 @@ class RaGame:
     move_history_file: Optional[str]
     player_names: List[str]
     game_state: gs.GameState
-    MAX_ACTION_ATTEMPTS: int
+    MAX_ACTION_ATTEMPTS: Final[int] = 10
 
     def __init__(self,
                  player_names: List[str],
@@ -68,7 +80,12 @@ class RaGame:
 
         self.game_state = gs.GameState(self.player_names)
 
-        self.MAX_ACTION_ATTEMPTS = 10  # max num times we try to get an action
+    def serialize(self) -> SerializedRaGame:
+        return SerializedRaGame(
+            player_names=self.player_names,
+            game_state=self.game_state.serialize()
+        )
+
 
     def is_valid_num_players(self, num_players: int) -> bool:
         return (num_players >= gi.MIN_NUM_PLAYERS and
@@ -367,7 +384,7 @@ class RaGame:
         Continually try to get an action until a legal action is given
         an action-making function can be given to get an action
         """
-        for _i in range(self.MAX_ACTION_ATTEMPTS):
+        for _i in range(RaGame.MAX_ACTION_ATTEMPTS):
             # get an action
             action = None
             if action_making_func is not None:  # AI makes action
@@ -382,7 +399,7 @@ class RaGame:
                 if log:
                     print(f"Invalid action given: {action}\n")
         raise Exception("Unable to get legal action after "
-                        f"{self.MAX_ACTION_ATTEMPTS} attempts")
+                        f"{RaGame.MAX_ACTION_ATTEMPTS} attempts")
 
     def execute_action(  # noqa: C901
             self,
