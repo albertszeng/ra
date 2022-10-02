@@ -1,4 +1,3 @@
-import dataclasses
 import enum
 from typing import Dict, List, TypedDict, Tuple
 
@@ -260,7 +259,8 @@ def list_of_temporary_collectible_indexes() -> List[int]:
     temp_collectibles = []
     for i in range(NUM_TILE_TYPES):
         curr_tile = TILE_INFO[i]
-        if curr_tile['tileType'] == TileType.COLLECTIBLE and not curr_tile['toKeep']:
+        if (curr_tile['tileType'] == TileType.COLLECTIBLE
+                and not curr_tile['toKeep']):
             temp_collectibles.append(i)
     return temp_collectibles
 
