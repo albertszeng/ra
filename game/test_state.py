@@ -9,15 +9,15 @@ class TileBagTests(unittest.TestCase):
         self.num_iterations = 100
         self.num_draws = 5
 
-    # test that bag starts with right number of tiles
     def test_starting_num_tiles(self) -> None:
+        """Test that bag starts with right number of tiles."""
         t = gs.TileBag()
         starting_num_tiles = t.get_num_tiles_left()
         self.assertEqual(starting_num_tiles, gi.STARTING_NUM_TILES)
         self.assertEqual(gi.NUM_TILE_TYPES, len(t.get_bag_contents()))
 
-    # test that drawing single tiles are recorded properly
     def test_single_draws(self) -> None:
+        """Test that drawing single tiles are recorded properly."""
         for i in range(self.num_iterations):
             t = gs.TileBag()
             current_collection = t.get_bag_contents()
@@ -37,8 +37,8 @@ class TileBagTests(unittest.TestCase):
                 current_collection = new_collection
                 num_tiles_left = t.get_num_tiles_left()
 
-    # test that drawing all the tiles results in an empty tile bag
     def test_drawing_all(self) -> None:
+        """Test that drawing all the tiles results in an empty tile bag."""
         t = gs.TileBag()
         starting_num_tiles = t.get_num_tiles_left()
         for i in range(starting_num_tiles):
@@ -48,7 +48,6 @@ class TileBagTests(unittest.TestCase):
         self.assertEqual(None, t.draw_tile(log=False))
 
 
-# Player State Tests
 class PlayerStateTests(unittest.TestCase):
     def setUp(self) -> None:
         self.num_adds = 50  # number of times we add tiles
@@ -57,6 +56,45 @@ class PlayerStateTests(unittest.TestCase):
         self.min_sun = 1
         self.num_sun = 10
         self.max_magnitude = 20  # max points we add to a player in a test
+
+    def test_serialize(self) -> None:
+        self.maxDiff = None
+        player = gs.PlayerState("Test Player", starting_sun=[1, 2, 3])
+        serialized = player.serialize()
+
+        self.assertEqual(serialized, serialized | dict(
+            points=10,
+            player_name="Test Player",
+            collection=[],
+            unusable_sun=[],
+        ))
+        self.assertCountEqual(serialized['usable_sun'], [1, 2, 3])
+
+        player.add_points(10)
+        self.assertEqual(player.serialize(),
+                         player.serialize() | dict(points=20))
+
+        # Check collection.
+        player.add_tiles(
+            [gi.INDEX_OF_GOLD, gi.INDEX_OF_PHAR, gi.INDEX_OF_NILE])
+        self.assertCountEqual(player.serialize()['collection'], [
+            gi.TILE_INFO[gi.INDEX_OF_GOLD],
+            gi.TILE_INFO[gi.INDEX_OF_PHAR],
+            gi.TILE_INFO[gi.INDEX_OF_NILE],
+        ])
+
+        # Check swapping sun.
+        player.exchange_sun(sun_to_give=2, sun_to_receive=13)
+        self.assertCountEqual(player.serialize()['usable_sun'], [1, 3])
+        self.assertCountEqual(player.serialize()['unusable_sun'], [13])
+
+        player.exchange_sun(sun_to_give=3, sun_to_receive=9)
+        self.assertCountEqual(player.serialize()['usable_sun'], [1])
+        self.assertCountEqual(player.serialize()['unusable_sun'], [9, 13])
+
+        player.exchange_sun(sun_to_give=1, sun_to_receive=4)
+        self.assertCountEqual(player.serialize()['usable_sun'], [])
+        self.assertCountEqual(player.serialize()['unusable_sun'], [4, 9, 13])
 
     def test_add_tiles(self) -> None:
         p_state = gs.PlayerState("Test Player", [1, 2, 3])
@@ -214,7 +252,6 @@ class PlayerStateTests(unittest.TestCase):
             self.assertEqual(current_points, p_state.get_player_points())
 
 
-# Game State Tests
 class GameStateTests(unittest.TestCase):
     def setUp(self) -> None:
         self.num_iterations = 100
@@ -436,26 +473,26 @@ class GameStateTests(unittest.TestCase):
             for j in range(3):
                 self.assertTrue(g_state.is_player_active(j))
 
-    # def test_get_next_active_player(self):
-    # 	return
+    def test_get_next_active_player(self):
+        pass
 
-    # def test_advance_current_player(self):
-    # 	return
+    def test_advance_current_player(self):
+        pass
 
-    # # testing: set_auction_start_player, remove_auction_start_player
-    # def test_set_remove_auction_start_player(self):
-    # 	return
+    # testing: set_auction_start_player, remove_auction_start_player
+    def test_set_remove_auction_start_player(self):
+        pass
 
-    # # testing: start_auction, end_auction, add_auction_sun,
+    # testing: start_auction, end_auction, add_auction_sun,
     # clear_auction_suns
-    # def test_auction_functions(self):
-    # 	return
+    def test_auction_functions(self):
+        pass
 
-    # def test_add_points_for_player(self):
-    # 	return
+    def test_add_points_for_player(self):
+        pass
 
-    # def test_current_player_has_god(self):
-    # 	return
+    def test_current_player_has_god(self):
+        pass
 
-    # def test_is_auction_started(self):
-    # 	return
+    def test_is_auction_started(self):
+        pass
