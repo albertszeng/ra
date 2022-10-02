@@ -11,6 +11,7 @@ from typing import (
     Callable,
     Iterable,
     Final,
+    Iterator,
     List,
     Optional,
     Tuple,
@@ -48,7 +49,7 @@ class SerializedRaGame(TypedDict):
 class RaGame:
     """Core logis for a game of Ra"""
     num_players: int
-    outfile: str
+    outfile: Optional[str]
     move_history_file: Optional[str]
     player_names: List[str]
     game_state: gs.GameState
@@ -57,20 +58,20 @@ class RaGame:
     def __init__(self,
                  player_names: List[str],
                  randomize_play_order: bool = True,
-                 outfile: str = "history.txt",
+                 outfile: Optional[str] = None,
                  move_history_file: Optional[str] = None) -> None:
         self.num_players = len(player_names)
         if not self.is_valid_num_players(self.num_players):
             print("Invalid number of players. Cannot create game instance...")
             raise ValueError("Invalid number of players")
-
-        self.outfile = f"{OUTFILE_FOLDER_NAME}/{outfile}"
-        self.move_history_file = move_history_file
         self.player_names = player_names
 
-        if not os.path.exists(OUTFILE_FOLDER_NAME):
-            os.makedirs(OUTFILE_FOLDER_NAME)
+        self.outfile = f"{OUTFILE_FOLDER_NAME}/{outfile}" if outfile else None
+        if self.outfile:
+            if not os.path.exists(OUTFILE_FOLDER_NAME):
+                os.makedirs(OUTFILE_FOLDER_NAME)
 
+        self.move_history_file = move_history_file
         if self.move_history_file is not None:
             with open(self.move_history_file, "r") as f:
                 self.player_names = [name.rstrip()
@@ -86,13 +87,15 @@ class RaGame:
             game_state=self.game_state.serialize()
         )
 
-
     def is_valid_num_players(self, num_players: int) -> bool:
         return (num_players >= gi.MIN_NUM_PLAYERS and
                 num_players <= gi.MAX_NUM_PLAYERS)
 
     def write_player_names_to_outfile(self) -> None:
         """Write player names to the outfile, overwriting if necessary."""
+        if not self.outfile:
+            return
+
         with open(self.outfile, "w+") as outfile:
             # write the player names to the outfile
             outfile.write(f"{' '.join(self.player_names)}\n")
@@ -722,14 +725,20 @@ class RaGame:
 
     def play(self) -> None:
         """Play the game and log action history to the outfile."""
-        with open(self.outfile, "a+") as outfile:
+        def run() -> Iterator[Tuple[int, Optional[int]]]:
             while not self.game_state.is_game_ended():
                 self.game_state.print_game_state()
                 legal_actions = self.get_possible_actions()
                 assert legal_actions is not None, "Game has not ended."
                 action = self.get_action(legal_actions)
                 t = self.execute_action(action, legal_actions)
+                yield action, t
+        if not self.outfile:
+            [_ for _ in run()]
+            return
 
+        with open(self.outfile, "a+") as outfile:
+            for action, t in run():
                 if action == gi.DRAW:
                     outfile.write(f"{gi.DRAW_OPTIONS[0]} {t}\n")
                 else:
@@ -742,7 +751,7 @@ class RaGame:
         """
         self.write_player_names_to_outfile()
 
-        with open(self.outfile, "a+") as outfile:
+        def loader() -> Iterator[str]:
             for action in action_lst:
                 legal_actions = self.get_possible_actions()
                 # TODO(zeng): Maybe crashing is a bit harsh. Consider ignoring.
@@ -751,7 +760,7 @@ class RaGame:
                 # if action is not to draw
                 if len(action) == 1:
                     self.execute_action(int(action[0]), legal_actions)
-                    outfile.write(f"{action[0].rstrip()}\n")
+                    yield f"{action[0].rstrip()}\n"
 
                 # if action is to draw
                 elif len(action) == 2:
@@ -760,11 +769,18 @@ class RaGame:
                         legal_actions,
                         tile_to_draw=int(action[1])
                     )
-                    outfile.write(f"{gi.DRAW_OPTIONS[0]} {t}\n")
+                    yield f"{gi.DRAW_OPTIONS[0]} {t}\n"
 
                 # invalid action given
                 else:
                     raise ValueError(f"Cannot load invalid action {action}")
+
+        if not self.outfile:
+            [_ for _ in loader()]
+            return
+
+        with open(self.outfile, "a+") as outfile:
+            [outfile.write(line) for line in loader()]
 
     def load_actions_from_infile(self, infile: str) -> None:
         """Execute a list of actions from an infile.

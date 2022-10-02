@@ -62,17 +62,17 @@ class PlayerStateTests(unittest.TestCase):
         player = gs.PlayerState("Test Player", starting_sun=[1, 2, 3])
         serialized = player.serialize()
 
-        self.assertEqual(serialized, serialized | dict(
-            points=10,
-            player_name="Test Player",
-            collection=[],
-            unusable_sun=[],
-        ))
+        self.assertEqual(serialized, {**serialized, **{
+            'points': 10,
+            'player_name': "Test Player",
+            'collection': [],
+            'unusable_sun': [],
+        }})
         self.assertCountEqual(serialized['usable_sun'], [1, 2, 3])
 
         player.add_points(10)
         self.assertEqual(player.serialize(),
-                         player.serialize() | dict(points=20))
+                         {**player.serialize(), **{'points': 20}})
 
         # Check collection.
         player.add_tiles(
@@ -260,18 +260,18 @@ class GameStateTests(unittest.TestCase):
     def test_serialize_default(self) -> None:
         self.maxDiff = None
         g_state = gs.GameState(["Player 1", "Player 2"])
-        self.assertEqual(g_state.serialize(), g_state.serialize() | dict(
-            current_round=1,
-            active_players=[True, True],
-            num_ras_this_round=0,
-            center_sun=gi.STARTING_CENTER_SUN,
-            auction_tiles=[],
-            auction_suns=[None, None],
-            auction_started=False,
-            current_player=0,
-            auction_winning_player=None,
-            game_ended=False,
-        ))
+        self.assertEqual(g_state.serialize(), {**g_state.serialize(), **{
+            'current_round': 1,
+            'active_players': [True, True],
+            'num_ras_this_round': 0,
+            'center_sun': gi.STARTING_CENTER_SUN,
+            'auction_tiles': [],
+            'auction_suns': [None, None],
+            'auction_started': False,
+            'current_player': 0,
+            'auction_winning_player': None,
+            'game_ended': False,
+        }})
         # Check player states.
         self.assertCountEqual(g_state.serialize()['player_states'], [dict(
             collection=[],
@@ -293,44 +293,51 @@ class GameStateTests(unittest.TestCase):
         g_state = gs.GameState(["Player 1", "Player 2"])
         g_state.increase_round_number()
         self.assertEqual(g_state.serialize(),
-                         g_state.serialize() | dict(current_round=2))
+                         {**g_state.serialize(), **{'current_round': 2}})
 
         g_state.increase_num_ras_this_round()
-        self.assertEqual(g_state.serialize(), g_state.serialize()
-                         | dict(num_ras_this_round=1))
+        self.assertEqual(g_state.serialize(),
+                         {**g_state.serialize(),
+                          **{'num_ras_this_round': 1}})
 
         g_state.add_tile_to_auction_tiles(gi.INDEX_OF_GOD)
         self.assertEqual(g_state.serialize(),
-                         g_state.serialize() | dict(auction_tiles=[
-                             gi.TILE_INFO[gi.INDEX_OF_GOD]]))
+                         {**g_state.serialize(), **{'auction_tiles': [
+                             gi.TILE_INFO[gi.INDEX_OF_GOD]]}})
 
         g_state.set_auction_winning_player(winning_player=1)
-        self.assertEqual(g_state.serialize(), g_state.serialize()
-                         | dict(auction_winning_player=1))
+        self.assertEqual(g_state.serialize(),
+                         {**g_state.serialize(),
+                          **{'auction_winning_player': 1}})
 
         g_state.set_current_player(new_player_index=1)
-        self.assertEqual(g_state.serialize(), g_state.serialize()
-                         | dict(current_player=1))
+        self.assertEqual(g_state.serialize(),
+                         {**g_state.serialize(),
+                          **{'current_player': 1}})
 
         g_state.mark_player_passed(player_index=1)
-        self.assertEqual(g_state.serialize(), g_state.serialize()
-                         | dict(active_players=[True, False]))
+        self.assertEqual(g_state.serialize(),
+                         {**g_state.serialize(),
+                          **{'active_players': [True, False]}})
 
         g_state.start_auction(forced=True, start_player=0)
-        self.assertEqual(g_state.serialize(), g_state.serialize()
-                         | dict(auction_started=True))
+        self.assertEqual(g_state.serialize(),
+                         {**g_state.serialize(),
+                          **{'auction_started': True}})
 
         g_state.add_auction_sun(player=1, sun=4)
-        self.assertEqual(g_state.serialize(), g_state.serialize()
-                         | dict(auction_suns=[None, 4]))
+        self.assertEqual(g_state.serialize(),
+                         {**g_state.serialize(),
+                          **{'auction_suns': [None, 4]}})
 
         g_state.set_center_sun(new_sun=4)
-        self.assertEqual(g_state.serialize(), g_state.serialize()
-                         | dict(center_sun=4))
+        self.assertEqual(g_state.serialize(),
+                         {**g_state.serialize(),
+                          **{'center_sun': 4}})
 
         g_state.set_game_ended()
-        self.assertEqual(g_state.serialize(), g_state.serialize()
-                         | dict(game_ended=True))
+        self.assertEqual(g_state.serialize(),
+                         {**g_state.serialize(), **{'game_ended': True}})
 
     def test_increase_round_number(self) -> None:
         g_state = gs.GameState(["Test Player 1", "Test Player 2"])
@@ -548,26 +555,26 @@ class GameStateTests(unittest.TestCase):
             for j in range(3):
                 self.assertTrue(g_state.is_player_active(j))
 
-    def test_get_next_active_player(self):
+    def test_get_next_active_player(self) -> None:
         pass
 
-    def test_advance_current_player(self):
+    def test_advance_current_player(self) -> None:
         pass
 
     # testing: set_auction_start_player, remove_auction_start_player
-    def test_set_remove_auction_start_player(self):
+    def test_set_remove_auction_start_player(self) -> None:
         pass
 
     # testing: start_auction, end_auction, add_auction_sun,
     # clear_auction_suns
-    def test_auction_functions(self):
+    def test_auction_functions(self) -> None:
         pass
 
-    def test_add_points_for_player(self):
+    def test_add_points_for_player(self) -> None:
         pass
 
-    def test_current_player_has_god(self):
+    def test_current_player_has_god(self) -> None:
         pass
 
-    def test_is_auction_started(self):
+    def test_is_auction_started(self) -> None:
         pass
