@@ -11,6 +11,7 @@ flask-sqlalchemy = "*"
 [dev-packages]
 pyre-check = "*"
 flake8 = "*"
+parameterized = "*"
 
 [requires]
 python_version = "3.8"

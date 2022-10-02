@@ -459,7 +459,3 @@ class GameStateTests(unittest.TestCase):
 
     # def test_is_auction_started(self):
     # 	return
-
-
-if __name__ == "__main__":
-    unittest.main()
