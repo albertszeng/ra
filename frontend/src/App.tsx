@@ -77,22 +77,22 @@ function App() {
   const [game, setGame] = useState<GameState>({data: ''});
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { message, gameState } = await handleCommand(form.gameId, form.command);
-    if (message || !gameState) {
+    const { message, gameAsStr } = await handleCommand(form.gameId, form.command);
+    if (message || !gameAsStr) {
       alert(message);
       return;
     }
     setForm((form) => ({...form, data: ''}));
-    setGame((game) => ({...game, data: gameState }));
+    setGame((game) => ({...game, data: gameAsStr }));
   };
   const handleStart = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const { message, gameId, gameState } = await startGame(form.gameId);
-    if (message || !gameId || !gameState) {
+    const { message, gameId, gameAsStr } = await startGame(form.gameId);
+    if (message || !gameId || !gameAsStr) {
       alert(message);
       return;
     }
-    setGame((game) => ({...game, data: gameState }));
+    setGame((game) => ({...game, data: gameAsStr }));
     setForm((form) => ({...form, gameId }));
   };
   const handleDelete = async (e: FormEvent<HTMLButtonElement>) => {
@@ -102,12 +102,12 @@ function App() {
   };
   const handleLoad = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const { message, gameState } = await handleCommand(form.gameId, 'LOAD');
-    if (message || !gameState) {
+    const { message, gameAsStr } = await handleCommand(form.gameId, 'LOAD');
+    if (message || !gameAsStr) {
       alert(message);
       return;
     }
-    setGame((game) => ({...game, data: gameState }));
+    setGame((game) => ({...game, data: gameAsStr }));
   }
 
   return (

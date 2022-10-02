@@ -63,7 +63,8 @@ class Message(TypedDict):
 
 
 class ActResponse(TypedDict):
-    gameState: str
+    gameAsStr: str
+    gameState: ra.SerializedRaGame
 
 
 class StartResponse(ActResponse):
@@ -87,7 +88,10 @@ def start() -> Union[Message, StartResponse]:
     db.session.add(dbGame)
     db.session.commit()
 
-    return StartResponse(gameId=gameId, gameState=get_game_repr(game))
+    return StartResponse(
+        gameId=gameId,
+        gameState=game.serialize(),
+        gameAsStr=get_game_repr(game))
 
 
 @app.route("/delete", methods=["POST"])
@@ -123,7 +127,8 @@ def action() -> Union[Message, ActResponse]:
         return Message(message=f'No active game with id: {gameId}')
     game = dbGame.data
     if game.game_state.is_game_ended() or action == 'LOAD':
-        return ActResponse(gameState=get_game_repr(game))
+        return ActResponse(
+            gameState=game.serialize(), gameAsStr=get_game_repr(game))
 
     legal_actions = game.get_possible_actions()
     if not legal_actions:
@@ -140,4 +145,5 @@ def action() -> Union[Message, ActResponse]:
         else:
             outfile.write(f"{action}\n")
 
-    return ActResponse(gameState=get_game_repr(game))
+    return ActResponse(
+        gameState=game.serialize(), gameAsStr=get_game_repr(game))
