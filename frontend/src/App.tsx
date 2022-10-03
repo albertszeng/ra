@@ -1,4 +1,13 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
+import { 
+  ApiResponse,
+  deleteGame,
+  Game,
+  handleCommand,
+  Player,
+  startGame,
+} from './libs/game'
+
 import './App.css';
 
 
@@ -11,47 +20,6 @@ type GameState = {
   data: string;
 };
 
-type ApiResponse = {
-  message?: string;
-  gameId?: string;
-  gameState?: string;
-};
-
-const apiUrl = process.env.BACKEND || "http://127.0.0.1:5000";
-
-async function handleCommand(gameId: string, command: string): Promise<ApiResponse> {
-  const requestOptions = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gameId, command }),
-  };
-  const res = await fetch(`${apiUrl}/action`, requestOptions);
-  return res.json();
-}
-
-async function startGame(players: string): Promise<ApiResponse> {
-  const requestOptions = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      player_names: players.split(","),
-    }),
-  };
-  const res = await fetch(`${apiUrl}/start`, requestOptions);
-  return res.json();
-}
-
-async function deleteGame(gameId: string): Promise<ApiResponse> {
-  const requestOptions = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      gameId: gameId,
-    }),
-  };
-  const res = await fetch(`${apiUrl}/delete`, requestOptions);
-  return res.json();
-}
 
 function App() {
   // Tracks the state of the form.
@@ -111,39 +79,37 @@ function App() {
   }
 
   return (
-    <div className="form-container">
-      <form className="register-form" onSubmit={handleSubmit}>
-        {game.data && <div className='display-linebreak'>{game.data}</div>}
-        <input
-          id="gameId"
-          className="form-field"
-          type="text"
-          placeholder="Player Names/Game ID"
-          value={form.gameId}
-          onChange={onGameIdChange}
-        />
-        <input
-          id="command"
-          className="form-field"
-          type="text"
-          placeholder="Text Command"
-          value={form.command}
-          onChange={onCommandChange}
-        />
-        <button className="form-field" type="submit">
-          Act
-        </button>
-        <button className="form-field" onClick={handleStart}>
-          Start New Game
-        </button>
-        <button className="form-field" onClick={handleLoad}>
-          Load Game
-        </button>
-        <button className="form-field" onClick={handleDelete}>
-          Delete Game
-        </button>
-      </form>
-    </div>
+    <form className="register-form" onSubmit={handleSubmit}>
+      {game.data && <div className='display-linebreak'>{game.data}</div>}
+      <input
+        id="gameId"
+        className="form-field"
+        type="text"
+        placeholder="Player Names/Game ID"
+        value={form.gameId}
+        onChange={onGameIdChange}
+      />
+      <input
+        id="command"
+        className="form-field"
+        type="text"
+        placeholder="Text Command"
+        value={form.command}
+        onChange={onCommandChange}
+      />
+      <button className="form-field" type="submit">
+        Act
+      </button>
+      <button className="form-field" onClick={handleStart}>
+        Start New Game
+      </button>
+      <button className="form-field" onClick={handleLoad}>
+        Load Game
+      </button>
+      <button className="form-field" onClick={handleDelete}>
+        Delete Game
+      </button>
+    </form>
   );
 }
 
