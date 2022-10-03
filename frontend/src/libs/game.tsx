@@ -11,6 +11,14 @@ type Player = {
   unusable_sun: number[];
 };
 
+const DefaultPlayer: Player = {
+  collection: [],
+  points: 0,
+  player_name: '',
+  usable_sun: [],
+  unusable_sun: [],
+};
+
 type Game = {
   player_names: string[];
   game_state: {
@@ -39,6 +47,24 @@ type Game = {
     // True if the game is over.
     game_ended: boolean;
   }
+};
+
+const DefaultGame: Game = {
+  player_names: [],
+  game_state: {
+    current_round: 0,
+    active_players: [],
+    num_ras_this_round: 0,
+    center_sun: 0,
+    auction_tiles: [],
+    auction_suns: [],
+    auction_started: false,
+    auction_start_player: null,
+    current_player: 0,
+    auction_winning_player: null,
+    player_states: [],
+    game_ended: false,
+  },
 };
 
 type ApiResponse = {
@@ -91,6 +117,8 @@ export type {
 };
 
 export {
+  DefaultGame,
+  DefaultPlayer,
   deleteGame,
   handleCommand,
   startGame,

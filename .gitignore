@@ -133,3 +133,5 @@ dmypy.json
 
 # Don't track history
 move_histories/
+
+.DS_Store
