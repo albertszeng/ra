@@ -1,18 +1,14 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
-import { 
-  ApiResponse,
+import {
   deleteGame,
-  Game,
   handleCommand,
-  Player,
   startGame,
-} from './libs/game'
+} from './libs/game';
 
 import './App.css';
 
-
 type FormState = {
-  gameId: string,
+  gameId: string;
   command: string;
 };
 
@@ -20,29 +16,28 @@ type GameState = {
   data: string;
 };
 
-
 function App() {
   // Tracks the state of the form.
   const [form, setForm] = useState<FormState>({
     command: '',
-    gameId: ''
+    gameId: '',
   });
   const onCommandChange = (e: ChangeEvent<HTMLInputElement>): void => {
     e.persist();
-    setForm((form) => ({
-      ...form,
+    setForm((prevForm: FormState) => ({
+      ...prevForm,
       command: e.target.value,
     }));
   };
   const onGameIdChange = (e: ChangeEvent<HTMLInputElement>): void => {
     e.persist();
-    setForm((form) => ({
-      ...form,
+    setForm((prevForm: FormState) => ({
+      ...prevForm,
       gameId: e.target.value,
     }));
   };
 
-  const [game, setGame] = useState<GameState>({data: ''});
+  const [game, setGame] = useState<GameState>({ data: '' });
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const { message, gameAsStr } = await handleCommand(form.gameId, form.command);
@@ -50,8 +45,8 @@ function App() {
       alert(message);
       return;
     }
-    setForm((form) => ({...form, data: ''}));
-    setGame((game) => ({...game, data: gameAsStr }));
+    setForm((prevForm: FormState) => ({ ...prevForm, data: '' }));
+    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr }));
   };
   const handleStart = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -60,8 +55,8 @@ function App() {
       alert(message);
       return;
     }
-    setGame((game) => ({...game, data: gameAsStr }));
-    setForm((form) => ({...form, gameId }));
+    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr }));
+    setForm((prevForm: FormState) => ({ ...prevForm, gameId }));
   };
   const handleDelete = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -75,12 +70,12 @@ function App() {
       alert(message);
       return;
     }
-    setGame((game) => ({...game, data: gameAsStr }));
-  }
+    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr }));
+  };
 
   return (
     <form className="register-form" onSubmit={handleSubmit}>
-      {game.data && <div className='display-linebreak'>{game.data}</div>}
+      {game.data && <div className="display-linebreak">{game.data}</div>}
       <input
         id="gameId"
         className="form-field"
@@ -100,13 +95,13 @@ function App() {
       <button className="form-field" type="submit">
         Act
       </button>
-      <button className="form-field" onClick={handleStart}>
+      <button className="form-field" type="button" onClick={handleStart}>
         Start New Game
       </button>
-      <button className="form-field" onClick={handleLoad}>
+      <button className="form-field" type="button" onClick={handleLoad}>
         Load Game
       </button>
-      <button className="form-field" onClick={handleDelete}>
+      <button className="form-field" type="button" onClick={handleDelete}>
         Delete Game
       </button>
     </form>

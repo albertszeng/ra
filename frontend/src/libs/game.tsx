@@ -9,7 +9,7 @@ type Player = {
   usable_sun: number[];
   // The List of sun the player has previously bid.
   unusable_sun: number[];
-}
+};
 
 type Game = {
   player_names: string[];
@@ -48,7 +48,7 @@ type ApiResponse = {
   gameState?: Game;
 };
 
-const apiUrl = process.env.BACKEND || "http://127.0.0.1:5000";
+const apiUrl = process.env.BACKEND || 'http://127.0.0.1:5000';
 
 async function handleCommand(gameId: string, command: string): Promise<ApiResponse> {
   const requestOptions = {
@@ -57,38 +57,38 @@ async function handleCommand(gameId: string, command: string): Promise<ApiRespon
     body: JSON.stringify({ gameId, command }),
   };
   const res = await fetch(`${apiUrl}/action`, requestOptions);
-  return res.json();
+  return res.json() as ApiResponse;
 }
 
 async function startGame(players: string): Promise<ApiResponse> {
   const requestOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      player_names: players.split(","),
+    body: JSON.stringify({
+      player_names: players.split(','),
     }),
   };
   const res = await fetch(`${apiUrl}/start`, requestOptions);
-  return res.json();
+  return res.json() as ApiResponse;
 }
 
 async function deleteGame(gameId: string): Promise<ApiResponse> {
   const requestOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      gameId: gameId,
+    body: JSON.stringify({
+      gameId,
     }),
   };
   const res = await fetch(`${apiUrl}/delete`, requestOptions);
-  return res.json();
+  return res.json() as ApiResponse;
 }
 
 export type {
   ApiResponse,
   Game,
   Player,
-}
+};
 
 export {
   deleteGame,
