@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
-import PlayerInfo from './PlayerInfo';
+import PlayersInfo from './PlayersInfo';
 import PlayerForm from './PlayerForm';
 
 import { DefaultGame, handleCommand, startGame } from '../libs/game';
@@ -32,6 +32,9 @@ const StartContainer = styled.div`
 
 function Game(): JSX.Element {
   const [game, setGame] = useState<GameState>(DefaultGame);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [gameEnded, setGameEnded] = useState(false);
+
   const handleNewGame = useCallback(async (players: string[]) => {
     const {
       message,
@@ -42,6 +45,8 @@ function Game(): JSX.Element {
       alert(message);
       return;
     }
+    setIsPlaying(true);
+    setGameEnded(false);
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, []);
   const handleLoadGame = useCallback(async (gameId: string) => {
@@ -50,11 +55,11 @@ function Game(): JSX.Element {
       alert(message);
       return;
     }
+    setIsPlaying(true);
+    setGameEnded(gameState.game_state.game_ended);
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, []);
 
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [gameEnded, setGameEnded] = useState(false);
   const resetGame = () => {
     setIsPlaying(false);
     setGameEnded(false);
@@ -73,7 +78,11 @@ function Game(): JSX.Element {
           />
         </StartContainer>
       )}
-      <PlayerInfo />
+      <PlayersInfo
+        players={game.game_state.player_states}
+        active={game.game_state.active_players}
+        current={game.game_state.current_player}
+      />
     </GameContainer>
   );
 }
