@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, FormEvent, useState } from 'react';
 import ReactTooltip from 'react-tooltip';
 import styled from 'styled-components';
 
@@ -29,7 +29,8 @@ const PlayerInput = styled.input`
 `;
 
 type PlayerFormProps = {
-  handleSubmit: () => void;
+  handleNewGame: (players: string[]) => void;
+  handleLoadGame: (gameId: string) => void;
 };
 
 function isValid(input: string): boolean {
@@ -46,13 +47,22 @@ function isValid(input: string): boolean {
   return (parseInt(hex, 16).toString(16) === hex.toLowerCase());
 }
 
-function PlayerForm({ handleSubmit }: PlayerFormProps): JSX.Element {
-  const [playersStr, setPlayers] = useState<string>('');
+function PlayerForm({ handleNewGame, handleLoadGame }: PlayerFormProps): JSX.Element {
+  const [input, setInput] = useState<string>('');
   const [formValid, setFormValid] = useState(false);
   const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     e.persist();
     setFormValid(isValid(e.target.value));
-    setPlayers(e.target.value);
+    setInput(e.target.value);
+  };
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (input.includes(',')) {
+      // Players, start a new game.
+      return handleNewGame(input.split(','));
+    }
+    // Game id, start load it.
+    return handleLoadGame(input);
   };
   const [tooltip, showTooltip] = useState(false);
   return (
@@ -77,7 +87,7 @@ function PlayerForm({ handleSubmit }: PlayerFormProps): JSX.Element {
             data-for="players or id"
             id="players"
             type="text"
-            value={playersStr}
+            value={input}
             onChange={handleChange}
             onMouseEnter={() => { showTooltip(true); }}
             onMouseLeave={() => { showTooltip(false); }}

@@ -1,6 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import {
-  DefaultGame,
   deleteGame,
   handleCommand,
   startGame,
@@ -9,7 +8,6 @@ import {
 import './App.css';
 import Game from './components/Game';
 import Header from './components/Header';
-import type { Game as GameProps } from './libs/game';
 
 type FormState = {
   gameId: string;
@@ -18,7 +16,6 @@ type FormState = {
 
 type GameState = {
   data: string;
-  game: GameProps;
 };
 
 function App() {
@@ -42,16 +39,16 @@ function App() {
     }));
   };
 
-  const [game, setGame] = useState<GameState>({ data: '', game: DefaultGame });
+  const [game, setGame] = useState<GameState>({ data: '' });
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { message, gameAsStr, gameState } = await handleCommand(form.gameId, form.command);
-    if (message || !gameAsStr || !gameState) {
+    const { message, gameAsStr } = await handleCommand(form.gameId, form.command);
+    if (message || !gameAsStr) {
       alert(message);
       return;
     }
     setForm((prevForm: FormState) => ({ ...prevForm, data: '' }));
-    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr, game: gameState }));
+    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr }));
   };
   const handleStart = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -59,13 +56,12 @@ function App() {
       message,
       gameId,
       gameAsStr,
-      gameState,
-    } = await startGame(form.gameId);
-    if (message || !gameId || !gameAsStr || !gameState) {
+    } = await startGame(form.gameId.split(','));
+    if (message || !gameId || !gameAsStr) {
       alert(message);
       return;
     }
-    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr, game: gameState }));
+    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr }));
     setForm((prevForm: FormState) => ({ ...prevForm, gameId }));
   };
   const handleDelete = async (e: FormEvent<HTMLButtonElement>) => {
@@ -75,18 +71,18 @@ function App() {
   };
   const handleLoad = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const { message, gameAsStr, gameState } = await handleCommand(form.gameId, 'LOAD');
-    if (message || !gameAsStr || !gameState) {
+    const { message, gameAsStr } = await handleCommand(form.gameId, 'LOAD');
+    if (message || !gameAsStr) {
       alert(message);
       return;
     }
-    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr, game: gameState }));
+    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr }));
   };
 
   return (
     <>
       <Header />
-      <Game game={game.game} />
+      <Game />
       <form className="register-form" onSubmit={handleSubmit}>
         {game.data && <div className="display-linebreak">{game.data}</div>}
         <input

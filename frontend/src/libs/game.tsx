@@ -86,12 +86,12 @@ async function handleCommand(gameId: string, command: string): Promise<ApiRespon
   return res.json() as ApiResponse;
 }
 
-async function startGame(players: string): Promise<ApiResponse> {
+async function startGame(players: string[]): Promise<ApiResponse> {
   const requestOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      player_names: players.split(','),
+      player_names: players,
     }),
   };
   const res = await fetch(`${apiUrl}/start`, requestOptions);

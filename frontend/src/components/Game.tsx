@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import styled from 'styled-components';
+
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
 import PlayerInfo from './PlayerInfo';
 import PlayerForm from './PlayerForm';
-import type { Game as GameLib } from '../libs/game';
+
+import { DefaultGame, handleCommand, startGame } from '../libs/game';
+import type { Game as GameState } from '../libs/game';
 
 const GameContainer = styled.main`
   width: min(99%, 1000px);
@@ -27,16 +30,36 @@ const StartContainer = styled.div`
   font-size: 2rem;
 `;
 
-type GameProps = {
-  game: GameLib;
-};
+function Game(): JSX.Element {
+  const [game, setGame] = useState<GameState>(DefaultGame);
+  const handleNewGame = useCallback(async (players: string[]) => {
+    const {
+      message,
+      gameId,
+      gameState,
+    } = await startGame(players);
+    if (message || !gameId || !gameState) {
+      alert(message);
+      return;
+    }
+    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
+  }, []);
+  const handleLoadGame = useCallback(async (gameId: string) => {
+    const { message, gameState } = await handleCommand(gameId, 'LOAD');
+    if (message || !gameState) {
+      alert(message);
+      return;
+    }
+    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
+  }, []);
 
-function Game({ game } : GameProps): JSX.Element {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [gameEnded, setGameEnded] = useState(false);
   const resetGame = () => {
-    alert('reset is not impleted');
+    setIsPlaying(false);
+    setGameEnded(false);
   };
-  const isPlaying = false;
-  const gameEnded = false;
+
   return (
     <GameContainer>
       {gameEnded ? <EndInfo resetGame={resetGame} /> : <div /> }
@@ -44,7 +67,10 @@ function Game({ game } : GameProps): JSX.Element {
         <CardGrid />
       ) : (
         <StartContainer>
-          <PlayerForm handleSubmit={() => { /* no op */ }} />
+          <PlayerForm
+            handleNewGame={handleNewGame}
+            handleLoadGame={handleLoadGame}
+          />
         </StartContainer>
       )}
       <PlayerInfo />
