@@ -1,8 +1,9 @@
-import styled from 'styled-components';
 import React from 'react';
+import styled from 'styled-components';
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
 import PlayerInfo from './PlayerInfo';
+import PlayerForm from './PlayerForm';
 import type { Game as GameLib } from '../libs/game';
 
 const GameContainer = styled.main`
@@ -26,31 +27,15 @@ const StartContainer = styled.div`
   font-size: 2rem;
 `;
 
-const IntroText = styled.p`
-  font-size: 2rem;
-`;
-
-const StartButton = styled.button`
-  width: 40%;
-  border-radius: 1rem;
-  border: none;
-  font-size: 2rem;
-  padding-block: 0.5rem;
-  background-color: var(--violet-blue-crayola);
-  color: var(--off-white);
-  letter-spacing: 0.2rem;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: var(--oxford-blue-light) 0px 1px 3px;
-`;
-
 type GameProps = {
-  game: GameLib,
+  game: GameLib;
 };
 
 function Game({ game } : GameProps): JSX.Element {
-  const resetGame = () => {};
-  const isPlaying = true;
+  const resetGame = () => {
+    alert('reset is not impleted');
+  };
+  const isPlaying = false;
   const gameEnded = false;
   return (
     <GameContainer>
@@ -59,8 +44,7 @@ function Game({ game } : GameProps): JSX.Element {
         <CardGrid />
       ) : (
         <StartContainer>
-          <IntroText>Find all of the matching pairs of cards!</IntroText>
-          <StartButton>Start</StartButton>
+          <PlayerForm handleSubmit={() => { /* no op */ }} />
         </StartContainer>
       )}
       <PlayerInfo />
