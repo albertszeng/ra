@@ -1,16 +1,36 @@
 name: Online Ra
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
-  build:
+  # JOB to run change detection
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - '*.py'
+              - 'game/**'
+            frontend:
+              - 'frontend/**'
+  deploy-server:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         os: [ubuntu-latest]
         python-version: ['3.9']
-
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python 3.9
@@ -48,3 +68,27 @@ jobs:
       - name: Run unit tests.
         run: |
           pipenv run python -m unittest
+
+  deploy-frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    name: Deploy Front-end to gh-pages
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+      - name: Install 🔧 & Build 🏗️
+        env:
+          # REACT_APP_MAPQUEST_API_KEY: ${{ secrets.REACT_APP_MAPQUEST_API_KEY }}
+        run: |
+          npm install
+          npm run build
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          folder: build
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
