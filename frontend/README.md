@@ -9,3 +9,5 @@ The front-end uses the `React` framework.
 - Run `npm start` to run the frontend locally.
 
 Note that by default, hot-reloading is available. The entry-point for the application is `index.tsx` so start there.
+
+## Deployment
