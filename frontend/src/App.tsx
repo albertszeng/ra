@@ -2,7 +2,6 @@ import React, { useState, ChangeEvent, FormEvent } from 'react';
 import {
   deleteGame,
   handleCommand,
-  startGame,
 } from './libs/game';
 
 import './App.css';
@@ -44,41 +43,15 @@ function App() {
     e.preventDefault();
     const { message, gameAsStr } = await handleCommand(form.gameId, form.command);
     if (message || !gameAsStr) {
-      alert(message);
       return;
     }
     setForm((prevForm: FormState) => ({ ...prevForm, data: '' }));
     setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr }));
   };
-  const handleStart = async (e: FormEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    const {
-      message,
-      gameId,
-      gameAsStr,
-    } = await startGame(form.gameId.split(','));
-    if (message || !gameId || !gameAsStr) {
-      alert(message);
-      return;
-    }
-    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr }));
-    setForm((prevForm: FormState) => ({ ...prevForm, gameId }));
-  };
   const handleDelete = async (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const { message } = await deleteGame(form.gameId);
-    alert(message);
+    await deleteGame(form.gameId);
   };
-  const handleLoad = async (e: FormEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    const { message, gameAsStr } = await handleCommand(form.gameId, 'LOAD');
-    if (message || !gameAsStr) {
-      alert(message);
-      return;
-    }
-    setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr }));
-  };
-
   return (
     <>
       <Header />
@@ -103,12 +76,6 @@ function App() {
         />
         <button className="form-field" type="submit">
           Act
-        </button>
-        <button className="form-field" type="button" onClick={handleStart}>
-          Start New Game
-        </button>
-        <button className="form-field" type="button" onClick={handleLoad}>
-          Load Game
         </button>
         <button className="form-field" type="button" onClick={handleDelete}>
           Delete Game
