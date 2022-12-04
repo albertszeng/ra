@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import CardGrid from './CardGrid';
@@ -31,9 +31,29 @@ const StartContainer = styled.div`
 `;
 
 function Game(): JSX.Element {
+  const GAME_STATE_KEY = 'LOCAL_GAME_STATE';
   const [game, setGame] = useState<GameState>(DefaultGame);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [gameEnded, setGameEnded] = useState(false);
+
+  // Store local game state to storage.
+  useEffect(() => {
+    if (game !== DefaultGame) {
+      window.localStorage.setItem(GAME_STATE_KEY, JSON.stringify({
+        game, isPlaying,
+      }));
+    }
+  }, [game, isPlaying]);
+  useEffect(() => {
+    const data = window.localStorage.getItem(GAME_STATE_KEY);
+    if (data !== null) {
+      const {
+        game: restoredGame,
+        isPlaying: restoredIsPlaying,
+      } = JSON.parse(data) as { game: GameState, isPlaying: boolean };
+      setGame(restoredGame);
+      setIsPlaying(restoredIsPlaying);
+    }
+  }, []);
 
   const handleNewGame = useCallback(async (players: string[]) => {
     const {
@@ -46,7 +66,6 @@ function Game(): JSX.Element {
       return;
     }
     setIsPlaying(true);
-    setGameEnded(false);
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, []);
   const handleLoadGame = useCallback(async (gameId: string) => {
@@ -56,20 +75,22 @@ function Game(): JSX.Element {
       return;
     }
     setIsPlaying(true);
-    setGameEnded(gameState.gameState.gameEnded);
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, []);
 
   const resetGame = () => {
     setIsPlaying(false);
-    setGameEnded(false);
   };
 
+  const { gameState } = game;
+  const {
+    gameEnded, playerStates, activePlayers, currentPlayer,
+  } = gameState;
   return (
     <GameContainer>
       {gameEnded ? <EndInfo resetGame={resetGame} /> : <div /> }
       {(!gameEnded && isPlaying) ? (
-        <CardGrid game={game.gameState} />
+        <CardGrid game={gameState} />
       ) : (
         <StartContainer>
           <PlayerForm
@@ -79,9 +100,9 @@ function Game(): JSX.Element {
         </StartContainer>
       )}
       <PlayersInfo
-        players={game.gameState.playerStates}
-        active={game.gameState.activePlayers}
-        current={game.gameState.currentPlayer}
+        players={playerStates}
+        active={activePlayers}
+        current={currentPlayer}
       />
     </GameContainer>
   );

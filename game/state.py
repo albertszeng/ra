@@ -337,7 +337,7 @@ class GameState:
     def serialize(self) -> SerializedGameState:
         return SerializedGameState(
             totalRounds=self.total_rounds,
-            numRasPerRound=self.num_ras_this_round,
+            numRasPerRound=self.num_ras_per_round,
             numPlayers=self.num_players,
             maxAuctionTiles=self.max_auction_tiles,
             currentRound=self.current_round,

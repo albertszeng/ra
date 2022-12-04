@@ -13,19 +13,23 @@ type TileProps = {
 
 function Tile({ altText, imageSrc }: TileProps): JSX.Element {
   return (
-    <Card sx={{ minWidth: 275 }}>
+    <Card>
       <CardMedia
         component="img"
-        height="140"
         image={imageSrc}
         alt={altText}
       />
     </Card>
   );
 }
-
-function RaTile() : JSX.Element {
-  return <Tile imageSrc={raTileImage} altText="ra" />;
+function EmptyTile(): JSX.Element {
+  return <Card sx={{ minWidth: 275 }} />;
+}
+type RaTileProps = {
+  filled: boolean;
+};
+function RaTile({ filled }: RaTileProps) : JSX.Element {
+  return (filled) ? <Tile imageSrc={raTileImage} altText="ra" /> : <EmptyTile />;
 }
 
 export {
