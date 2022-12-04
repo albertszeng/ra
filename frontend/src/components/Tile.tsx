@@ -4,10 +4,6 @@ import {
   CardMedia,
 } from '@mui/material';
 
-import raTileImage from '../images/tiles/ra.png';
-import emptyRaTileImage from '../images/tiles/emptyRa.png';
-import slotTileImage from '../images/tiles/slot.png';
-
 type TileProps = {
   altText: string;
   imageSrc: string;
@@ -25,20 +21,21 @@ function Tile({ altText, imageSrc }: TileProps): JSX.Element {
   );
 }
 function EmptyRaTile(): JSX.Element {
-  return <Tile altText="empty ra" imageSrc={emptyRaTileImage} />;
+  return <Tile altText="empty ra" imageSrc="/assets/tiles/emptyRa.png" />;
 }
 function SlotTile(): JSX.Element {
-  return <Tile altText="empty slot" imageSrc={slotTileImage} />;
+  return <Tile altText="empty slot" imageSrc="/assets/tiles/slot.png" />;
 }
 
 type RaTileProps = {
   filled: boolean;
 };
 function RaTile({ filled }: RaTileProps) : JSX.Element {
-  return (filled) ? <Tile imageSrc={raTileImage} altText="ra" /> : <EmptyRaTile />;
+  return (filled) ? <Tile imageSrc="/assets/tiles/ra.png" altText="ra" /> : <EmptyRaTile />;
 }
 
 export {
   RaTile,
   SlotTile,
+  Tile,
 };

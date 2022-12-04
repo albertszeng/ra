@@ -18,6 +18,16 @@ const DefaultPlayer: Player = {
   usableSun: [],
   unusableSun: [],
 };
+type Tile = {
+  // This is used to fetch the corresponding file for display purposes.
+  // This means file names should match the backend names.
+  name: string;
+  tileType: 'COLLECTIBLE' | 'DISASTER' | 'RA';
+  // How many start in the bag
+  startingNum: number;
+  // Whether we should keep or not.
+  toKeep: boolean;
+};
 
 type GameState = {
   // Total number of rounds to play.
@@ -38,7 +48,7 @@ type GameState = {
   // The value of the sun tile in the center.
   centerSun: number;
   // The tiles currently up for auction.
-  auctionTiles: string[];
+  auctionTiles: Tile[];
   // For each player i, how much sun have they bid if any.
   auctionSuns: (number | null)[];
   // Whether or not an action has started.

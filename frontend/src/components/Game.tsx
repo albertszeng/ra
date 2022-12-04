@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
+import Actions from './Actions';
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
 import PlayersInfo from './PlayersInfo';
@@ -34,49 +35,76 @@ function Game(): JSX.Element {
   const GAME_STATE_KEY = 'LOCAL_GAME_STATE';
   const [game, setGame] = useState<GameState>(DefaultGame);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [gameId, setGameId] = useState<string | null>(null);
 
   // Store local game state to storage.
   useEffect(() => {
     if (game !== DefaultGame) {
       window.localStorage.setItem(GAME_STATE_KEY, JSON.stringify({
-        game, isPlaying,
+        game, gameId, isPlaying,
       }));
     }
-  }, [game, isPlaying]);
+  }, [game, isPlaying, gameId]);
   useEffect(() => {
     const data = window.localStorage.getItem(GAME_STATE_KEY);
     if (data !== null) {
       const {
         game: restoredGame,
+        gameId: restoredGameId,
         isPlaying: restoredIsPlaying,
-      } = JSON.parse(data) as { game: GameState, isPlaying: boolean };
+      } = JSON.parse(data) as { game: GameState, isPlaying: boolean, gameId: string };
       setGame(restoredGame);
       setIsPlaying(restoredIsPlaying);
+      setGameId(restoredGameId);
     }
   }, []);
 
   const handleNewGame = useCallback(async (players: string[]) => {
     const {
       message,
-      gameId,
+      gameId: remoteGameId,
       gameState,
     } = await startGame(players);
-    if (message || !gameId || !gameState) {
+    if (message || !remoteGameId || !gameState) {
       alert(message);
       return;
     }
     setIsPlaying(true);
+    setGameId(remoteGameId);
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, []);
-  const handleLoadGame = useCallback(async (gameId: string) => {
-    const { message, gameState } = await handleCommand(gameId, 'LOAD');
+  const handleLoadGame = useCallback(async (requestedId: string) => {
+    const { message, gameState } = await handleCommand(requestedId, 'LOAD');
     if (message || !gameState) {
       alert(message);
       return;
     }
     setIsPlaying(true);
+    setGameId(requestedId);
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, []);
+  const handleDraw = useCallback(async () => {
+    if (!gameId) {
+      return;
+    }
+    const { message, gameState } = await handleCommand(gameId, 'DRAW');
+    if (message || !gameState) {
+      alert(message);
+      return;
+    }
+    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
+  }, [gameId]);
+  const handleAuction = useCallback(async () => {
+    if (!gameId) {
+      return;
+    }
+    const { message, gameState } = await handleCommand(gameId, 'AUCTION');
+    if (message || !gameState) {
+      alert(message);
+      return;
+    }
+    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
+  }, [gameId]);
 
   const resetGame = () => {
     setIsPlaying(false);
@@ -103,6 +131,11 @@ function Game(): JSX.Element {
         players={playerStates}
         active={activePlayers}
         current={currentPlayer}
+      />
+      <Actions
+        onDraw={handleDraw}
+        onAuction={handleAuction}
+        disabled={gameEnded || !isPlaying}
       />
     </GameContainer>
   );

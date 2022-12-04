@@ -2,7 +2,7 @@ import React from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
 
-import { RaTile, SlotTile } from './Tile';
+import { RaTile, SlotTile, Tile } from './Tile';
 import type { GameState } from '../libs/game';
 
 type CardGridProps = {
@@ -10,7 +10,7 @@ type CardGridProps = {
 };
 function CardGrid({
   game: {
-    numRasPerRound, numRasThisRound, maxAuctionTiles,
+    numRasPerRound, numRasThisRound, maxAuctionTiles, auctionTiles,
   },
 }: CardGridProps): JSX.Element {
   const renderRaTile = (idx: number) => (
@@ -18,11 +18,18 @@ function CardGrid({
       <RaTile filled={idx < numRasThisRound} />
     </Grid>
   );
-  const renderAuctionTile = (idx: number) => (
-    <Grid key={idx} xs={2} sm={1}>
-      <SlotTile />
-    </Grid>
-  );
+  const renderAuctionTile = (idx: number) => {
+    let tile = <SlotTile />;
+    if (idx < auctionTiles.length) {
+      const { name } = auctionTiles[idx];
+      tile = <Tile altText={name} imageSrc={`/assets/tiles/${name}.png`} />;
+    }
+    return (
+      <Grid key={idx} xs={2} sm={1}>
+        {tile}
+      </Grid>
+    );
+  };
   return (
     <>
       <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: numRasPerRound }}>
