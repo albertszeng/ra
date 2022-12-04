@@ -5,6 +5,8 @@ import {
 } from '@mui/material';
 
 import raTileImage from '../images/tiles/ra.png';
+import emptyRaTileImage from '../images/tiles/emptyRa.png';
+import slotTileImage from '../images/tiles/slot.png';
 
 type TileProps = {
   altText: string;
@@ -22,17 +24,21 @@ function Tile({ altText, imageSrc }: TileProps): JSX.Element {
     </Card>
   );
 }
-function EmptyTile(): JSX.Element {
-  return <Card sx={{ minWidth: 275 }} />;
+function EmptyRaTile(): JSX.Element {
+  return <Tile altText="empty ra" imageSrc={emptyRaTileImage} />;
 }
+function SlotTile(): JSX.Element {
+  return <Tile altText="empty slot" imageSrc={slotTileImage} />;
+}
+
 type RaTileProps = {
   filled: boolean;
 };
 function RaTile({ filled }: RaTileProps) : JSX.Element {
-  return (filled) ? <Tile imageSrc={raTileImage} altText="ra" /> : <EmptyTile />;
+  return (filled) ? <Tile imageSrc={raTileImage} altText="ra" /> : <EmptyRaTile />;
 }
 
 export {
-  Tile,
   RaTile,
+  SlotTile,
 };
