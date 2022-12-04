@@ -24,14 +24,25 @@ type PlayersInfoProps = {
   players: Player[];
   active: boolean[];
   current: number;
+  auctionStarted: boolean;
+  // Called with the index of the bid tile. 0 is lowest.
+  bidWithSun: (idx: number) => void;
 };
 
-function PlayersInfo({ players, active, current }: PlayersInfoProps) {
+function PlayersInfo({
+  players, active, current, auctionStarted, bidWithSun,
+}: PlayersInfoProps) {
   return (
     <>
       {players.map((player: Player, idx: number) => (
         <PlayerBox key={player.playerName} isActive={active[idx]} isCurrent={current === idx}>
-          <PlayerInfo data={players[idx]} />
+          <PlayerInfo
+            auctionStarted={auctionStarted}
+            data={players[idx]}
+            isActive={active[idx]}
+            isCurrent={current === idx}
+            bidWithSun={bidWithSun}
+          />
         </PlayerBox>
       ))}
     </>

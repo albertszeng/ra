@@ -105,6 +105,17 @@ function Game(): JSX.Element {
     }
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, [gameId]);
+  const handleActionBid = useCallback(async (idx: number) => {
+    if (!gameId) {
+      return;
+    }
+    const { message, gameState } = await handleCommand(gameId, `B${idx + 1}`);
+    if (message || !gameState) {
+      alert(message);
+      return;
+    }
+    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
+  }, [gameId]);
 
   const resetGame = () => {
     setIsPlaying(false);
@@ -112,7 +123,7 @@ function Game(): JSX.Element {
 
   const { gameState } = game;
   const {
-    gameEnded, playerStates, activePlayers, currentPlayer,
+    gameEnded, playerStates, activePlayers, currentPlayer, auctionStarted,
   } = gameState;
   return (
     <GameContainer>
@@ -129,8 +140,10 @@ function Game(): JSX.Element {
       )}
       <PlayersInfo
         players={playerStates}
+        auctionStarted={auctionStarted}
         active={activePlayers}
         current={currentPlayer}
+        bidWithSun={handleActionBid}
       />
       <Actions
         onDraw={handleDraw}
