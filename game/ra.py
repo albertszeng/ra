@@ -42,8 +42,8 @@ class SerializedRaGame(TypedDict):
     entire state of a RaGame for display purposes.
     """
     # The players and their respective play-order.
-    player_names: List[str]
-    game_state: gs.SerializedGameState
+    playerNames: List[str]
+    gameState: gs.SerializedGameState
 
 
 class RaGame:
@@ -83,8 +83,8 @@ class RaGame:
 
     def serialize(self) -> SerializedRaGame:
         return SerializedRaGame(
-            player_names=self.player_names,
-            game_state=self.game_state.serialize()
+            playerNames=self.player_names,
+            gameState=self.game_state.serialize()
         )
 
     def is_valid_num_players(self, num_players: int) -> bool:

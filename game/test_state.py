@@ -64,11 +64,11 @@ class PlayerStateTests(unittest.TestCase):
 
         self.assertEqual(serialized, {**serialized, **{
             'points': 10,
-            'player_name': "Test Player",
+            'playerName': "Test Player",
             'collection': [],
-            'unusable_sun': [],
+            'unusableSun': [],
         }})
-        self.assertCountEqual(serialized['usable_sun'], [1, 2, 3])
+        self.assertCountEqual(serialized['usableSun'], [1, 2, 3])
 
         player.add_points(10)
         self.assertEqual(player.serialize(),
@@ -85,16 +85,16 @@ class PlayerStateTests(unittest.TestCase):
 
         # Check swapping sun.
         player.exchange_sun(sun_to_give=2, sun_to_receive=13)
-        self.assertCountEqual(player.serialize()['usable_sun'], [1, 3])
-        self.assertCountEqual(player.serialize()['unusable_sun'], [13])
+        self.assertCountEqual(player.serialize()['usableSun'], [1, 3])
+        self.assertCountEqual(player.serialize()['unusableSun'], [13])
 
         player.exchange_sun(sun_to_give=3, sun_to_receive=9)
-        self.assertCountEqual(player.serialize()['usable_sun'], [1])
-        self.assertCountEqual(player.serialize()['unusable_sun'], [9, 13])
+        self.assertCountEqual(player.serialize()['usableSun'], [1])
+        self.assertCountEqual(player.serialize()['unusableSun'], [9, 13])
 
         player.exchange_sun(sun_to_give=1, sun_to_receive=4)
-        self.assertCountEqual(player.serialize()['usable_sun'], [])
-        self.assertCountEqual(player.serialize()['unusable_sun'], [4, 9, 13])
+        self.assertCountEqual(player.serialize()['usableSun'], [])
+        self.assertCountEqual(player.serialize()['unusableSun'], [4, 9, 13])
 
     def test_add_tiles(self) -> None:
         p_state = gs.PlayerState("Test Player", [1, 2, 3])
@@ -261,31 +261,31 @@ class GameStateTests(unittest.TestCase):
         self.maxDiff = None
         g_state = gs.GameState(["Player 1", "Player 2"])
         self.assertEqual(g_state.serialize(), {**g_state.serialize(), **{
-            'current_round': 1,
-            'active_players': [True, True],
-            'num_ras_this_round': 0,
-            'center_sun': gi.STARTING_CENTER_SUN,
-            'auction_tiles': [],
-            'auction_suns': [None, None],
-            'auction_started': False,
-            'current_player': 0,
-            'auction_winning_player': None,
-            'game_ended': False,
+            'currentRound': 1,
+            'activePlayers': [True, True],
+            'numRasThisRound': 0,
+            'centerSun': gi.STARTING_CENTER_SUN,
+            'auctionTiles': [],
+            'auctionSuns': [None, None],
+            'auctionStarted': False,
+            'currentPlayer': 0,
+            'auctionWinningPlayer': None,
+            'gameEnded': False,
         }})
         # Check player states.
-        self.assertCountEqual(g_state.serialize()['player_states'], [dict(
+        self.assertCountEqual(g_state.serialize()['playerStates'], [dict(
             collection=[],
-            player_name='Player 1',
+            playerName='Player 1',
             points=10,
-            unusable_sun=[],
-            usable_sun=[2, 5, 6, 9],
+            unusableSun=[],
+            usableSun=[2, 5, 6, 9],
         ),
             dict(
                 collection=[],
-                player_name='Player 2',
+                playerName='Player 2',
                 points=10,
-                unusable_sun=[],
-                usable_sun=[3, 4, 7, 8],
+                unusableSun=[],
+                usableSun=[3, 4, 7, 8],
         )])
 
     def test_serialize_changes(self) -> None:
@@ -293,51 +293,51 @@ class GameStateTests(unittest.TestCase):
         g_state = gs.GameState(["Player 1", "Player 2"])
         g_state.increase_round_number()
         self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(), **{'current_round': 2}})
+                         {**g_state.serialize(), **{'currentRound': 2}})
 
         g_state.increase_num_ras_this_round()
         self.assertEqual(g_state.serialize(),
                          {**g_state.serialize(),
-                          **{'num_ras_this_round': 1}})
+                          **{'numRasThisRound': 1}})
 
         g_state.add_tile_to_auction_tiles(gi.INDEX_OF_GOD)
         self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(), **{'auction_tiles': [
+                         {**g_state.serialize(), **{'auctionTiles': [
                              gi.TILE_INFO[gi.INDEX_OF_GOD]]}})
 
         g_state.set_auction_winning_player(winning_player=1)
         self.assertEqual(g_state.serialize(),
                          {**g_state.serialize(),
-                          **{'auction_winning_player': 1}})
+                          **{'auctionWinningPlayer': 1}})
 
         g_state.set_current_player(new_player_index=1)
         self.assertEqual(g_state.serialize(),
                          {**g_state.serialize(),
-                          **{'current_player': 1}})
+                          **{'currentPlayer': 1}})
 
         g_state.mark_player_passed(player_index=1)
         self.assertEqual(g_state.serialize(),
                          {**g_state.serialize(),
-                          **{'active_players': [True, False]}})
+                          **{'activePlayers': [True, False]}})
 
         g_state.start_auction(forced=True, start_player=0)
         self.assertEqual(g_state.serialize(),
                          {**g_state.serialize(),
-                          **{'auction_started': True}})
+                          **{'auctionStarted': True}})
 
         g_state.add_auction_sun(player=1, sun=4)
         self.assertEqual(g_state.serialize(),
                          {**g_state.serialize(),
-                          **{'auction_suns': [None, 4]}})
+                          **{'auctionSuns': [None, 4]}})
 
         g_state.set_center_sun(new_sun=4)
         self.assertEqual(g_state.serialize(),
                          {**g_state.serialize(),
-                          **{'center_sun': 4}})
+                          **{'centerSun': 4}})
 
         g_state.set_game_ended()
         self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(), **{'game_ended': True}})
+                         {**g_state.serialize(), **{'gameEnded': True}})
 
     def test_increase_round_number(self) -> None:
         g_state = gs.GameState(["Test Player 1", "Test Player 2"])

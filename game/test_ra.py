@@ -16,5 +16,5 @@ class RaTest(unittest.TestCase):
         self.assertEqual(
             game.serialize(),
             {**game.serialize(), **{
-                'player_names': ['P2', 'P1']}}
+                'playerNames': ['P2', 'P1']}}
         )

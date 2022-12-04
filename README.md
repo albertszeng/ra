@@ -51,12 +51,12 @@ You should be able to type check by running:
 
 ```sh
 # Assumes you're in the right shell.
-pyre
+pipenv run pyre
 ```
 
 And you should run the linter with:
 ```
-flake8 . --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
+pipenv run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
 ```
 
 Note that these commands will be run when push to the `master` branch on github as well. You'll be able to see the results on Github Actions.
@@ -69,7 +69,7 @@ We use the `unittest` framework. To run the tests, run:
 
 ```sh
 # Assumes you're in the right shell.
-python -m unittest
+pipenv run python -m unittest
 ```
 
 Note that above automatically runs all tests found in `test_*.py` files.
@@ -79,7 +79,7 @@ Note that above automatically runs all tests found in `test_*.py` files.
 
 To launch the backend server for debugging, run:
 ```sh
-flask --debug run
+pipenv run flask --debug run
 ```
 
 # Ra Website

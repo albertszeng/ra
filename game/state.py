@@ -82,11 +82,11 @@ class SerializedPlayerState(TypedDict):
     # The current point total of the player.
     points: int
     # The full name of the player.
-    player_name: str
+    playerName: str
     # The list of sun the player can bid.
-    usable_sun: List[int]
+    usableSun: List[int]
     # The List of sun the player has previously bid.
-    unusable_sun: List[int]
+    unusableSun: List[int]
 
 
 class PlayerState:
@@ -109,10 +109,10 @@ class PlayerState:
 
     def serialize(self) -> SerializedPlayerState:
         return SerializedPlayerState(
-            player_name=self.player_name,
+            playerName=self.player_name,
             points=self.points,
-            usable_sun=self.usable_sun,
-            unusable_sun=self.unusable_sun,
+            usableSun=self.usable_sun,
+            unusableSun=self.unusable_sun,
             collection=[gi.index_to_tile(
                 idx) for idx, count in enumerate(self.collection)
                 if count > 0]
@@ -220,32 +220,41 @@ class PlayerState:
 
 class SerializedGameState(TypedDict):
     """Fully summarizes in a data-only format the current GameState."""
+    # Total number of rounds to play.
+    totalRounds: int
+    # Total number of Ra tiles per round.
+    numRasPerRound: int
+    # Total number of active players.
+    numPlayers: int
+    # maximum number of tiles up for auction at once
+    maxAuctionTiles: int
+
     # The current round.
-    current_round: int
+    currentRound: int
     # If true, the player[i] is active.
-    active_players: List[bool]
+    activePlayers: List[bool]
     # The number of Ra tiles revealed so far.
-    num_ras_this_round: int
+    numRasThisRound: int
     # The value of the sun tile in the center.
-    center_sun: int
+    centerSun: int
     # The tiles currently up for auction.
-    auction_tiles: List[gi.TileTypeInfo]
+    auctionTiles: List[gi.TileTypeInfo]
     # For each player i, how much sun have they bid if any.
-    auction_suns: List[Optional[int]]
+    auctionSuns: List[Optional[int]]
     # Whether or not an action has started.
-    auction_started: bool
+    auctionStarted: bool
     # The index of the player that started the auction, if any.
-    auction_start_player: Optional[int]
+    auctionStartPlayer: Optional[int]
     # The index of the current player.
-    current_player: int
+    currentPlayer: int
     # The index of the player that won the auction, if any.
-    auction_winning_player: Optional[int]
+    auctionWinningPlayer: Optional[int]
 
     # The serialized player states.
-    player_states: List[SerializedPlayerState]
+    playerStates: List[SerializedPlayerState]
 
     # True if the game is over.
-    game_ended: bool
+    gameEnded: bool
 
 
 class GameState:
@@ -327,19 +336,22 @@ class GameState:
 
     def serialize(self) -> SerializedGameState:
         return SerializedGameState(
-            current_round=self.current_round,
-            active_players=self.active_players,
-            num_ras_this_round=self.num_ras_this_round,
-            center_sun=self.center_sun,
-            auction_tiles=[gi.index_to_tile(idx)
-                           for idx in self.auction_tiles],
-            auction_suns=self.auction_suns,
-            auction_started=self.auction_started,
-            auction_start_player=self.auction_start_player,
-            current_player=self.current_player,
-            auction_winning_player=self.auction_winning_player,
-            player_states=[state.serialize() for state in self.player_states],
-            game_ended=self.game_ended,
+            totalRounds=self.total_rounds,
+            numRasPerRound=self.num_ras_this_round,
+            numPlayers=self.num_players,
+            maxAuctionTiles=self.max_auction_tiles,
+            currentRound=self.current_round,
+            activePlayers=self.active_players,
+            numRasThisRound=self.num_ras_this_round,
+            centerSun=self.center_sun,
+            auctionTiles=[gi.index_to_tile(idx) for idx in self.auction_tiles],
+            auctionSuns=self.auction_suns,
+            auctionStarted=self.auction_started,
+            auctionStartPlayer=self.auction_start_player,
+            currentPlayer=self.current_player,
+            auctionWinningPlayer=self.auction_winning_player,
+            playerStates=[state.serialize() for state in self.player_states],
+            gameEnded=self.game_ended,
         )
 
     def increase_round_number(self) -> None:

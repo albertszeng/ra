@@ -74,7 +74,7 @@ class StartResponse(ActResponse):
 @app.route("/start", methods=["POST"])
 def start() -> Union[Message, StartResponse]:
     gameId = uuid.uuid4()
-    if not (players := request.json.get("player_names")) or len(players) < 2:
+    if not (players := request.json.get("playerNames")) or len(players) < 2:
         return Message(message='Cannot start game. Need player names.')
 
     game = ra.RaGame(
