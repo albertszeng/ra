@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
+import { Alert, AlertTitle, Collapse } from '@mui/material';
+
 import Actions from './Actions';
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
@@ -35,7 +37,8 @@ function Game(): JSX.Element {
   const GAME_STATE_KEY = 'LOCAL_GAME_STATE';
   const [game, setGame] = useState<GameState>(DefaultGame);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [gameId, setGameId] = useState<string | null>(null);
+  const [gameId, setGameId] = useState<string>('');
+  const [alertMsg, setAlertMsg] = useState<string>('');
 
   // Store local game state to storage.
   useEffect(() => {
@@ -66,7 +69,7 @@ function Game(): JSX.Element {
       gameState,
     } = await startGame(players);
     if (message || !remoteGameId || !gameState) {
-      alert(message);
+      setAlertMsg(message || 'Unknown error.');
       return;
     }
     setIsPlaying(true);
@@ -76,7 +79,7 @@ function Game(): JSX.Element {
   const handleLoadGame = useCallback(async (requestedId: string) => {
     const { message, gameState } = await handleCommand(requestedId, 'LOAD');
     if (message || !gameState) {
-      alert(message);
+      setAlertMsg(message || 'Unknown error.');
       return;
     }
     setIsPlaying(true);
@@ -89,7 +92,7 @@ function Game(): JSX.Element {
     }
     const { message, gameState } = await handleCommand(gameId, 'DRAW');
     if (message || !gameState) {
-      alert(message);
+      setAlertMsg(message || 'Unknown error.');
       return;
     }
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
@@ -100,7 +103,7 @@ function Game(): JSX.Element {
     }
     const { message, gameState } = await handleCommand(gameId, 'AUCTION');
     if (message || !gameState) {
-      alert(message);
+      setAlertMsg(message || 'Unknown error.');
       return;
     }
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
@@ -111,7 +114,7 @@ function Game(): JSX.Element {
     }
     const { message, gameState } = await handleCommand(gameId, `B${idx + 1}`);
     if (message || !gameState) {
-      alert(message);
+      setAlertMsg(message || 'Unknown error.');
       return;
     }
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
@@ -145,6 +148,16 @@ function Game(): JSX.Element {
         current={currentPlayer}
         bidWithSun={handleActionBid}
       />
+      <Collapse in={!!alertMsg}>
+        <Alert
+          onClose={() => setAlertMsg('')}
+          variant="filled"
+          severity="error"
+        >
+          <AlertTitle>Invalid Input</AlertTitle>
+          {alertMsg}
+        </Alert>
+      </Collapse>
       <Actions
         onDraw={handleDraw}
         onAuction={handleAuction}

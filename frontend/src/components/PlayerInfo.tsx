@@ -41,7 +41,7 @@ function PlayerInfo({
             {sun}
           </Button>
         ))}
-        {unusableSun.map((sun, idx) => (
+        {unusableSun.map((sun) => (
           <Button
             disabled
             endIcon={<StrikethroughS />}
