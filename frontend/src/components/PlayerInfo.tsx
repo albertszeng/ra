@@ -10,10 +10,10 @@ type PlayerInfoProps = {
 function PlayerInfo({ data }: PlayerInfoProps) {
   return (
     <>
-      <p>{`Name: ${data.player_name} (${data.points})`}</p>
+      <p>{`Name: ${data.playerName} (${data.points})`}</p>
       <p>{`Tiles: ${data.collection.toString()}`}</p>
-      <p>{`Sun: ${data.usable_sun.toString()}`}</p>
-      <p>{`Used Sun: ${data.unusable_sun.toString()}`}</p>
+      <p>{`Sun: ${data.usableSun.toString()}`}</p>
+      <p>{`Used Sun: ${data.unusableSun.toString()}`}</p>
     </>
   );
 }

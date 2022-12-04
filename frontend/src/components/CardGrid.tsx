@@ -1,8 +1,16 @@
 import React from 'react';
 
-function CardGrid(): JSX.Element {
+import { RaTile } from './Tile';
+import type { GameState } from '../libs/game';
+
+type CardGridProps = {
+  game: GameState;
+};
+function CardGrid({ game }: CardGridProps): JSX.Element {
   return (
-    <div />
+    <>
+      {[...Array(game.numRasPerRound).keys()].map(() => <RaTile />)}
+    </>
   );
 }
 

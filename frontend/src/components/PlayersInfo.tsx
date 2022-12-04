@@ -30,7 +30,7 @@ function PlayersInfo({ players, active, current }: PlayersInfoProps) {
   return (
     <>
       {players.map((player: Player, idx: number) => (
-        <PlayerBox isActive={active[idx]} isCurrent={current === idx}>
+        <PlayerBox key={player.playerName} isActive={active[idx]} isCurrent={current === idx}>
           <PlayerInfo data={players[idx]} />
         </PlayerBox>
       ))}

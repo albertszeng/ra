@@ -56,7 +56,7 @@ function Game(): JSX.Element {
       return;
     }
     setIsPlaying(true);
-    setGameEnded(gameState.game_state.game_ended);
+    setGameEnded(gameState.gameState.gameEnded);
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, []);
 
@@ -69,7 +69,7 @@ function Game(): JSX.Element {
     <GameContainer>
       {gameEnded ? <EndInfo resetGame={resetGame} /> : <div /> }
       {(!gameEnded && isPlaying) ? (
-        <CardGrid />
+        <CardGrid game={game.gameState} />
       ) : (
         <StartContainer>
           <PlayerForm
@@ -79,9 +79,9 @@ function Game(): JSX.Element {
         </StartContainer>
       )}
       <PlayersInfo
-        players={game.game_state.player_states}
-        active={game.game_state.active_players}
-        current={game.game_state.current_player}
+        players={game.gameState.playerStates}
+        active={game.gameState.activePlayers}
+        current={game.gameState.currentPlayer}
       />
     </GameContainer>
   );
