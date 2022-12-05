@@ -4,16 +4,19 @@ from game import info
 import copy
 import flask
 import flask_cors
+import flask_socketio  # type: ignore
 import flask_sqlalchemy
 import git
 import os
 import uuid
 
 from flask import abort, request
+from flask_socketio import emit, join_room, leave_room
 from sqlalchemy.ext import mutable
 
 
-from typing import Dict, TypedDict, Union
+from typing import Dict, Union
+from typing_extensions import NotRequired, TypedDict
 
 
 app = flask.Flask(__name__)
@@ -21,6 +24,7 @@ flask_cors.CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URI']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = flask_sqlalchemy.SQLAlchemy(app)
+socketio = flask_socketio.SocketIO(app)  # type: ignore
 
 
 class RaGame(mutable.Mutable, ra.RaGame):
@@ -67,6 +71,9 @@ class ActResponse(TypedDict):
 
 class StartResponse(ActResponse):
     gameId: uuid.UUID
+
+class JoinLeaveRequest(TypedDict):
+    gameId: NotRequired[str]
 
 
 @app.route("/", methods=["GET"])
@@ -143,13 +150,14 @@ def start() -> Union[Message, StartResponse]:
 
 @app.route("/delete", methods=["POST"])
 def delete() -> Message:
-    if not (gameId := request.json.get('gameId')):
+    if not (gameIdStr := request.json.get('gameId')):
         return Message(message='Invalid request.')
 
-    gameId = uuid.UUID(gameId)
+    gameId = uuid.UUID(gameIdStr)
     if not (dbGame := db.session.get(Game, gameId.hex)):
         return Message(message=f'No game with id {gameId} found.')
 
+    socketio.close_room(gameId)
     db.session.delete(dbGame)
     db.session.commit()
     return Message(message=f'Deleted game: {gameId}')
@@ -158,9 +166,9 @@ def delete() -> Message:
 @app.route("/action", methods=["POST"])
 def action() -> Union[Message, ActResponse]:
     _SERVER_ACTIONS = ['LOAD']
-    if not (gameId := request.json.get('gameId')):
-        return Message(message=f'Cannot act on non-existing game: {gameId}')
-    gameId = uuid.UUID(gameId)
+    if not (gameIdStr := request.json.get('gameId')):
+        return Message(message=f'Cannot act on non-existing game: {gameIdStr}')
+    gameId = uuid.UUID(gameIdStr)
     action = request.json.get("command")
     if not action:
         return Message(message='No action')
@@ -192,5 +200,35 @@ def action() -> Union[Message, ActResponse]:
         else:
             outfile.write(f"{action}\n")
 
-    return ActResponse(
+    response = ActResponse(
         gameState=game.serialize(), gameAsStr=get_game_repr(game))
+    # Update all connected clients with the updated game.
+    socketio.emit(
+        'update', response, to=gameIdStr, include_self=False,
+        skip_sid=request.sid)  # type: ignore
+
+    # Update the initiator of the event.
+    return response
+
+
+# Clients can join and leave specific rooms to listen to the updates
+# as the game progresses.
+@socketio.on('join')  # type: ignore
+def on_join(data: JoinLeaveRequest) -> None:
+    gameIdStr = data.get('gameId')
+    if not gameIdStr:
+        return
+    gameId = uuid.UUID(gameIdStr)
+    if not (dbGame := db.session.get(Game, gameId.hex)):
+        return
+    game = dbGame.data
+    join_room(gameIdStr)
+
+
+@socketio.on('leave')  # type: ignore
+def on_leave(data: JoinLeaveRequest) -> None:
+    gameIdStr = data.get('gameId')
+    if not gameIdStr:
+        return
+    leave_room(gameIdStr)
+
