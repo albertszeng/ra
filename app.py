@@ -4,14 +4,14 @@ from game import info
 import copy
 import flask
 import flask_cors
-import flask_socketio  # type: ignore
+import flask_socketio  # pyre-ignore[21]
 import flask_sqlalchemy
 import git
 import os
 import uuid
 
 from flask import abort, request
-from flask_socketio import emit, join_room, leave_room
+from flask_socketio import join_room, leave_room
 from sqlalchemy.ext import mutable
 
 
@@ -24,7 +24,8 @@ flask_cors.CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URI']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = flask_sqlalchemy.SQLAlchemy(app)
-socketio = flask_socketio.SocketIO(app, cors_allowed_origins="*")  # type: ignore
+# pyre-ignore[5]
+socketio = flask_socketio.SocketIO(app, cors_allowed_origins="*")
 
 
 class RaGame(mutable.Mutable, ra.RaGame):
@@ -72,6 +73,7 @@ class ActResponse(TypedDict):
 class StartResponse(ActResponse):
     gameId: uuid.UUID
 
+
 class JoinLeaveRequest(TypedDict):
     gameId: NotRequired[str]
 
@@ -82,7 +84,7 @@ def hello_world() -> str:
 
 
 @app.route("/update_server", methods=["POST"])
-def webhook() -> Message:
+def webhook() -> Message:  # noqa: C901
     abort_code = 418
     # Do initial validations on required headers
     if 'X-Github-Event' not in request.headers:
@@ -123,7 +125,9 @@ def webhook() -> Message:
         return Message(message="Didn't pull any information from remote!")
 
     commit_hash = pull_info[0].commit.hexsha
-    return Message(message='Updated PythonAnywhere server to commit {commit_hash}')
+    return Message(
+        message=f'Updated PythonAnywhere server to commit {commit_hash}')
+
 
 @app.route("/start", methods=["POST"])
 def start() -> Union[Message, StartResponse]:
@@ -214,23 +218,21 @@ def action() -> Union[Message, ActResponse]:
 
 # Clients can join and leave specific rooms to listen to the updates
 # as the game progresses.
-@socketio.on('join')  # type: ignore
+@socketio.on('join')  # pyre-ignore[56]
 def on_join(data: JoinLeaveRequest) -> None:
     gameIdStr = data.get('gameId')
     if not gameIdStr:
         return
     gameId = uuid.UUID(gameIdStr)
-    if not (dbGame := db.session.get(Game, gameId.hex)):
+    if not db.session.get(Game, gameId.hex):
         return
-    game = dbGame.data
-    print(f'Client: {request.sid} joined room: {gameIdStr}')
+    print(f'Client: {request.sid} joined room: {gameIdStr}')  # pyre-ignore[16]
     join_room(gameIdStr)
 
 
-@socketio.on('leave')  # type: ignore
+@socketio.on('leave')  # pyre-ignore[56]
 def on_leave(data: JoinLeaveRequest) -> None:
     gameIdStr = data.get('gameId')
     if not gameIdStr:
         return
     leave_room(gameIdStr)
-
