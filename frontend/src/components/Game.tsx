@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
-import { Alert, AlertTitle, Collapse } from '@mui/material';
+import { Alert, AlertTitle, Snackbar } from '@mui/material';
 
 import Actions from './Actions';
 import CardGrid from './CardGrid';
@@ -161,7 +161,10 @@ function Game(): JSX.Element {
             current={currentPlayer}
             bidWithSun={handleActionBid}
           />
-          <Collapse in={!!alertMsg}>
+          <Snackbar
+            open={!!alertMsg}
+            onClose={() => setAlertMsg('')}
+          >
             <Alert
               onClose={() => setAlertMsg('')}
               variant="filled"
@@ -170,7 +173,7 @@ function Game(): JSX.Element {
               <AlertTitle>Invalid Input</AlertTitle>
               {alertMsg}
             </Alert>
-          </Collapse>
+          </Snackbar>
           <Actions
             onDraw={handleDraw}
             onAuction={handleAuction}
