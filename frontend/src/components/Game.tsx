@@ -9,8 +9,13 @@ import EndInfo from './EndInfo';
 import PlayersInfo from './PlayersInfo';
 import PlayerForm from './PlayerForm';
 
-import { DefaultGame, handleCommand, startGame } from '../libs/game';
-import type { Game as GameState } from '../libs/game';
+import {
+  DefaultGame,
+  handleCommand,
+  startGame,
+  socket,
+} from '../libs/game';
+import type { ApiResponse, Game as GameState } from '../libs/game';
 
 const GameContainer = styled.main`
   width: min(99%, 1000px);
@@ -59,7 +64,19 @@ function Game(): JSX.Element {
       setGame(restoredGame);
       setIsPlaying(restoredIsPlaying);
       setGameId(restoredGameId);
+      // Also let the server know we've joined again.
+      socket.emit('join', { gameId: restoredGameId });
     }
+  }, []);
+  useEffect(() => {
+    socket.on('update', ({ gameState }: ApiResponse) => {
+      if (gameState) {
+        setGame(gameState);
+      }
+    });
+    return () => {
+      socket.off('update');
+    };
   }, []);
 
   const handleNewGame = useCallback(async (players: string[]) => {
@@ -85,6 +102,8 @@ function Game(): JSX.Element {
     setIsPlaying(true);
     setGameId(requestedId);
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
+    // Also let the server know we've joined again.
+    socket.emit('join', { gameId: requestedId });
   }, []);
   const handleDraw = useCallback(async () => {
     if (!gameId) {

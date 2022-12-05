@@ -1,3 +1,5 @@
+import io from 'socket.io-client';
+
 type Player = {
   // The tiles the player currently has in his collection.
   collection: string[];
@@ -101,16 +103,22 @@ type ApiResponse = {
   gameState?: Game;
 };
 
-const apiUrl = process.env.REACT_APP_BACKEND || 'http://127.0.0.1:5000';
+const apiUrl = (process.env.REACT_APP_BACKEND) ? `https://${process.env.REACT_APP_BACKEND}` : 'http://127.0.0.1:5000';
+const socket = io((process.env.REACT_APP_BACKEND) ? `wss://${process.env.REACT_APP_BACKEND}` : 'ws://127.0.0.1:5000');
 
 async function handleCommand(gameId: string, command: string): Promise<ApiResponse> {
   const requestOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gameId, command }),
+    body: JSON.stringify({ gameId, command, socketId: socket.id }),
   };
   const res = await fetch(`${apiUrl}/action`, requestOptions);
-  return res.json() as ApiResponse;
+  const parsed = await res.json() as ApiResponse;
+  const { gameId: joinedGameId } = parsed;
+  if (joinedGameId) {
+    socket.emit('join', { gameId: joinedGameId });
+  }
+  return parsed;
 }
 
 async function startGame(players: string[]): Promise<ApiResponse> {
@@ -122,7 +130,13 @@ async function startGame(players: string[]): Promise<ApiResponse> {
     }),
   };
   const res = await fetch(`${apiUrl}/start`, requestOptions);
-  return res.json() as ApiResponse;
+  const parsed = await res.json() as ApiResponse;
+  const { gameId } = parsed;
+  if (gameId) {
+    // Let server know we've joined a game.
+    socket.emit('join', { gameId });
+  }
+  return parsed;
 }
 
 async function deleteGame(gameId: string): Promise<ApiResponse> {
@@ -150,4 +164,5 @@ export {
   deleteGame,
   handleCommand,
   startGame,
+  socket,
 };

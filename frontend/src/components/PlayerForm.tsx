@@ -42,9 +42,9 @@ function isValid(input: string): boolean {
   // Must be game id.
   let hex = input;
   if (input.includes('-')) {
-    hex = input.replace('-', '');
+    hex = input.replace(/-|\s/g, '');
   }
-  return (parseInt(hex, 16).toString(16) === hex.toLowerCase());
+  return hex.length === 32;
 }
 
 function PlayerForm({ handleNewGame, handleLoadGame }: PlayerFormProps): JSX.Element {
