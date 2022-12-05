@@ -1,6 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import {
-  deleteGame,
   handleCommand,
 } from './libs/game';
 
@@ -48,10 +47,6 @@ function App() {
     setForm((prevForm: FormState) => ({ ...prevForm, data: '' }));
     setGame((prevGame: GameState) => ({ ...prevGame, data: gameAsStr }));
   };
-  const handleDelete = async (e: FormEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    await deleteGame(form.gameId);
-  };
   return (
     <>
       <Header />
@@ -76,9 +71,6 @@ function App() {
         />
         <button className="form-field" type="submit">
           Act
-        </button>
-        <button className="form-field" type="button" onClick={handleDelete}>
-          Delete Game
         </button>
       </form>
     </>

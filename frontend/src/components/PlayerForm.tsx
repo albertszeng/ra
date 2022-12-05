@@ -1,31 +1,23 @@
-import React, { ChangeEvent, FormEvent, useState } from 'react';
-import ReactTooltip from 'react-tooltip';
+import React, {
+  SyntheticEvent,
+  useEffect,
+  useState,
+} from 'react';
 import styled from 'styled-components';
+
+import {
+  Alert,
+  Autocomplete,
+  Button,
+  Snackbar,
+  TextField,
+  Tooltip,
+} from '@mui/material';
+
+import { listGames, deleteGame } from '../libs/game';
 
 const IntroText = styled.p`
   font-size: 2rem;
-`;
-
-const StartButton = styled.button`
-  width: 40%;
-  border-radius: 1rem;
-  border: none;
-  font-size: 2rem;
-  padding-block: 0.5rem;
-  background-color: var(--violet-blue-crayola);
-  color: var(--off-white);
-  letter-spacing: 0.2rem;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: var(--oxford-blue-light) 0px 1px 3px;
-`;
-
-const PlayerInput = styled.input`
-  padding: 0.5em;
-  margin: 0.5em;
-  color: 'palevioletred';
-  border-radius: 3px;
-  font-size: 18pt;
 `;
 
 type PlayerFormProps = {
@@ -50,13 +42,26 @@ function isValid(input: string): boolean {
 function PlayerForm({ handleNewGame, handleLoadGame }: PlayerFormProps): JSX.Element {
   const [input, setInput] = useState<string>('');
   const [formValid, setFormValid] = useState(false);
-  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    e.persist();
-    setFormValid(isValid(e.target.value));
-    setInput(e.target.value);
+  const [games, setGames] = useState<string[]>([]);
+  const [userMsg, setUserMsg] = useState('');
+
+  useEffect(() => {
+    const fetchGames = async () => {
+      const { gameIds } = await listGames();
+      setGames(gameIds);
+    };
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const _ = fetchGames();
+  }, []);
+
+  const handleChange = (e: SyntheticEvent<Element, Event>, value: string | null): void => {
+    if (!value) {
+      return;
+    }
+    setFormValid(isValid(value));
+    setInput(value);
   };
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (input.includes(',')) {
       // Players, start a new game.
       return handleNewGame(input.split(','));
@@ -64,42 +69,74 @@ function PlayerForm({ handleNewGame, handleLoadGame }: PlayerFormProps): JSX.Ele
     // Game id, start load it.
     return handleLoadGame(input);
   };
-  const [tooltip, showTooltip] = useState(false);
+  const handleDelete = () => {
+    const remoteDelete = async () => {
+      const { message } = await deleteGame(input);
+      const { gameIds } = await listGames();
+      setGames(gameIds);
+      if (message) {
+        setUserMsg(message);
+      }
+    };
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const _ = remoteDelete();
+  };
+  const tooltipText = 'Enter comma-seperated list of players or the Game ID of an existing game.';
   return (
     <>
-      { tooltip && (
-        <ReactTooltip
-          id="players or id"
-          type="info"
-          place="bottom"
+      <IntroText>Start a Game of Ra!</IntroText>
+      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+      <Tooltip
+        followCursor
+        title={tooltipText}
+        enterDelay={500}
+      >
+        <Autocomplete
+          freeSolo
+          id="players"
+          options={games}
+          value={input}
+          onInputChange={handleChange}
+          renderInput={(params) => (
+            <TextField
+              /* eslint-disable-next-line react/jsx-props-no-spreading */
+              {...params}
+              label="Player Names/Game ID"
+            />
+          )}
+        />
+      </Tooltip>
+      <Button
+        size="large"
+        variant="contained"
+        color={(input.includes('-')) ? 'secondary' : 'primary'}
+        disabled={!formValid}
+        onClick={handleSubmit}
+      >
+        {(input.includes('-')) ? 'Load' : 'Start'}
+      </Button>
+      <Button
+        size="large"
+        variant="contained"
+        color="error"
+        disabled={!formValid && !input.includes(',')}
+        onClick={handleDelete}
+      >
+        Delete
+      </Button>
+      <Snackbar
+        open={!!userMsg}
+        autoHideDuration={6000}
+        onClose={() => setUserMsg('')}
+      >
+        <Alert
+          onClose={() => setUserMsg('')}
+          severity="warning"
+          sx={{ width: '100%' }}
         >
-          Enter comma-seperated list of players or the Game ID of an existing game.
-        </ReactTooltip>
-      )}
-      <form onSubmit={handleSubmit}>
-        <IntroText>Start a Game of Ra!</IntroText>
-        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-        <label htmlFor="players">
-          Player Names/Game ID:
-          {' '}
-          <PlayerInput
-            data-tip
-            data-for="players or id"
-            id="players"
-            type="text"
-            value={input}
-            onChange={handleChange}
-            onMouseEnter={() => { showTooltip(true); }}
-            onMouseLeave={() => { showTooltip(false); }}
-          />
-        </label>
-        <StartButton
-          type="submit"
-          disabled={!formValid}
-        >
-          Start
-        </StartButton>
-      </form>
+          {userMsg}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

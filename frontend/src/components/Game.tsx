@@ -35,7 +35,6 @@ const GameContainer = styled.main`
 const StartContainer = styled.div`
   text-align: center;
   margin-top: auto;
-  font-size: 2rem;
 `;
 
 function Game(): JSX.Element {
@@ -141,6 +140,8 @@ function Game(): JSX.Element {
 
   const resetGame = () => {
     setIsPlaying(false);
+    // Let the server know we've left the game.
+    socket.emit('leave', { gameId });
   };
 
   const { gameState } = game;
@@ -151,7 +152,32 @@ function Game(): JSX.Element {
     <GameContainer>
       {gameEnded ? <EndInfo resetGame={resetGame} /> : <div /> }
       {(!gameEnded && isPlaying) ? (
-        <CardGrid game={gameState} />
+        <>
+          <CardGrid game={gameState} />
+          <PlayersInfo
+            players={playerStates}
+            auctionStarted={auctionStarted}
+            active={activePlayers}
+            current={currentPlayer}
+            bidWithSun={handleActionBid}
+          />
+          <Collapse in={!!alertMsg}>
+            <Alert
+              onClose={() => setAlertMsg('')}
+              variant="filled"
+              severity="error"
+            >
+              <AlertTitle>Invalid Input</AlertTitle>
+              {alertMsg}
+            </Alert>
+          </Collapse>
+          <Actions
+            onDraw={handleDraw}
+            onAuction={handleAuction}
+            disabled={gameEnded || !isPlaying}
+            resetGame={resetGame}
+          />
+        </>
       ) : (
         <StartContainer>
           <PlayerForm
@@ -160,28 +186,6 @@ function Game(): JSX.Element {
           />
         </StartContainer>
       )}
-      <PlayersInfo
-        players={playerStates}
-        auctionStarted={auctionStarted}
-        active={activePlayers}
-        current={currentPlayer}
-        bidWithSun={handleActionBid}
-      />
-      <Collapse in={!!alertMsg}>
-        <Alert
-          onClose={() => setAlertMsg('')}
-          variant="filled"
-          severity="error"
-        >
-          <AlertTitle>Invalid Input</AlertTitle>
-          {alertMsg}
-        </Alert>
-      </Collapse>
-      <Actions
-        onDraw={handleDraw}
-        onAuction={handleAuction}
-        disabled={gameEnded || !isPlaying}
-      />
     </GameContainer>
   );
 }

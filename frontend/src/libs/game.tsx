@@ -151,10 +151,24 @@ async function deleteGame(gameId: string): Promise<ApiResponse> {
   return res.json() as ApiResponse;
 }
 
+type ListGamesResponse = {
+  total: number;
+  gameIds: string[];
+};
+async function listGames(): Promise<ListGamesResponse> {
+  const requestOptions = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  };
+  const res = await fetch(`${apiUrl}/list`, requestOptions);
+  return res.json() as Promise<ListGamesResponse>;
+}
+
 export type {
   ApiResponse,
   Game,
   GameState,
+  ListGamesResponse,
   Player,
 };
 
@@ -163,6 +177,7 @@ export {
   DefaultPlayer,
   deleteGame,
   handleCommand,
+  listGames,
   startGame,
   socket,
 };
