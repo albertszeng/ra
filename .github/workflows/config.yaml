@@ -82,7 +82,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Install 🔧 & Build 🏗️
         env:
-          RA_APP_BACKEND: 'http://127.0.0.1:5000'
+          RA_APP_BACKEND: 'https://nautilik.pythonanywhere.com'
         run: |
           npm install
           npm run build
