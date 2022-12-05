@@ -132,11 +132,11 @@ def webhook() -> Message:  # noqa: C901
 
 class ListGamesResponse(TypedDict):
     total: int
-    gameIds: List[str]
+    gameIds: List[uuid.UUID]
 
 
 @app.route("/list", methods=["GET", "POST"])
-def list() -> Union[Message, StartResponse]:
+def list() -> ListGamesResponse:
     """Lists all available games in the database."""
     results = db.session.scalars(expression.select(Game.id)).all()
     return ListGamesResponse(
