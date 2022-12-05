@@ -24,7 +24,7 @@ flask_cors.CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URI']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = flask_sqlalchemy.SQLAlchemy(app)
-socketio = flask_socketio.SocketIO(app)  # type: ignore
+socketio = flask_socketio.SocketIO(app, cors_allowed_origins="*")  # type: ignore
 
 
 class RaGame(mutable.Mutable, ra.RaGame):
@@ -202,9 +202,11 @@ def action() -> Union[Message, ActResponse]:
 
     response = ActResponse(
         gameState=game.serialize(), gameAsStr=get_game_repr(game))
-    # Update all connected clients with the updated game.
+    # Update all connected clients with the updated game except client that
+    # sent the update.
     socketio.emit(
-        'update', response, to=gameIdStr, include_self=False)
+        'update', response, to=gameIdStr,
+        skip_sid=request.json.get('socketId'))
 
     # Update the initiator of the event.
     return response
@@ -221,6 +223,7 @@ def on_join(data: JoinLeaveRequest) -> None:
     if not (dbGame := db.session.get(Game, gameId.hex)):
         return
     game = dbGame.data
+    print(f'Client: {request.sid} joined room: {gameIdStr}')
     join_room(gameIdStr)
 
 
