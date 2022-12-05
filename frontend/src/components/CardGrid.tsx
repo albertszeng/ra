@@ -22,7 +22,7 @@ function CardGrid({
     let tile = <SlotTile />;
     if (idx < auctionTiles.length) {
       const { name } = auctionTiles[idx];
-      tile = <Tile altText={name} imageSrc={`/assets/tiles/${name}.png`} />;
+      tile = <Tile altText={name} imageSrc={`${process.env.PUBLIC_URL}/assets/tiles/${name}.png`} />;
     }
     return (
       <Grid key={idx} xs={2} sm={1}>

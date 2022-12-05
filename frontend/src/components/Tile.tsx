@@ -21,17 +21,17 @@ function Tile({ altText, imageSrc }: TileProps): JSX.Element {
   );
 }
 function EmptyRaTile(): JSX.Element {
-  return <Tile altText="empty ra" imageSrc="/assets/tiles/emptyRa.png" />;
+  return <Tile altText="empty ra" imageSrc={`${process.env.PUBLIC_URL}/assets/tiles/emptyRa.png`} />;
 }
 function SlotTile(): JSX.Element {
-  return <Tile altText="empty slot" imageSrc="/assets/tiles/slot.png" />;
+  return <Tile altText="empty slot" imageSrc={`${process.env.PUBLIC_URL}/assets/tiles/slot.png`} />;
 }
 
 type RaTileProps = {
   filled: boolean;
 };
 function RaTile({ filled }: RaTileProps) : JSX.Element {
-  return (filled) ? <Tile imageSrc="/assets/tiles/ra.png" altText="ra" /> : <EmptyRaTile />;
+  return (filled) ? <Tile imageSrc={`${process.env.PUBLIC_URL}/assets/tiles/ra.png`} altText="ra" /> : <EmptyRaTile />;
 }
 
 export {
