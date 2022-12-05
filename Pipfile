@@ -9,6 +9,7 @@ flask-cors = "*"
 flask-sqlalchemy = "*"
 gitpython = "*"
 flask-socketio = "*"
+typing-extensions = "*"
 
 [dev-packages]
 pyre-check = "*"
