@@ -1,5 +1,5 @@
 from . import info as gi
-from .import state as gs
+from . import state as gs
 
 import argparse
 from datetime import datetime

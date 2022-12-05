@@ -5,6 +5,7 @@ import copy
 import flask
 import flask_cors
 import flask_sqlalchemy
+import os
 import uuid
 
 from flask import request
@@ -16,7 +17,7 @@ from typing import Dict, TypedDict, Union
 
 app = flask.Flask(__name__)
 flask_cors.CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/game.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URI']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = flask_sqlalchemy.SQLAlchemy(app)
 
