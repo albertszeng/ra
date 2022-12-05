@@ -1,4 +1,4 @@
-from . import info
+import info
 
 import unittest
 

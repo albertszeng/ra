@@ -1,4 +1,4 @@
-from . import ra
+import ra
 
 import random
 import unittest

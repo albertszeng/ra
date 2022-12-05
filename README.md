@@ -43,6 +43,17 @@ When installing future dependencies, just make sure you use `pipenv`. For exampl
 pipenv install flask
 ```
 
+### Environment Varibles.
+
+You'll also need to define a few environment variables. Note that when using `pipenv`, you can define these variables in `.env` which will automatically load them.
+
+```sh
+# Set the database location.
+DATABASE_URI=sqlite:////tmp/game.db
+# Add current working directory to python path.
+PYTHONPATH=${PYTHONPATH}:${PWD}:${PWD}/game
+```
+
 ## Type Checking and Linter
 
 For development purposes, you want to also install the dev dependencies by running `pipenv install -d`. For type-checking, we use `pyre`. See [here](https://pyre-check.org/docs/getting-started/) to install.

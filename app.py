@@ -1,5 +1,5 @@
-from .game import ra
-from .game import info
+from game import ra
+from game import info
 
 import copy
 import flask

@@ -1,4 +1,4 @@
-from . import info as gi
+import info as gi
 
 import logging
 import random
