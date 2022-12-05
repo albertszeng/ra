@@ -5,10 +5,11 @@ import copy
 import flask
 import flask_cors
 import flask_sqlalchemy
+import git
 import os
 import uuid
 
-from flask import request
+from flask import abort, request
 from sqlalchemy.ext import mutable
 
 
@@ -42,7 +43,8 @@ class Game(db.Model):  # pyre-ignore[11]
 
 
 # Creates the database and tables as specified by all db.Model classes.
-db.create_all()
+with app.app_context():
+    db.create_all()
 
 
 def get_game_repr(game: ra.RaGame) -> str:
@@ -52,11 +54,6 @@ def get_game_repr(game: ra.RaGame) -> str:
         return val
     prompt = game.get_action_prompt(legal_actions, helpful_prompt=True)
     return f"{val}\n\n{prompt}"
-
-
-@app.route("/", methods=["GET"])
-def hello_world() -> str:
-    return "<p>Hello, World!</p>"
 
 
 class Message(TypedDict):
@@ -71,6 +68,55 @@ class ActResponse(TypedDict):
 class StartResponse(ActResponse):
     gameId: uuid.UUID
 
+
+@app.route("/", methods=["GET"])
+def hello_world() -> str:
+    return "<p>Hello, World!</p>"
+
+
+@app.route("/update_server", methods=["GET"])
+def webhook() -> Message:
+    abort_code = 418
+    # Do initial validations on required headers
+    if 'X-Github-Event' not in request.headers:
+        abort(abort_code)
+    if 'X-Github-Delivery' not in request.headers:
+        abort(abort_code)
+    if 'X-Hub-Signature' not in request.headers:
+        abort(abort_code)
+    if not request.is_json:
+        abort(abort_code)
+    if 'User-Agent' not in request.headers:
+        abort(abort_code)
+    ua = request.headers.get('User-Agent')
+    if not ua or not ua.startswith('GitHub-Hookshot/'):
+        abort(abort_code)
+
+    event = request.headers.get('X-GitHub-Event')
+    if event == "ping":
+        return Message(message='Hi!')
+    if event != "push":
+        return Message(message="Wrong event type")
+
+    payload = request.get_json()
+    if payload is None:
+        abort(abort_code)
+
+    if payload['ref'] != 'refs/heads/master':
+        return Message(message='Not master; ignoring')
+
+    repo = git.Repo(os.path.dirname(os.path.realpath(__file__)))
+    origin = repo.remotes.origin
+
+    pull_info = origin.pull()
+
+    if len(pull_info) == 0:
+        return Message(message="Didn't pull any information from remote!")
+    if pull_info[0].flags > 128:
+        return Message(message="Didn't pull any information from remote!")
+
+    commit_hash = pull_info[0].commit.hexsha
+    return Message(message='Updated PythonAnywhere server to commit {commit_hash}')
 
 @app.route("/start", methods=["POST"])
 def start() -> Union[Message, StartResponse]:
