@@ -72,7 +72,7 @@ pipenv run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=79
 
 Note that these commands will be run when push to the `master` branch on github as well. You'll be able to see the results on Github Actions.
 
-## Testing TODO
+## Testing
 
 Testing for the `RaGame` class and for the newer functions of the `GameState` class are still needed. Existing tests can be found in the `tests` folder, where each file is a set of tests.
 
@@ -85,6 +85,9 @@ pipenv run python -m unittest
 
 Note that above automatically runs all tests found in `test_*.py` files.
 
+## Deployment
+
+When pushed, this server gets deployed to `nautilik.pythonanywhere.com`.
 
 # Ra Server
 
