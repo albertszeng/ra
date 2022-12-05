@@ -13,9 +13,10 @@ import uuid
 from flask import abort, request
 from flask_socketio import join_room, leave_room
 from sqlalchemy.ext import mutable
+from sqlalchemy.sql import expression
 
 
-from typing import Dict, Union
+from typing import Dict, List, Union
 from typing_extensions import NotRequired, TypedDict
 
 
@@ -127,6 +128,20 @@ def webhook() -> Message:  # noqa: C901
     commit_hash = pull_info[0].commit.hexsha
     return Message(
         message=f'Updated PythonAnywhere server to commit {commit_hash}')
+
+
+class ListGamesResponse(TypedDict):
+    total: int
+    gameIds: List[str]
+
+
+@app.route("/list", methods=["GET", "POST"])
+def list() -> Union[Message, StartResponse]:
+    """Lists all available games in the database."""
+    results = db.session.scalars(expression.select(Game.id)).all()
+    return ListGamesResponse(
+        total=len(results),
+        gameIds=[uuid.UUID(gameIdStr) for gameIdStr in results])
 
 
 @app.route("/start", methods=["POST"])
