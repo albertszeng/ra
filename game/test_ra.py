@@ -1,4 +1,4 @@
-import ra
+from game import ra
 
 import random
 import unittest

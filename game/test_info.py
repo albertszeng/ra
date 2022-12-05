@@ -1,4 +1,4 @@
-import info
+from game import info
 
 import unittest
 

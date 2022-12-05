@@ -51,7 +51,7 @@ You'll also need to define a few environment variables. Note that when using `pi
 # Set the database location.
 DATABASE_URI=sqlite:////tmp/game.db
 # Add current working directory to python path.
-PYTHONPATH=${PYTHONPATH}:${PWD}:${PWD}/game
+PYTHONPATH=${PYTHONPATH}:${PWD}
 ```
 
 ## Type Checking and Linter

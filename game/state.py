@@ -1,4 +1,4 @@
-import info as gi
+from game import info as gi
 
 import logging
 import random

@@ -1,5 +1,5 @@
-import info as gi
-import state as gs
+from game import info as gi
+from game import state as gs
 
 import argparse
 from datetime import datetime
