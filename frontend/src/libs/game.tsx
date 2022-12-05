@@ -101,7 +101,7 @@ type ApiResponse = {
   gameState?: Game;
 };
 
-const apiUrl = process.env.RA_APP_BACKEND || 'http://127.0.0.1:5000';
+const apiUrl = process.env.REACT_APP_BACKEND || 'http://127.0.0.1:5000';
 
 async function handleCommand(gameId: string, command: string): Promise<ApiResponse> {
   const requestOptions = {
