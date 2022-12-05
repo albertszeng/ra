@@ -81,7 +81,7 @@ def hello_world() -> str:
     return "<p>Hello, World!</p>"
 
 
-@app.route("/update_server", methods=["GET"])
+@app.route("/update_server", methods=["POST"])
 def webhook() -> Message:
     abort_code = 418
     # Do initial validations on required headers
@@ -204,8 +204,7 @@ def action() -> Union[Message, ActResponse]:
         gameState=game.serialize(), gameAsStr=get_game_repr(game))
     # Update all connected clients with the updated game.
     socketio.emit(
-        'update', response, to=gameIdStr, include_self=False,
-        skip_sid=request.sid)  # type: ignore
+        'update', response, to=gameIdStr, include_self=False)
 
     # Update the initiator of the event.
     return response
