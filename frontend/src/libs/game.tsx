@@ -103,8 +103,8 @@ type ApiResponse = {
   gameState?: Game;
 };
 
-const apiUrl = (process.env.REACT_APP_BACKEND) ? `https://${process.env.REACT_APP_BACKEND}` : 'http://127.0.0.1:5000';
-const socket = io((process.env.REACT_APP_BACKEND) ? `wss://${process.env.REACT_APP_BACKEND}` : 'ws://127.0.0.1:5000');
+const apiUrl = (process.env.REACT_APP_BACKEND) ? `https://${process.env.REACT_APP_BACKEND}` : 'http://0.0.0.0:8080';
+const socket = io((process.env.REACT_APP_BACKEND) ? `wss://${process.env.REACT_APP_BACKEND}` : 'ws://0.0.0.0:8080');
 
 async function handleCommand(gameId: string, command: string): Promise<ApiResponse> {
   const requestOptions = {
