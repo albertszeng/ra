@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a6e9540f769c1f5a70798a7544b7528d13c5b84869db3b65c075a0ee96b74bac"
+            "sha256": "513f146f99572439ea7dcc19acc903d91f4a2bf9431b747f705292647f0acd5b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -171,7 +171,7 @@
                 "sha256:d5059f9f1e8e41f80e9c56c2ee58811450c31984dfa625329ffd7c0dad88a73b",
                 "sha256:d84d17e21670ec07990e1044a99efe8d615d860fd176fc29ef5c306068fda313"
             ],
-            "markers": "python_version < '3.10'",
+            "markers": "python_version >= '3.7'",
             "version": "==5.1.0"
         },
         "itsdangerous": {
@@ -390,12 +390,13 @@
             "version": "==6.0"
         },
         "quart": {
+            "editable": true,
+            "git": "https://github.com/kandluis/quart.git",
             "hashes": [
                 "sha256:c221a7deb83a014dee040108d654b6141fe37f59e249c5caa0fdcf6506caf50b",
                 "sha256:dc4de597d5d4693627c90904b233d729531f6b27c1164f760476d3967aee2a4a"
             ],
-            "index": "pypi",
-            "version": "==0.18.3"
+            "ref": "ecc6b263d40b877f3d557f36921aaf93a986c460"
         },
         "quart-cors": {
             "hashes": [

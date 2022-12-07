@@ -9,8 +9,8 @@ typing-extensions = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 psycopg2-binary = "*"
 python-socketio = "*"
-quart = "*"
 quart-cors = "*"
+quart = {editable = true, git = "https://github.com/kandluis/quart.git"}
 
 [dev-packages]
 pyre-check = "*"
