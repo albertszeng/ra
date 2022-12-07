@@ -12,4 +12,5 @@ RUN pip install --upgrade pip && \
   pip install pipenv && \
   pipenv install --deploy --system --ignore-pipfile
 
+# Only one workers to save resources for now.
 CMD uvicorn --port 8080 --workers 1 --lifespan on --proxy-headers --log-level debug app:asgi_app

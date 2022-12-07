@@ -20,6 +20,9 @@ jobs:
           filters: |
             backend:
               - '*.py'
+              - 'Dockerfile'
+              - '*.toml'
+              - 'Pipfile*'
               - 'game/**'
             frontend:
               - 'frontend/**'
