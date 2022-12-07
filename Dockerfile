@@ -12,4 +12,4 @@ RUN pip install --upgrade pip && \
   pip install pipenv && \
   pipenv install --deploy --system --ignore-pipfile
 
-CMD uvicorn --port 8080 --workers 10 --lifespan on --proxy-headers --log-level debug app:asgi_app
+CMD uvicorn --port 8080 --workers 1 --lifespan on --proxy-headers --log-level debug app:asgi_app
