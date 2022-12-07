@@ -4,17 +4,16 @@ from game import ra
 from game import info
 
 import copy
-import flask_cors
 import flask_sqlalchemy
 import logging
 import os
 import quart
 import quart_cors
-import socketio
+import socketio  # pyre-ignore[21]
 import uuid
 
 
-from quart import abort, request
+from quart import request
 from sqlalchemy.ext import mutable
 from sqlalchemy.sql import expression
 
@@ -22,7 +21,7 @@ from sqlalchemy.sql import expression
 from typing import Dict, List, Union
 from typing_extensions import NotRequired, TypedDict
 
-logger = logging.getLogger("uvicorn.info")
+logger: logging.Logger = logging.getLogger("uvicorn.info")
 
 
 app = quart.Quart(__name__)
@@ -31,12 +30,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # For Database support.
 db = flask_sqlalchemy.SQLAlchemy(app)
+
+
 # Creates the database and tables as specified by all db.Model classes.
 async def setup() -> None:
     async with app.app_context():
         db.create_all()
 
-_ = setup()
+
+_ = setup()  # pyre-ignore[5]
 
 
 class RaGame(mutable.Mutable, ra.RaGame):
@@ -85,8 +87,10 @@ class JoinLeaveRequest(TypedDict):
 
 
 # For websocket support.
-sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode='asgi')
-cors_app = quart_cors.cors(app, allow_origin="*")
+sio = socketio.AsyncServer(  # pyre-ignore[5]
+    cors_allowed_origins="*", async_mode='asgi')
+cors_app: quart.app.Quart = quart_cors.cors(app, allow_origin="*")
+
 
 @cors_app.route("/", methods=["GET"])
 async def hello_world() -> str:
@@ -111,7 +115,8 @@ async def list() -> ListGamesResponse:
 @cors_app.route("/start", methods=["POST"])
 async def start() -> Union[Message, StartResponse]:
     gameId = uuid.uuid4()
-    if not (players := (await request.json).get("playerNames")) or len(players) < 2:
+    if (not (players := (await request.json).get("playerNames"))
+            or len(players) < 2):
         return Message(message='Cannot start game. Need player names.')
 
     game = ra.RaGame(
@@ -197,11 +202,12 @@ async def action() -> Union[Message, ActResponse]:
     # Update the initiator of the event.
     return response
 
-asgi_app = socketio.ASGIApp(sio, cors_app)
+asgi_app = socketio.ASGIApp(sio, cors_app)  # pyre-ignore[5]
+
 
 # Clients can join and leave specific rooms to listen to the updates
 # as the game progresses.
-@sio.event
+@sio.event  # pyre-ignore[56]
 async def join(sid: str, data: JoinLeaveRequest) -> None:
     gameIdStr = data.get('gameId')
     if not gameIdStr:
@@ -213,7 +219,7 @@ async def join(sid: str, data: JoinLeaveRequest) -> None:
     sio.enter_room(sid, gameIdStr)
 
 
-@sio.event
+@sio.event  # pyre-ignore[56]
 async def leave(sid: str, data: JoinLeaveRequest) -> None:
     gameIdStr = data.get('gameId')
     if not gameIdStr:
@@ -222,10 +228,11 @@ async def leave(sid: str, data: JoinLeaveRequest) -> None:
 
 
 # Client connections. TODO: Use for auth cookies and stuff.
-@sio.event
-async def connect(sid: str, environ, auth) -> None:
+@sio.event  # pyre-ignore[56]
+async def connect(sid: str, environ, auth) -> None:  # pyre-ignore[2]
     logger.info("Client %s CONNECTED.", sid)
 
-@sio.event
+
+@sio.event  # pyre-ignore[56]
 async def disconnect(sid: str) -> None:
     logger.info("Client %s DISCONNECTED.", sid)
