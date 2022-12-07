@@ -12,6 +12,7 @@ typing-extensions = "*"
 eventlet = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 psycopg2-binary = "*"
+gunicorn = "*"
 
 [dev-packages]
 pyre-check = "*"
