@@ -13,6 +13,7 @@ eventlet = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 psycopg2-binary = "*"
 gunicorn = "*"
+asgiref = "*"
 
 [dev-packages]
 pyre-check = "*"

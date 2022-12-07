@@ -9,6 +9,7 @@ import flask_sqlalchemy
 import os
 import uuid
 
+from asgiref import wsgi
 from flask import abort, request
 from flask_socketio import join_room, leave_room
 from sqlalchemy.ext import mutable
@@ -204,3 +205,5 @@ def on_leave(data: JoinLeaveRequest) -> None:
     if not gameIdStr:
         return
     leave_room(gameIdStr)
+
+asgi_app = wsgi.WsgiToAsgi(app)
