@@ -6,7 +6,6 @@ import flask
 import flask_cors
 import flask_socketio  # pyre-ignore[21]
 import flask_sqlalchemy
-import git
 import os
 import uuid
 
@@ -22,7 +21,7 @@ from typing_extensions import NotRequired, TypedDict
 
 app = flask.Flask(__name__)
 flask_cors.CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URI']
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = flask_sqlalchemy.SQLAlchemy(app)
 # pyre-ignore[5]
@@ -82,52 +81,6 @@ class JoinLeaveRequest(TypedDict):
 @app.route("/", methods=["GET"])
 def hello_world() -> str:
     return "<p>Hello, World!</p>"
-
-
-@app.route("/update_server", methods=["POST"])
-def webhook() -> Message:  # noqa: C901
-    abort_code = 418
-    # Do initial validations on required headers
-    if 'X-Github-Event' not in request.headers:
-        abort(abort_code)
-    if 'X-Github-Delivery' not in request.headers:
-        abort(abort_code)
-    if 'X-Hub-Signature' not in request.headers:
-        abort(abort_code)
-    if not request.is_json:
-        abort(abort_code)
-    if 'User-Agent' not in request.headers:
-        abort(abort_code)
-    ua = request.headers.get('User-Agent')
-    if not ua or not ua.startswith('GitHub-Hookshot/'):
-        abort(abort_code)
-
-    event = request.headers.get('X-GitHub-Event')
-    if event == "ping":
-        return Message(message='Hi!')
-    if event != "push":
-        return Message(message="Wrong event type")
-
-    payload = request.get_json()
-    if payload is None:
-        abort(abort_code)
-
-    if payload['ref'] != 'refs/heads/master':
-        return Message(message='Not master; ignoring')
-
-    repo = git.Repo(os.path.dirname(os.path.realpath(__file__)))
-    origin = repo.remotes.origin
-
-    pull_info = origin.pull()
-
-    if len(pull_info) == 0:
-        return Message(message="Didn't pull any information from remote!")
-    if pull_info[0].flags > 128:
-        return Message(message="Didn't pull any information from remote!")
-
-    commit_hash = pull_info[0].commit.hexsha
-    return Message(
-        message=f'Updated PythonAnywhere server to commit {commit_hash}')
 
 
 class ListGamesResponse(TypedDict):

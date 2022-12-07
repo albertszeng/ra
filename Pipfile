@@ -7,10 +7,10 @@ name = "pypi"
 flask = "*"
 flask-cors = "*"
 flask-sqlalchemy = "*"
-gitpython = "*"
 flask-socketio = "*"
 typing-extensions = "*"
 eventlet = "*"
+uvicorn = {extras = ["standard"], version = "*"}
 
 [dev-packages]
 pyre-check = "*"
