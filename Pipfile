@@ -4,16 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "*"
-flask-cors = "*"
 flask-sqlalchemy = "*"
-flask-socketio = "*"
 typing-extensions = "*"
-eventlet = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 psycopg2-binary = "*"
-gunicorn = "*"
-asgiref = "*"
+python-socketio = "*"
+quart = "*"
+quart-cors = "*"
 
 [dev-packages]
 pyre-check = "*"

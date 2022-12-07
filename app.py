@@ -1,17 +1,20 @@
+import quart.flask_patch
+
 from game import ra
 from game import info
 
 import copy
-import flask
 import flask_cors
-import flask_socketio  # pyre-ignore[21]
 import flask_sqlalchemy
+import logging
 import os
+import quart
+import quart_cors
+import socketio
 import uuid
 
-from asgiref import wsgi
-from flask import abort, request
-from flask_socketio import join_room, leave_room
+
+from quart import abort, request
 from sqlalchemy.ext import mutable
 from sqlalchemy.sql import expression
 
@@ -19,14 +22,21 @@ from sqlalchemy.sql import expression
 from typing import Dict, List, Union
 from typing_extensions import NotRequired, TypedDict
 
+logger = logging.getLogger("uvicorn.info")
 
-app = flask.Flask(__name__)
-flask_cors.CORS(app)
+
+app = quart.Quart(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# For Database support.
 db = flask_sqlalchemy.SQLAlchemy(app)
-# pyre-ignore[5]
-socketio = flask_socketio.SocketIO(app, cors_allowed_origins="*")
+# Creates the database and tables as specified by all db.Model classes.
+async def setup() -> None:
+    async with app.app_context():
+        db.create_all()
+
+_ = setup()
 
 
 class RaGame(mutable.Mutable, ra.RaGame):
@@ -46,11 +56,6 @@ class Game(db.Model):  # pyre-ignore[11]
 
     # This is a pickle-d version of the game so we can restore state.
     data: db.Column = db.Column(db.PickleType, nullable=False)
-
-
-# Creates the database and tables as specified by all db.Model classes.
-with app.app_context():
-    db.create_all()
 
 
 def get_game_repr(game: ra.RaGame) -> str:
@@ -79,8 +84,12 @@ class JoinLeaveRequest(TypedDict):
     gameId: NotRequired[str]
 
 
-@app.route("/", methods=["GET"])
-def hello_world() -> str:
+# For websocket support.
+sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode='asgi')
+cors_app = quart_cors.cors(app, allow_origin="*")
+
+@cors_app.route("/", methods=["GET"])
+async def hello_world() -> str:
     return "<p>Hello, World!</p>"
 
 
@@ -89,19 +98,20 @@ class ListGamesResponse(TypedDict):
     gameIds: List[uuid.UUID]
 
 
-@app.route("/list", methods=["GET", "POST"])
-def list() -> ListGamesResponse:
+@cors_app.route("/list", methods=["GET", "POST"])
+async def list() -> ListGamesResponse:
     """Lists all available games in the database."""
-    results = db.session.scalars(expression.select(Game.id)).all()
+    async with app.app_context():
+        results = db.session.scalars(expression.select(Game.id)).all()
     return ListGamesResponse(
         total=len(results),
         gameIds=[uuid.UUID(gameIdStr) for gameIdStr in results])
 
 
-@app.route("/start", methods=["POST"])
-def start() -> Union[Message, StartResponse]:
+@cors_app.route("/start", methods=["POST"])
+async def start() -> Union[Message, StartResponse]:
     gameId = uuid.uuid4()
-    if not (players := request.json.get("playerNames")) or len(players) < 2:
+    if not (players := (await request.json).get("playerNames")) or len(players) < 2:
         return Message(message='Cannot start game. Need player names.')
 
     game = ra.RaGame(
@@ -112,8 +122,9 @@ def start() -> Union[Message, StartResponse]:
 
     # Add game to database.
     dbGame = Game(id=gameId.hex, data=game)  # pyre-ignore[28]
-    db.session.add(dbGame)
-    db.session.commit()
+    async with app.app_context():
+        db.session.add(dbGame)
+        db.session.commit()
 
     return StartResponse(
         gameId=gameId,
@@ -121,9 +132,9 @@ def start() -> Union[Message, StartResponse]:
         gameAsStr=get_game_repr(game))
 
 
-@app.route("/delete", methods=["POST"])
-def delete() -> Message:
-    if not (gameIdStr := request.json.get('gameId')):
+@cors_app.route("/delete", methods=["POST"])
+async def delete() -> Message:
+    if not (gameIdStr := (await request.json).get('gameId')):
         return Message(message='Invalid request.')
 
     gameId = uuid.UUID(gameIdStr)
@@ -131,18 +142,19 @@ def delete() -> Message:
         return Message(message=f'No game with id {gameId} found.')
 
     socketio.close_room(gameId)
-    db.session.delete(dbGame)
-    db.session.commit()
+    async with app.app_context():
+        db.session.delete(dbGame)
+        db.session.commit()
     return Message(message=f'Deleted game: {gameId}')
 
 
-@app.route("/action", methods=["POST"])
-def action() -> Union[Message, ActResponse]:
+@cors_app.route("/action", methods=["POST"])
+async def action() -> Union[Message, ActResponse]:
     _SERVER_ACTIONS = ['LOAD']
-    if not (gameIdStr := request.json.get('gameId')):
+    if not (gameIdStr := (await request.json).get('gameId')):
         return Message(message=f'Cannot act on non-existing game: {gameIdStr}')
     gameId = uuid.UUID(gameIdStr)
-    action = request.json.get("command")
+    action = (await request.json).get("command")
     if not action:
         return Message(message='No action')
 
@@ -151,8 +163,9 @@ def action() -> Union[Message, ActResponse]:
         if isinstance(action, str):
             return Message(message=f'Unrecognized action: {action}')
 
-    if not (dbGame := db.session.get(Game, gameId.hex)):
-        return Message(message=f'No active game with id: {gameId}')
+    async with app.app_context():
+        if not (dbGame := db.session.get(Game, gameId.hex)):
+            return Message(message=f'No active game with id: {gameId}')
     game = dbGame.data
     if game.game_state.is_game_ended() or action == 'LOAD':
         return ActResponse(
@@ -165,7 +178,8 @@ def action() -> Union[Message, ActResponse]:
         return Message(message=f'Only legal actions are: {legal_actions}')
     t = game.execute_action(action, legal_actions)
     dbGame.data = copy.copy(game)
-    db.session.commit()
+    async with app.app_context():
+        db.session.commit()
 
     with open(game.outfile, "a+") as outfile:
         if action == info.DRAW:
@@ -177,33 +191,41 @@ def action() -> Union[Message, ActResponse]:
         gameState=game.serialize(), gameAsStr=get_game_repr(game))
     # Update all connected clients with the updated game except client that
     # sent the update.
-    socketio.emit(
-        'update', response, to=gameIdStr,
-        skip_sid=request.json.get('socketId'))
+    skip_sid = (await request.json).get('socketId')
+    await sio.emit('update', response, to=gameIdStr, skip_sid=skip_sid)
 
     # Update the initiator of the event.
     return response
 
+asgi_app = socketio.ASGIApp(sio, cors_app)
 
 # Clients can join and leave specific rooms to listen to the updates
 # as the game progresses.
-@socketio.on('join')  # pyre-ignore[56]
-def on_join(data: JoinLeaveRequest) -> None:
+@sio.event
+async def join(sid: str, data: JoinLeaveRequest) -> None:
     gameIdStr = data.get('gameId')
     if not gameIdStr:
         return
     gameId = uuid.UUID(gameIdStr)
-    if not db.session.get(Game, gameId.hex):
-        return
-    print(f'Client: {request.sid} joined room: {gameIdStr}')  # pyre-ignore[16]
-    join_room(gameIdStr)
+    async with app.app_context():
+        if not db.session.get(Game, gameId.hex):
+            return
+    sio.enter_room(sid, gameIdStr)
 
 
-@socketio.on('leave')  # pyre-ignore[56]
-def on_leave(data: JoinLeaveRequest) -> None:
+@sio.event
+async def leave(sid: str, data: JoinLeaveRequest) -> None:
     gameIdStr = data.get('gameId')
     if not gameIdStr:
         return
-    leave_room(gameIdStr)
+    sio.leave_room(sid, gameIdStr)
 
-asgi_app = wsgi.WsgiToAsgi(app)
+
+# Client connections. TODO: Use for auth cookies and stuff.
+@sio.event
+async def connect(sid: str, environ, auth) -> None:
+    logger.info("Client %s CONNECTED.", sid)
+
+@sio.event
+async def disconnect(sid: str) -> None:
+    logger.info("Client %s DISCONNECTED.", sid)
