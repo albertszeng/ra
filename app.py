@@ -1,4 +1,4 @@
-import quart.flask_patch
+import quart.flask_patch  # pyre-ignore[21]
 
 from game import ra
 from game import info
@@ -7,7 +7,7 @@ import copy
 import flask_sqlalchemy
 import logging
 import os
-import quart
+import quart  # pyre-ignore[21]
 import quart_cors
 import socketio  # pyre-ignore[21]
 import uuid
@@ -24,7 +24,7 @@ from typing_extensions import NotRequired, TypedDict
 logger: logging.Logger = logging.getLogger("uvicorn.info")
 
 
-app = quart.Quart(__name__)
+app = quart.Quart(__name__)  # pyre-ignore[5]
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -89,10 +89,10 @@ class JoinLeaveRequest(TypedDict):
 # For websocket support.
 sio = socketio.AsyncServer(  # pyre-ignore[5]
     cors_allowed_origins="*", async_mode='asgi')
-cors_app: quart.app.Quart = quart_cors.cors(app, allow_origin="*")
+cors_app: quart.app.Quart = quart_cors.cors(app, allow_origin="*")  # pyre-ignore[11]
 
 
-@cors_app.route("/", methods=["GET"])
+@cors_app.route("/", methods=["GET"])  # pyre-ignore[56]
 async def hello_world() -> str:
     return "<p>Hello, World!</p>"
 
@@ -102,7 +102,7 @@ class ListGamesResponse(TypedDict):
     gameIds: List[uuid.UUID]
 
 
-@cors_app.route("/list", methods=["GET", "POST"])
+@cors_app.route("/list", methods=["GET", "POST"])  # pyre-ignore[56]
 async def list() -> ListGamesResponse:
     """Lists all available games in the database."""
     async with app.app_context():
@@ -112,7 +112,7 @@ async def list() -> ListGamesResponse:
         gameIds=[uuid.UUID(gameIdStr) for gameIdStr in results])
 
 
-@cors_app.route("/start", methods=["POST"])
+@cors_app.route("/start", methods=["POST"])  # pyre-ignore[56]
 async def start() -> Union[Message, StartResponse]:
     gameId = uuid.uuid4()
     if (not (players := (await request.json).get("playerNames"))
@@ -137,7 +137,7 @@ async def start() -> Union[Message, StartResponse]:
         gameAsStr=get_game_repr(game))
 
 
-@cors_app.route("/delete", methods=["POST"])
+@cors_app.route("/delete", methods=["POST"])  # pyre-ignore[56]
 async def delete() -> Message:
     if not (gameIdStr := (await request.json).get('gameId')):
         return Message(message='Invalid request.')
@@ -153,7 +153,7 @@ async def delete() -> Message:
     return Message(message=f'Deleted game: {gameId}')
 
 
-@cors_app.route("/action", methods=["POST"])
+@cors_app.route("/action", methods=["POST"])  # pyre-ignore[56]
 async def action() -> Union[Message, ActResponse]:
     _SERVER_ACTIONS = ['LOAD']
     if not (gameIdStr := (await request.json).get('gameId')):
