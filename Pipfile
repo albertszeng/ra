@@ -11,6 +11,7 @@ flask-socketio = "*"
 typing-extensions = "*"
 eventlet = "*"
 uvicorn = {extras = ["standard"], version = "*"}
+psycopg2-binary = "*"
 
 [dev-packages]
 pyre-check = "*"
