@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Install 🔧 & Build 🏗️
         env:
-          REACT_APP_BACKEND: 'nautilik.pythonanywhere.com'
+          REACT_APP_BACKEND: 'ra-server.fly.dev'
         run: |
           npm install
           npm run build

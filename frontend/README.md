@@ -12,4 +12,4 @@ Note that by default, hot-reloading is available. The entry-point for the applic
 
 ## Deployment
 
-This is triggered on github.
+This is triggered on github. Backend is now https://ra-server.fly.dev/.
