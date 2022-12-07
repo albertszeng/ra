@@ -11,3 +11,5 @@ The front-end uses the `React` framework.
 Note that by default, hot-reloading is available. The entry-point for the application is `index.tsx` so start there.
 
 ## Deployment
+
+This is triggered on github.

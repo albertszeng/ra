@@ -102,4 +102,4 @@ See `frontend/README.md`.
 
 ## Specifications
 
-Runs on Python3.8.9. Probably works on any Python3 version, but not Python2. 
+Runs on Python3.9. Probably works on any Python3 version, but not Python2. 
