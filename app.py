@@ -105,8 +105,7 @@ class ListGamesResponse(TypedDict):
 @cors_app.route("/list", methods=["GET", "POST"])  # pyre-ignore[56]
 async def list() -> ListGamesResponse:
     """Lists all available games in the database."""
-    async with app.app_context():
-        results = db.session.scalars(expression.select(Game.id)).all()
+    results = db.session.scalars(expression.select(Game.id)).all()
     return ListGamesResponse(
         total=len(results),
         gameIds=[uuid.UUID(gameIdStr) for gameIdStr in results])
@@ -127,9 +126,8 @@ async def start() -> Union[Message, StartResponse]:
 
     # Add game to database.
     dbGame = Game(id=gameId.hex, data=game)  # pyre-ignore[28]
-    async with app.app_context():
-        db.session.add(dbGame)
-        db.session.commit()
+    db.session.add(dbGame)
+    db.session.commit()
 
     return StartResponse(
         gameId=gameId,
@@ -146,10 +144,8 @@ async def delete() -> Message:
     if not (dbGame := db.session.get(Game, gameId.hex)):
         return Message(message=f'No game with id {gameId} found.')
 
-    socketio.close_room(gameId)
-    async with app.app_context():
-        db.session.delete(dbGame)
-        db.session.commit()
+    db.session.delete(dbGame)
+    db.session.commit()
     return Message(message=f'Deleted game: {gameId}')
 
 
@@ -168,9 +164,8 @@ async def action() -> Union[Message, ActResponse]:
         if isinstance(action, str):
             return Message(message=f'Unrecognized action: {action}')
 
-    async with app.app_context():
-        if not (dbGame := db.session.get(Game, gameId.hex)):
-            return Message(message=f'No active game with id: {gameId}')
+    if not (dbGame := db.session.get(Game, gameId.hex)):
+        return Message(message=f'No active game with id: {gameId}')
     game = dbGame.data
     if game.game_state.is_game_ended() or action == 'LOAD':
         return ActResponse(
@@ -181,16 +176,9 @@ async def action() -> Union[Message, ActResponse]:
         return Message(message='Internal Error: No valid actions. ')
     if action not in legal_actions:
         return Message(message=f'Only legal actions are: {legal_actions}')
-    t = game.execute_action(action, legal_actions)
+    game.execute_action(action, legal_actions)
     dbGame.data = copy.copy(game)
-    async with app.app_context():
-        db.session.commit()
-
-    with open(game.outfile, "a+") as outfile:
-        if action == info.DRAW:
-            outfile.write(f"{info.DRAW_OPTIONS[0]} {t}\n")
-        else:
-            outfile.write(f"{action}\n")
+    db.session.commit()
 
     response = ActResponse(
         gameState=game.serialize(), gameAsStr=get_game_repr(game))
@@ -213,9 +201,8 @@ async def join(sid: str, data: JoinLeaveRequest) -> None:
     if not gameIdStr:
         return
     gameId = uuid.UUID(gameIdStr)
-    async with app.app_context():
-        if not db.session.get(Game, gameId.hex):
-            return
+    if not db.session.get(Game, gameId.hex):
+         return
     sio.enter_room(sid, gameIdStr)
 
 

@@ -88,11 +88,13 @@ const DefaultGameState = {
 
 type Game = {
   playerNames: string[];
+  gameLog: ([string, number | null] | number)[],
   gameState: GameState;
 };
 
 const DefaultGame: Game = {
   playerNames: [],
+  gameLog: [],
   gameState: DefaultGameState,
 };
 

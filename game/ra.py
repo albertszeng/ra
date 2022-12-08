@@ -43,6 +43,7 @@ class SerializedRaGame(TypedDict):
     """
     # The players and their respective play-order.
     playerNames: List[str]
+    gameLog: List[Union[Tuple[str, Optional[int]], int]]
     gameState: gs.SerializedGameState
 
 
@@ -53,6 +54,7 @@ class RaGame:
     move_history_file: Optional[str]
     player_names: List[str]
     game_state: gs.GameState
+    logged_moves: List[Union[Tuple[str, Optional[int]], int]]
     MAX_ACTION_ATTEMPTS: Final[int] = 10
 
     def __init__(self,
@@ -61,6 +63,8 @@ class RaGame:
                  outfile: Optional[str] = None,
                  move_history_file: Optional[str] = None) -> None:
         self.num_players = len(player_names)
+        # Initialize empty before loading history.
+        self.logged_moves = []
         if not self.is_valid_num_players(self.num_players):
             print("Invalid number of players. Cannot create game instance...")
             raise ValueError("Invalid number of players")
@@ -70,7 +74,6 @@ class RaGame:
         if self.outfile:
             if not os.path.exists(OUTFILE_FOLDER_NAME):
                 os.makedirs(OUTFILE_FOLDER_NAME)
-
         self.move_history_file = move_history_file
         if self.move_history_file is not None:
             with open(self.move_history_file, "r") as f:
@@ -82,9 +85,11 @@ class RaGame:
         self.game_state = gs.GameState(self.player_names)
 
     def serialize(self) -> SerializedRaGame:
+        print(self)
         return SerializedRaGame(
             playerNames=self.player_names,
-            gameState=self.game_state.serialize()
+            gameState=self.game_state.serialize(),
+            gameLog=self.logged_moves,
         )
 
     def is_valid_num_players(self, num_players: int) -> bool:
@@ -404,7 +409,18 @@ class RaGame:
         raise Exception("Unable to get legal action after "
                         f"{RaGame.MAX_ACTION_ATTEMPTS} attempts")
 
-    def execute_action(  # noqa: C901
+    def execute_action(
+            self,
+            action: int,
+            legal_actions: Iterable[int],
+            tile_to_draw: Optional[int] = None) -> None:
+        t = self.execute_action_internal(action, legal_actions, tile_to_draw)
+        if action == gi.DRAW:
+            self.logged_moves.append((gi.DRAW_OPTIONS[0], t))
+        else:
+            self.logged_moves.append(action)
+
+    def execute_action_internal(  # noqa: C901
             self,
             action: int,
             legal_actions: Iterable[int],
