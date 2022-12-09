@@ -205,8 +205,9 @@ async def join(sid: str, data: JoinLeaveRequest) -> None:
     if not gameIdStr:
         return
     gameId = uuid.UUID(gameIdStr)
-    if not db.session.get(Game, gameId.hex):
-        return
+    async with app.app_context():
+        if not db.session.get(Game, gameId.hex):
+            return
     sio.enter_room(sid, gameIdStr)
     logger.info("Client %s JOINED room: %s", sid, gameIdStr)
     return
