@@ -1,4 +1,4 @@
-import quart.flask_patch  # pyre-ignore[21]
+import quart.flask_patch  # pyre-ignore[21]: Manually patched.
 
 from game import ra
 from game import info
