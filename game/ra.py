@@ -85,7 +85,6 @@ class RaGame:
         self.game_state = gs.GameState(self.player_names)
 
     def serialize(self) -> SerializedRaGame:
-        print(self)
         return SerializedRaGame(
             playerNames=self.player_names,
             gameState=self.game_state.serialize(),
