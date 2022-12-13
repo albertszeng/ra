@@ -9,6 +9,7 @@ import logging
 import os
 import quart  # pyre-ignore[21]
 import quart_cors
+import routes
 import socketio  # pyre-ignore[21]
 import uuid
 
@@ -18,8 +19,7 @@ from sqlalchemy.ext import mutable
 from sqlalchemy.sql import expression
 
 
-from typing import Dict, List, Union
-from typing_extensions import NotRequired, TypedDict
+from typing import Dict, Union
 
 logger: logging.Logger = logging.getLogger("uvicorn.info")
 
@@ -64,32 +64,6 @@ except RuntimeError:  # 'RuntimeError: There is no current event loop...'
     asyncio.run(setup())
 
 
-def get_game_repr(game: ra.RaGame) -> str:
-    legal_actions = ra.get_possible_actions(game.game_state)
-    val = str(game.game_state)
-    if not legal_actions:
-        return val
-    prompt = game.get_action_prompt(legal_actions)
-    return f"{val}\n\n{prompt}"
-
-
-class Message(TypedDict):
-    message: str
-
-
-class ActResponse(TypedDict):
-    gameAsStr: str
-    gameState: ra.SerializedRaGame
-
-
-class StartResponse(ActResponse):
-    gameId: uuid.UUID
-
-
-class JoinLeaveRequest(TypedDict):
-    gameId: NotRequired[str]
-
-
 # For websocket support.
 sio = socketio.AsyncServer(  # pyre-ignore[5]
     cors_allowed_origins="*", async_mode='asgi')
@@ -100,96 +74,69 @@ async def hello_world() -> str:
     return "<p>Hello, World!</p>"
 
 
-class ListGamesResponse(TypedDict):
-    total: int
-    gameIds: List[uuid.UUID]
-
-
 @app.route("/list", methods=["GET", "POST"])  # pyre-ignore[56]
-async def list() -> ListGamesResponse:
-    """Lists all available games in the database."""
+async def list() -> routes.ListGamesResponse:
     results = db.session.scalars(expression.select(Game.id)).all()
-    return ListGamesResponse(
-        total=len(results),
-        gameIds=[uuid.UUID(gameIdStr) for gameIdStr in results])
+    return routes.list(results)
 
 
 @app.route("/start", methods=["POST"])  # pyre-ignore[56]
-async def start() -> Union[Message, StartResponse]:
-    gameId = uuid.uuid4()
+async def start() -> Union[routes.Message, routes.StartResponse]:
     if (not (players := (await request.json).get("playerNames"))
             or len(players) < 2):
-        return Message(message='Cannot start game. Need player names.')
+        return routes.Message(message='Cannot start game. Need player names.')
 
-    game = ra.RaGame(
-        player_names=players,
-        outfile=f"{gameId}.txt"
-    )
-    game.init_game()
+    gameId = uuid.uuid4()
+    response = routes.start(gameId, players)
+    if isinstance(response, dict):
+        return response
+    game, startResponse = response
 
     # Add game to database.
     dbGame = Game(id=gameId.hex, data=game)  # pyre-ignore[28]
     db.session.add(dbGame)
     db.session.commit()
 
-    return StartResponse(
-        gameId=gameId,
-        gameState=game.serialize(),
-        gameAsStr=get_game_repr(game))
+    return startResponse
 
 
 @app.route("/delete", methods=["POST"])  # pyre-ignore[56]
-async def delete() -> Message:
+async def delete() -> routes.Message:
     if not (gameIdStr := (await request.json).get('gameId')):
-        return Message(message='Invalid request.')
+        return routes.Message(message='Invalid request.')
 
     gameId = uuid.UUID(gameIdStr)
     if not (dbGame := db.session.get(Game, gameId.hex)):
-        return Message(message=f'No game with id {gameId} found.')
+        return routes.Message(message=f'No game with id {gameId} found.')
 
     db.session.delete(dbGame)
     db.session.commit()
-    return Message(message=f'Deleted game: {gameId}')
+    return routes.Message(message=f'Deleted game: {gameId}')
 
 
 @app.route("/action", methods=["POST"])  # pyre-ignore[56]
-async def action() -> Union[Message, ActResponse]:
-    _SERVER_ACTIONS = ['LOAD']
+async def action() -> Union[routes.Message, routes.ActResponse]:
     if not (gameIdStr := (await request.json).get('gameId')):
-        return Message(message=f'Cannot act on non-existing game: {gameIdStr}')
+        return routes.Message(
+            message=f'Cannot act on non-existing game: {gameIdStr}')
     gameId = uuid.UUID(gameIdStr)
     action = (await request.json).get("command")
     if not action:
-        return Message(message='No action')
-
-    if action not in _SERVER_ACTIONS:
-        action = ra.parse_action(action)
-        if isinstance(action, str):
-            return Message(message=f'Unrecognized action: {action}')
+        return routes.Message(message='No action')
 
     if not (dbGame := db.session.get(Game, gameId.hex)):
-        return Message(message=f'No active game with id: {gameId}')
+        return routes.Message(message=f'No active game with id: {gameId}')
     game = dbGame.data
     sid = (await request.json).get('socketId')
-    response = ActResponse(
-        gameState=game.serialize(), gameAsStr=get_game_repr(game))
-    if game.game_state.is_game_ended():
-        return response
+
+    response = routes.action(game, action)
     if action == 'LOAD':
         sio.enter_room(sid, gameIdStr)
         return response
 
-    legal_actions = ra.get_possible_actions(game.game_state)
-    if not legal_actions:
-        return Message(message='Internal Error: No valid actions. ')
-    if action not in legal_actions:
-        return Message(message=f'Only legal actions are: {legal_actions}')
-    game.execute_action(action, legal_actions)
     dbGame.data = copy.copy(game)
     db.session.commit()
 
-    response = ActResponse(
-        gameState=game.serialize(), gameAsStr=get_game_repr(game))
     # Update all connected clients with the updated game except client that
     # sent the update.
     await sio.emit('update', response, to=gameIdStr, skip_sid=sid)
@@ -201,7 +148,7 @@ async def action() -> Union[Message, ActResponse]:
 # Clients can join and leave specific rooms to listen to the updates
 # as the game progresses.
 @sio.event  # pyre-ignore[56]
-async def join(sid: str, data: JoinLeaveRequest) -> None:
+async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
     gameIdStr = data.get('gameId')
     if not gameIdStr:
         return
@@ -215,7 +162,7 @@ async def join(sid: str, data: JoinLeaveRequest) -> None:
 
 
 @sio.event  # pyre-ignore[56]
-async def leave(sid: str, data: JoinLeaveRequest) -> None:
+async def leave(sid: str, data: routes.JoinLeaveRequest) -> None:
     gameIdStr = data.get('gameId')
     if not gameIdStr:
         return

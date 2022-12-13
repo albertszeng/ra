@@ -20,7 +20,8 @@ def make_first_move_ai(game_state: gs.GameState) -> int:
 
 
 def get_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Ra Game Instance for a single-player game against an AI')
+    parser = argparse.ArgumentParser(
+        description='Ra Game Instance for a single-player game against an AI')
 
     # parser.add_argument('--num_players', '-n', type=int, default=2,
     #                     help='number of players in the game')
