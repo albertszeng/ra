@@ -3,7 +3,7 @@ FROM python:3.9-alpine
 RUN apk update && apk upgrade && apk add curl bash git
 
 ENV PYENV_ROOT $HOME/.pyenv
-ENV DATABASE_URL sqlite:////app/game.db
+ENV DATABASE_URL postgresql://postgres:cWmiSFOpWIAzkDa@ra-db.internal:5432
 
 COPY . $HOME/app
 WORKDIR $HOME/app
