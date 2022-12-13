@@ -64,11 +64,11 @@ except RuntimeError:  # 'RuntimeError: There is no current event loop...'
 
 
 def get_game_repr(game: ra.RaGame) -> str:
-    legal_actions = game.get_possible_actions()
+    legal_actions = ra.get_possible_actions(game.game_state)
     val = str(game.game_state)
     if not legal_actions:
         return val
-    prompt = game.get_action_prompt(legal_actions, helpful_prompt=True)
+    prompt = game.get_action_prompt(legal_actions)
     return f"{val}\n\n{prompt}"
 
 

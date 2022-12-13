@@ -13,6 +13,7 @@ from typing import (
     Final,
     Iterator,
     List,
+    Mapping,
     Optional,
     Tuple,
     TypedDict,
@@ -24,7 +25,7 @@ OUTFILE_FOLDER_NAME: str = "move_histories"
 DEFAULT_OUTFILE_PREFIX: str = "move_history"
 
 
-def parse_action(action: str) -> Union[int, str]:
+def parse_action(action: str) -> int:
     action_lower = action.lower()
 
     # try to parse action
@@ -33,7 +34,7 @@ def parse_action(action: str) -> Union[int, str]:
             return a
 
     # return unrecognized action
-    return action_lower
+    return -1
 
 
 class SerializedRaGame(TypedDict):
@@ -45,6 +46,122 @@ class SerializedRaGame(TypedDict):
     playerNames: List[str]
     gameLog: List[Union[Tuple[str, Optional[int]], int]]
     gameState: gs.SerializedGameState
+
+
+# Get the possible actions for a gamestate
+def get_possible_actions(game_state: gs.GameState) -> Optional[List[int]]:  # noqa: C901
+        """Returns a list of legal actions."""
+        if game_state.is_game_ended():
+            return None
+
+        legal_actions = []
+
+        if game_state.is_auction_started():  # if it is an auction
+            # find max auction sun
+            auction_suns = game_state.get_auction_suns()
+            max_auction_sun = float("-inf")
+            if len([el for el in auction_suns if el is not None]) > 0:
+                max_auction_sun = max(
+                    [el for el in auction_suns if el is not None])
+
+            # add a legal action for every player sun greater than the max
+            # bid sun
+            current_player_usable_sun = (
+                game_state.get_current_player_usable_sun())
+            possible_bid_actions = [gi.BID_1, gi.BID_2, gi.BID_3, gi.BID_4]
+            for i in range(len(current_player_usable_sun)):
+                if current_player_usable_sun[i] > max_auction_sun:
+                    legal_actions.append(possible_bid_actions[i])
+
+            # if current player is not the auction starter or auction was
+            # forced or someone else has bid, then player can pass
+            currPlayer = game_state.get_current_player()
+            if (currPlayer != game_state.get_auction_start_player() or
+                    game_state.auction_was_forced() or
+                    game_state.get_num_auction_suns() > 0):
+                legal_actions.append(gi.BID_NOTHING)
+
+        else:  # if it is not an auction
+            # if disaster must be resolved
+            if (game_state.get_num_mons_to_discard() > 0 or
+                    game_state.get_num_civs_to_discard() > 0):
+
+                player = game_state.get_auction_winning_player()
+                assert player is not None
+                winning_player_collection = (
+                    game_state.get_player_collection(player))
+
+                # if there are civilizations to be discarded
+                if game_state.get_num_civs_to_discard() > 0:
+                    possible_discards = [
+                        gi.DISCARD_ASTR,
+                        gi.DISCARD_AGR,
+                        gi.DISCARD_WRI,
+                        gi.DISCARD_REL,
+                        gi.DISCARD_ART
+                    ]
+                    # the number of civilization tiles
+                    for i in range(gi.NUM_CIVS):
+                        if winning_player_collection[
+                                gi.STARTING_INDEX_OF_CIVS + i] > 0:
+                            legal_actions.append(possible_discards[i])
+
+                # if there are monuments to be discarded
+                elif game_state.get_num_mons_to_discard() > 0:
+                    possible_discards = [
+                        gi.DISCARD_FORT,
+                        gi.DISCARD_OBEL,
+                        gi.DISCARD_PAL,
+                        gi.DISCARD_PYR,
+                        gi.DISCARD_TEM,
+                        gi.DISCARD_STAT,
+                        gi.DISCARD_STE,
+                        gi.DISCARD_SPH
+                    ]
+                    # the number of civilization tiles
+                    for i in range(gi.NUM_MONUMENTS):
+                        if winning_player_collection[
+                                gi.STARTING_INDEX_OF_MONUMENTS + i] > 0:
+                            legal_actions.append(possible_discards[i])
+
+                # this should never be reached
+                else:
+                    raise Exception(
+                        "Error getting possible actions for disaster "
+                        "resolution")
+
+            # if no disaster to resolve
+            else:
+                # add start auction option
+                legal_actions.append(gi.AUCTION)
+
+                num_auction_tiles = game_state.get_num_auction_tiles()
+                max_auction_tiles = game_state.get_max_auction_tiles()
+                if num_auction_tiles < max_auction_tiles:
+                    # add draw option if auction tiles not full
+                    legal_actions.append(gi.DRAW)
+
+                    # if golden god exists, add god options for each auction
+                    # tile
+                    players = game_state.get_current_player_collection()
+                    if players[gi.INDEX_OF_GOD] > 0:
+                        possible_takes = [
+                            gi.GOD_1,
+                            gi.GOD_2,
+                            gi.GOD_3,
+                            gi.GOD_4,
+                            gi.GOD_5,
+                            gi.GOD_6,
+                            gi.GOD_7,
+                            gi.GOD_8
+                        ]
+
+                        auction_tiles = game_state.get_auction_tiles()
+                        for i in range(num_auction_tiles):
+                            if not gi.index_is_disaster(auction_tiles[i]):
+                                legal_actions.append(possible_takes[i])
+
+        return sorted(legal_actions)
 
 
 class RaGame:
@@ -61,7 +178,9 @@ class RaGame:
                  player_names: List[str],
                  randomize_play_order: bool = True,
                  outfile: Optional[str] = None,
-                 move_history_file: Optional[str] = None) -> None:
+                 move_history_file: Optional[str] = None,
+                 # dict mapping player-name to ai_function
+                 ai_player_action_functions: Optional[Mapping[str, Callable[[gs.GameState], int]]] = None) -> None:
         self.num_players = len(player_names)
         # Initialize empty before loading history.
         self.logged_moves = []
@@ -69,6 +188,13 @@ class RaGame:
             print("Invalid number of players. Cannot create game instance...")
             raise ValueError("Invalid number of players")
         self.player_names = player_names
+
+        # Verify AI action functions dict has valid player names
+        self.ai_player_action_functions: Mapping[str, Callable[[gs.GameState], int]] = {}
+        if ai_player_action_functions is not None:
+            self.ai_player_action_functions = ai_player_action_functions
+        for player_name in self.ai_player_action_functions.keys():
+            assert player_name in self.player_names, f"Player name '{player_name}' was provided in 'ai_player_action_functions', but not in 'player_names'"
 
         self.outfile = f"{OUTFILE_FOLDER_NAME}/{outfile}" if outfile else None
         if self.outfile:
@@ -239,148 +365,41 @@ class RaGame:
 
         return
 
-    def get_possible_actions(self) -> Optional[List[int]]:  # noqa: C901
-        """Returns a list of legal actions."""
-        if self.game_state.is_game_ended():
-            return None
-
-        legal_actions = []
-
-        if self.game_state.is_auction_started():  # if it is an auction
-            # find max auction sun
-            auction_suns = self.game_state.get_auction_suns()
-            max_auction_sun = float("-inf")
-            if len([el for el in auction_suns if el is not None]) > 0:
-                max_auction_sun = max(
-                    [el for el in auction_suns if el is not None])
-
-            # add a legal action for every player sun greater than the max
-            # bid sun
-            current_player_usable_sun = (
-                self.game_state.get_current_player_usable_sun())
-            possible_bid_actions = [gi.BID_1, gi.BID_2, gi.BID_3, gi.BID_4]
-            for i in range(len(current_player_usable_sun)):
-                if current_player_usable_sun[i] > max_auction_sun:
-                    legal_actions.append(possible_bid_actions[i])
-
-            # if current player is not the auction starter or auction was
-            # forced or someone else has bid, then player can pass
-            currPlayer = self.game_state.get_current_player()
-            if (currPlayer != self.game_state.get_auction_start_player() or
-                    self.game_state.auction_was_forced() or
-                    self.game_state.get_num_auction_suns() > 0):
-                legal_actions.append(gi.BID_NOTHING)
-
-        else:  # if it is not an auction
-            # if disaster must be resolved
-            if (self.game_state.get_num_mons_to_discard() > 0 or
-                    self.game_state.get_num_civs_to_discard() > 0):
-
-                player = self.game_state.get_auction_winning_player()
-                assert player is not None
-                winning_player_collection = (
-                    self.game_state.get_player_collection(player))
-
-                # if there are civilizations to be discarded
-                if self.game_state.get_num_civs_to_discard() > 0:
-                    possible_discards = [
-                        gi.DISCARD_ASTR,
-                        gi.DISCARD_AGR,
-                        gi.DISCARD_WRI,
-                        gi.DISCARD_REL,
-                        gi.DISCARD_ART
-                    ]
-                    # the number of civilization tiles
-                    for i in range(gi.NUM_CIVS):
-                        if winning_player_collection[
-                                gi.STARTING_INDEX_OF_CIVS + i] > 0:
-                            legal_actions.append(possible_discards[i])
-
-                # if there are monuments to be discarded
-                elif self.game_state.get_num_mons_to_discard() > 0:
-                    possible_discards = [
-                        gi.DISCARD_FORT,
-                        gi.DISCARD_OBEL,
-                        gi.DISCARD_PAL,
-                        gi.DISCARD_PYR,
-                        gi.DISCARD_TEM,
-                        gi.DISCARD_STAT,
-                        gi.DISCARD_STE,
-                        gi.DISCARD_SPH
-                    ]
-                    # the number of civilization tiles
-                    for i in range(gi.NUM_MONUMENTS):
-                        if winning_player_collection[
-                                gi.STARTING_INDEX_OF_MONUMENTS + i] > 0:
-                            legal_actions.append(possible_discards[i])
-
-                # this should never be reached
-                else:
-                    raise Exception(
-                        "Error getting possible actions for disaster "
-                        "resolution")
-
-            # if no disaster to resolve
-            else:
-                # add start auction option
-                legal_actions.append(gi.AUCTION)
-
-                num_auction_tiles = self.game_state.get_num_auction_tiles()
-                max_auction_tiles = self.game_state.get_max_auction_tiles()
-                if num_auction_tiles < max_auction_tiles:
-                    # add draw option if auction tiles not full
-                    legal_actions.append(gi.DRAW)
-
-                    # if golden god exists, add god options for each auction
-                    # tile
-                    players = self.game_state.get_current_player_collection()
-                    if players[gi.INDEX_OF_GOD] > 0:
-                        possible_takes = [
-                            gi.GOD_1,
-                            gi.GOD_2,
-                            gi.GOD_3,
-                            gi.GOD_4,
-                            gi.GOD_5,
-                            gi.GOD_6,
-                            gi.GOD_7,
-                            gi.GOD_8
-                        ]
-
-                        auction_tiles = self.game_state.get_auction_tiles()
-                        for i in range(num_auction_tiles):
-                            if not gi.index_is_disaster(auction_tiles[i]):
-                                legal_actions.append(possible_takes[i])
-
-        return sorted(legal_actions)
-
-    # get an action from a human user
-
-    def get_action_prompt(self,
-                          legal_actions: List[int],
-                          helpful_prompt: bool = True) -> str:
+    def get_action_prompt(self, legal_actions: List[int]) -> str:
         prompt = "User Action: "
-        if helpful_prompt:
-            possible_actions_lst = [
-                gi.action_option_lst[action][2] for action in legal_actions
-            ]
-            possible_actions_str = "\n\t".join([
-                f"{i}: {action}"
-                for i, action in enumerate(possible_actions_lst)])
-            prompt = f"""Possible actions:
-        {possible_actions_str}
 
-            User Action: """
+        possible_actions_lst = [
+            gi.action_option_lst[action][2] for action in legal_actions
+        ]
+        possible_actions_str = "\n\t".join([
+            f"{i}: {action}"
+            for i, action in enumerate(possible_actions_lst)])
+        prompt = f"""Possible actions:
+    {possible_actions_str}
+
+        User Action: """
 
         return prompt
 
-    def get_action_from_user(self,
-                             legal_actions: List[int],
-                             helpful_prompt: bool = True) -> Union[int, str]:
+    # get an action from a human user
+    def get_action_from_user(self, game_state: gs.GameState) -> int:
+        legal_actions = get_possible_actions(game_state)
+        assert legal_actions is not None, "cannot get action from user because no legal actions"
 
-        prompt = self.get_action_prompt(legal_actions, helpful_prompt)
+        prompt = self.get_action_prompt(legal_actions)
         action = input(prompt)
 
         return parse_action(action)
+
+    # Fetch the function that should make the current player's action
+    def get_action_function(self) -> Callable[[gs.GameState], int]:
+        # Use AI function if provided
+        current_player_name = self.game_state.get_current_player_name()
+        if current_player_name in self.ai_player_action_functions:
+            return self.ai_player_action_functions[current_player_name]
+
+        # If no AI function, ask user for input
+        return self.get_action_from_user
 
     def get_action(
             self,
@@ -393,11 +412,8 @@ class RaGame:
         """
         for _i in range(RaGame.MAX_ACTION_ATTEMPTS):
             # get an action
-            action = None
-            if action_making_func is not None:  # AI makes action
-                action = action_making_func(self.game_state)
-            else:  # human makes action
-                action = self.get_action_from_user(legal_actions)
+            action_function = self.get_action_function()
+            action = action_function(self.game_state)
 
             # return action if it is legal
             if action in legal_actions:
@@ -743,7 +759,7 @@ class RaGame:
         def run() -> Iterator[Tuple[int, Optional[int]]]:
             while not self.game_state.is_game_ended():
                 self.game_state.print_game_state()
-                legal_actions = self.get_possible_actions()
+                legal_actions = get_possible_actions(self.game_state)
                 assert legal_actions is not None, "Game has not ended."
                 action = self.get_action(legal_actions)
                 t = self.execute_action(action, legal_actions)
@@ -768,7 +784,7 @@ class RaGame:
 
         def loader() -> Iterator[str]:
             for action in action_lst:
-                legal_actions = self.get_possible_actions()
+                legal_actions = get_possible_actions(self.game_state)
                 # TODO(zeng): Maybe crashing is a bit harsh. Consider ignoring.
                 assert legal_actions is not None
 

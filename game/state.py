@@ -646,6 +646,9 @@ class GameState:
     def get_current_player(self) -> int:
         return self.current_player
 
+    def get_current_player_name(self) -> str:
+        return self.player_names[self.current_player]
+
     def get_current_player_usable_sun(self) -> List[int]:
         return self.player_states[self.current_player].get_usable_sun()
 
