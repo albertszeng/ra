@@ -179,7 +179,7 @@ async def action() -> Union[Message, ActResponse]:
         sio.enter_room(sid, gameIdStr)
         return response
 
-    legal_actions = game.get_possible_actions()
+    legal_actions = ra.get_possible_actions(game.game_state)
     if not legal_actions:
         return Message(message='Internal Error: No valid actions. ')
     if action not in legal_actions:
