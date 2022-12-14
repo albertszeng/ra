@@ -682,7 +682,7 @@ class GameState:
     def player_scores_as_str(self) -> str:
         val = "Scores: \n"
         for state in self.player_states:
-            val += f"\t{state.get_player_name()}: \t\
+            val += f"    {state.get_player_name()}:     \
                 {state.get_player_points()} points\n"
         return val
 
@@ -695,7 +695,7 @@ class GameState:
     def auction_tiles_as_str(self) -> str:
         val = "Auction Tiles: \n"
         for tile_index in self.auction_tiles:
-            val += f"\t{gi.index_to_tile_name(tile_index)}\n"
+            val += f"    {gi.index_to_tile_name(tile_index)}\n"
         return val
 
     def __str__(self) -> str:

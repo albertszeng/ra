@@ -188,7 +188,6 @@ class RaGame:
         # Initialize empty before loading history.
         self.logged_moves = []
         if not self.is_valid_num_players(self.num_players):
-            print("Invalid number of players. Cannot create game instance...")
             raise ValueError("Invalid number of players")
         self.player_names = player_names
 
@@ -377,7 +376,7 @@ class RaGame:
         possible_actions_lst = [
             gi.action_option_lst[action][2] for action in legal_actions
         ]
-        possible_actions_str = "\n\t".join([
+        possible_actions_str = "\n    ".join([
             f"{i}: {action}"
             for i, action in enumerate(possible_actions_lst)])
         prompt = f"""Possible actions:

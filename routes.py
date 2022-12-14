@@ -61,11 +61,11 @@ def start(gameId: uuid.UUID,
 def action(game: ra.RaGame, move: str) -> Union[Message, ActResponse]:
     response = ActResponse(
         gameState=game.serialize(), gameAsStr=get_game_repr(game))
-    if move == "LOAD":
+    if move.upper() == "LOAD":
         return response
 
     parsedMove = ra.parse_action(move)
-    if isinstance(parsedMove, str):
+    if parsedMove < 0:
         return Message(message=f'Unrecognized action: {parsedMove}')
 
     if game.game_state.is_game_ended():
