@@ -1,3 +1,4 @@
+# flake8: noqa
 import routes
 
 import random
@@ -7,6 +8,8 @@ import uuid
 from game import ra
 from unittest import mock
 
+from typing import cast
+
 
 class RoutesTest(unittest.TestCase):
     def test_get_game_repr(self) -> None:
@@ -14,7 +17,7 @@ class RoutesTest(unittest.TestCase):
         self.maxDiff = None
         game = ra.RaGame(player_names=['P1', 'P2'], randomize_play_order=True)
         self.assertEqual(routes.get_game_repr(game),
-                         """-------------------------------------------------
+                         r"""-------------------------------------------------
 Player: P2
 
 Sun of P2
@@ -119,17 +122,18 @@ Possible actions:
             player_names=['Player 1', 'Player 2'],
         )
         game.init_game()
-        response = routes.action(game, 'INVALID')
-        self.assertIn("Unrecognized", response.get("message"),
-                      response.get("message"))
+        response = cast(routes.Message, routes.action(game, 'INVALID'))
+        self.assertIsNotNone(response['message'])
+        self.assertIn("Unrecognized", response['message'])
 
     def test_action_illegal_move(self) -> None:
         game = ra.RaGame(
             player_names=['Player 1', 'Player 2'],
         )
         game.init_game()
-        self.assertIn('Only legal actions', routes.action(
-            game, 'god1').get("message"))
+        response = cast(routes.Message, routes.action(game, 'god1'))
+        self.assertIsNotNone(response['message'])
+        self.assertIn('Only legal actions', response['message'])
 
     def test_action(self) -> None:
         game = ra.RaGame(
@@ -138,6 +142,9 @@ Possible actions:
         game.init_game()
         response = routes.action(game, 'draw')
 
-        self.assertEqual(game.logged_moves[0][0], '0')
+        self.assertGreater(len(game.logged_moves), 0)
+        firstMove = game.logged_moves[0]
+        self.assertTrue(isinstance(firstMove, tuple))
+        self.assertEqual(firstMove[0], '0')
         self.assertEqual(response, routes.ActResponse(
             gameState=game.serialize(), gameAsStr=routes.get_game_repr(game)))
