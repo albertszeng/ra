@@ -14,7 +14,7 @@ function CardGrid({
   },
 }: CardGridProps): JSX.Element {
   const renderRaTile = (idx: number) => (
-    <Grid key={idx} xs={1}>
+    <Grid key={idx} xs={2} sm={1}>
       <RaTile filled={idx < numRasThisRound} />
     </Grid>
   );

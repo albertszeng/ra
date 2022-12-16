@@ -1,8 +1,9 @@
 import React from 'react';
 
-import { Badge, Button, ButtonGroup } from '@mui/material';
-import { Leaderboard, StrikethroughS, WbSunny } from '@mui/icons-material';
+import { Badge } from '@mui/material';
+import { Leaderboard } from '@mui/icons-material';
 
+import PlayerActions from './PlayerActions';
 import type { Player } from '../libs/game';
 
 type PlayerInfoProps = {
@@ -25,33 +26,14 @@ function PlayerInfo({
         {`Name: ${playerName}`}
       </p>
       <p>{`Tiles: ${collection.toString()}`}</p>
-      <ButtonGroup
-        disabled={!isActive || !isCurrent || !auctionStarted}
-        size="large"
-        color="success"
-        aria-label="large button group"
-      >
-        {usableSun.map((sun, idx) => (
-          <Button
-            endIcon={<WbSunny />}
-            variant="contained"
-            key={sun}
-            onClick={() => bidWithSun(idx)}
-          >
-            {sun}
-          </Button>
-        ))}
-        {unusableSun.map((sun) => (
-          <Button
-            disabled
-            endIcon={<StrikethroughS />}
-            variant="contained"
-            key={sun}
-          >
-            {sun}
-          </Button>
-        ))}
-      </ButtonGroup>
+      <PlayerActions
+        isActive={isActive}
+        isCurrent={isCurrent}
+        auctionStarted={auctionStarted}
+        availableSun={usableSun}
+        unavailableSun={unusableSun}
+        bidWithSun={bidWithSun}
+      />
       <Badge badgeContent={points} color="secondary">
         <Leaderboard fontSize="large" color="action" />
       </Badge>

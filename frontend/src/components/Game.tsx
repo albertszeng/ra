@@ -126,10 +126,11 @@ function Game(): JSX.Element {
     }
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, [gameId]);
-  const handleActionBid = useCallback(async (idx: number) => {
+  const handleBidAction = useCallback(async (idx: number) => {
     if (!gameId) {
       return;
     }
+    // 1-indexed. 0 corresponds to passing.
     const { message, gameState } = await handleCommand(gameId, `B${idx + 1}`);
     if (message || !gameState) {
       setAlertMsg(message || 'Unknown error.');
@@ -159,7 +160,7 @@ function Game(): JSX.Element {
             auctionStarted={auctionStarted}
             active={activePlayers}
             current={currentPlayer}
-            bidWithSun={handleActionBid}
+            bidWithSun={handleBidAction}
           />
           <Snackbar
             open={!!alertMsg}
