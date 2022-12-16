@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 
-import Grid from '@mui/material/Unstable_Grid2';
+import { Leaderboard } from '@mui/icons-material';
+import { TabContext, TabList, TabPanel } from '@mui/lab';
+import { Badge, Box, Tab } from '@mui/material';
 
 import PlayerInfo from './PlayerInfo';
 import type { Player } from '../libs/game';
@@ -31,22 +33,58 @@ type PlayersInfoProps = {
 function PlayersInfo({
   players, active, current, auctionStarted, bidWithSun,
 }: PlayersInfoProps) {
+  const [value, setValue] = React.useState(current.toString());
+  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+    setValue(newValue);
+  };
+  // Update value when current changes.
+  useEffect(() => setValue(current.toString()), [current]);
   return (
-    <Grid container spacing={{ xs: 1, md: 2 }}>
-      {players.map((player: Player, idx: number) => (
-        <Grid key={player.playerName} xs={12}>
-          <PlayerBox isActive={active[idx]} isCurrent={current === idx}>
-            <PlayerInfo
-              auctionStarted={auctionStarted}
-              data={players[idx]}
+    <Box sx={{ width: '100%', typography: 'body1' }}>
+      <TabContext value={value}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <TabList
+            onChange={handleChange}
+            centered
+            textColor="primary"
+            indicatorColor="primary"
+            aria-label="player tabs"
+          >
+            {players.map(({ playerName, points }, idx) => (
+              <Tab
+                iconPosition="start"
+                key={playerName}
+                label={playerName}
+                value={idx.toString()}
+                disabled={!active[idx]}
+                icon={(
+                  <Badge badgeContent={points} color="secondary">
+                    <Leaderboard fontSize="large" color="action" />
+                  </Badge>
+                )}
+              />
+            ))}
+          </TabList>
+        </Box>
+        {players.map((player: Player, idx: number) => (
+          <TabPanel value={idx.toString()}>
+            <PlayerBox
+              key={player.playerName}
               isActive={active[idx]}
               isCurrent={current === idx}
-              bidWithSun={bidWithSun}
-            />
-          </PlayerBox>
-        </Grid>
-      ))}
-    </Grid>
+            >
+              <PlayerInfo
+                auctionStarted={auctionStarted}
+                data={players[idx]}
+                isActive={active[idx]}
+                isCurrent={current === idx}
+                bidWithSun={bidWithSun}
+              />
+            </PlayerBox>
+          </TabPanel>
+        ))}
+      </TabContext>
+    </Box>
   );
 }
 

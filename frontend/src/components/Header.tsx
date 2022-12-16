@@ -21,7 +21,6 @@ const MainHeader = styled.header`
 const Heading = styled.h1`
   color: var(--violet-blue-crayola);
   font-size: min(8vw, 3rem);
-  padding-inline: 2rem;
 `;
 
 function Header() {
