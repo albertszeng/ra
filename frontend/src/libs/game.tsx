@@ -172,6 +172,7 @@ export type {
   GameState,
   ListGamesResponse,
   Player,
+  Tile,
 };
 
 export {

@@ -163,6 +163,7 @@ function Game(): JSX.Element {
           />
           <Snackbar
             open={!!alertMsg}
+            autoHideDuration={2500}
             onClose={() => setAlertMsg('')}
           >
             <Alert

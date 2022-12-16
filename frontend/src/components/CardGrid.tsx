@@ -21,8 +21,7 @@ function CardGrid({
   const renderAuctionTile = (idx: number) => {
     let tile = <SlotTile />;
     if (idx < auctionTiles.length) {
-      const { name } = auctionTiles[idx];
-      tile = <Tile altText={name} imageSrc={`${process.env.PUBLIC_URL}/assets/tiles/${name}.png`} />;
+      tile = <Tile tile={auctionTiles[idx]} />;
     }
     return (
       <Grid key={idx} xs={2} sm={1}>
