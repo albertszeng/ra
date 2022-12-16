@@ -19,12 +19,14 @@ jobs:
         with:
           filters: |
             backend:
+              - '.github/**'
               - '*.py'
               - 'Dockerfile'
               - '*.toml'
               - 'Pipfile*'
               - 'game/**'
             frontend:
+              - '.github/**'
               - 'frontend/**'
   deploy-server:
     needs: changes
