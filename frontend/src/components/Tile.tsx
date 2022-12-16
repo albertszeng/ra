@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Badge,
   Card,
   CardMedia,
   Tooltip,
@@ -70,7 +71,20 @@ function RaTile({ filled }: RaTileProps) : JSX.Element {
   return (filled) ? <FilledRaTile /> : <EmptyRaTile />;
 }
 
+type PlayerTileProps = {
+  tile: TileInfo;
+  count: number;
+};
+function PlayerTile({ tile, count }: PlayerTileProps): JSX.Element {
+  return (
+    <Badge color="secondary" badgeContent={count}>
+      <Tile tile={tile} />
+    </Badge>
+  );
+}
+
 export {
+  PlayerTile,
   RaTile,
   SlotTile,
   Tile,

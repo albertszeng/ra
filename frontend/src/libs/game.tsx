@@ -1,18 +1,5 @@
 import io from 'socket.io-client';
 
-type Player = {
-  // The tiles the player currently has in his collection.
-  collection: string[];
-  // The current point total of the player.
-  points: number;
-  // The full name of the player.
-  playerName: string;
-  // The list of sun the player can bid.
-  usableSun: number[];
-  // The List of sun the player has previously bid.
-  unusableSun: number[];
-};
-
 const DefaultPlayer: Player = {
   collection: [],
   points: 0,
@@ -29,6 +16,19 @@ type Tile = {
   startingNum: number;
   // Whether we should keep or not.
   toKeep: boolean;
+};
+
+type Player = {
+  // The tiles the player currently has in his collection.
+  collection: Tile[];
+  // The current point total of the player.
+  points: number;
+  // The full name of the player.
+  playerName: string;
+  // The list of sun the player can bid.
+  usableSun: number[];
+  // The List of sun the player has previously bid.
+  unusableSun: number[];
 };
 
 type GameState = {

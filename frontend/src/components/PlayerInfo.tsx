@@ -4,6 +4,7 @@ import { Badge } from '@mui/material';
 import { Leaderboard } from '@mui/icons-material';
 
 import PlayerActions from './PlayerActions';
+import PlayerTiles from './PlayerTiles';
 import type { Player } from '../libs/game';
 
 type PlayerInfoProps = {
@@ -19,13 +20,13 @@ function PlayerInfo({
   data: {
     playerName, points, collection, usableSun, unusableSun,
   }, isActive, isCurrent, auctionStarted, bidWithSun,
-}: PlayerInfoProps) {
+}: PlayerInfoProps): JSX.Element {
   return (
     <>
       <p>
         {`Name: ${playerName}`}
       </p>
-      <p>{`Tiles: ${collection.toString()}`}</p>
+      <PlayerTiles tiles={collection} />
       <PlayerActions
         isActive={isActive}
         isCurrent={isCurrent}
