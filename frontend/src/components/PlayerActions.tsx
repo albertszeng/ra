@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Button, ButtonGroup, useMediaQuery } from '@mui/material';
+import { Button, ButtonGroup } from '@mui/material';
 import { NextPlan, StrikethroughS, WbSunny } from '@mui/icons-material';
 
 type PlayerActionsProps = {
@@ -16,12 +16,10 @@ type PlayerActionsProps = {
 function PlayerActions({
   availableSun, unavailableSun, isActive, isCurrent, auctionStarted, bidWithSun,
 }: PlayerActionsProps) {
-  const largeScreen = useMediaQuery('(min-width:800px)');
   return (
     <>
       <ButtonGroup
         disabled={!isActive || !isCurrent || !auctionStarted}
-        orientation={(largeScreen) ? 'horizontal' : 'vertical'}
         size="large"
         color="success"
         aria-label="available sun button group"
@@ -47,7 +45,6 @@ function PlayerActions({
       </ButtonGroup>
       <ButtonGroup
         disabled={!isActive || !isCurrent || !auctionStarted}
-        orientation={(largeScreen) ? 'horizontal' : 'vertical'}
         size="large"
         color="success"
         aria-label="unavailable sun button group"

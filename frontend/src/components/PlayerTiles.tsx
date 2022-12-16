@@ -1,8 +1,16 @@
 import React from 'react';
 
-import Grid from '@mui/material/Unstable_Grid2';
+import {
+  Avatar,
+  ImageList,
+  ImageListItem,
+  ImageListItemBar,
+  useMediaQuery,
+} from '@mui/material';
+import { deepPurple } from '@mui/material/colors';
+import { useTheme } from '@mui/material/styles';
 
-import { PlayerTile } from './Tile';
+import { Tile } from './Tile';
 import type { Tile as TileInfo } from '../libs/game';
 
 type PlayerTilesProps = {
@@ -10,18 +18,26 @@ type PlayerTilesProps = {
 };
 
 function PlayerTiles({ tiles }: PlayerTilesProps): JSX.Element {
+  const theme = useTheme();
+  const matchDownMd = useMediaQuery(theme.breakpoints.down('sm'));
+  const height = 100;
   const renderTile = (tile: TileInfo) => {
-    const { name } = tile;
+    const { name, tileType } = tile;
     return (
-      <Grid key={name} xs={2} sm={1}>
-        <PlayerTile tile={tile} count={1} />
-      </Grid>
+      <ImageListItem key={name}>
+        <Tile tile={tile} />
+        <ImageListItemBar
+          title={name}
+          subtitle={tileType}
+          actionIcon={<Avatar sx={{ bgcolor: deepPurple[500] }}>1</Avatar>}
+        />
+      </ImageListItem>
     );
   };
   return (
-    <Grid container spacing={{ xs: 1 }} columns={{ xs: tiles.length }}>
+    <ImageList sx={{ height }} cols={(matchDownMd) ? 3 : 5} rowHeight={height}>
       {tiles.map(renderTile)}
-    </Grid>
+    </ImageList>
   );
 }
 

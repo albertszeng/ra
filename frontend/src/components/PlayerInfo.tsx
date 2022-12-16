@@ -1,5 +1,7 @@
 import React from 'react';
 
+import Grid from '@mui/material/Unstable_Grid2';
+
 import { Badge } from '@mui/material';
 import { Leaderboard } from '@mui/icons-material';
 
@@ -22,23 +24,29 @@ function PlayerInfo({
   }, isActive, isCurrent, auctionStarted, bidWithSun,
 }: PlayerInfoProps): JSX.Element {
   return (
-    <>
-      <p>
-        {`Name: ${playerName}`}
-      </p>
-      <PlayerTiles tiles={collection} />
-      <PlayerActions
-        isActive={isActive}
-        isCurrent={isCurrent}
-        auctionStarted={auctionStarted}
-        availableSun={usableSun}
-        unavailableSun={unusableSun}
-        bidWithSun={bidWithSun}
-      />
-      <Badge badgeContent={points} color="secondary">
-        <Leaderboard fontSize="large" color="action" />
-      </Badge>
-    </>
+    <Grid container spacing={{ xs: 1, md: 2 }}>
+      <Grid xs={3}>
+        <p>
+          {`Name: ${playerName}`}
+        </p>
+      </Grid>
+      <Grid xs={9}>
+        <PlayerTiles tiles={collection} />
+      </Grid>
+      <Grid xs={8}>
+        <PlayerActions
+          isActive={isActive}
+          isCurrent={isCurrent}
+          auctionStarted={auctionStarted}
+          availableSun={usableSun}
+          unavailableSun={unusableSun}
+          bidWithSun={bidWithSun}
+        />
+        <Badge badgeContent={points} color="secondary">
+          <Leaderboard fontSize="large" color="action" />
+        </Badge>
+      </Grid>
+    </Grid>
   );
 }
 

@@ -1,5 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import styled from 'styled-components';
+
+import { Brightness4, Brightness7 } from '@mui/icons-material';
+import { IconButton } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+
+import ColorModeContext from '../common';
 import sword from '../images/sword_01.png';
 import shield from '../images/wooden_shield.png';
 
@@ -19,10 +25,15 @@ const Heading = styled.h1`
 `;
 
 function Header() {
+  const theme = useTheme();
+  const colorMode = useContext(ColorModeContext);
   return (
     <MainHeader>
       <img src={sword} alt="sword" width="50px" height="50px" />
       <Heading>Online Ra Game</Heading>
+      <IconButton sx={{ ml: 1 }} onClick={colorMode.toggleColorMode} color="inherit">
+        {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+      </IconButton>
       <img src={shield} alt="sword" width="50px" height="50px" />
     </MainHeader>
   );

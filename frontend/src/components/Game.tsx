@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
+import Grid from '@mui/material/Unstable_Grid2';
 import { Alert, AlertTitle, Snackbar } from '@mui/material';
 
 import Actions from './Actions';
@@ -20,8 +21,6 @@ import type { ApiResponse, Game as GameState } from '../libs/game';
 const GameContainer = styled.main`
   width: min(99%, 1000px);
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 82vh;
@@ -153,8 +152,10 @@ function Game(): JSX.Element {
     <GameContainer>
       {gameEnded ? <EndInfo resetGame={resetGame} /> : <div /> }
       {(!gameEnded && isPlaying) ? (
-        <>
-          <CardGrid game={gameState} />
+        <Grid container spacing={{ xs: 2, md: 3 }}>
+          <Grid xs={12}>
+            <CardGrid game={gameState} />
+          </Grid>
           <PlayersInfo
             players={playerStates}
             auctionStarted={auctionStarted}
@@ -176,13 +177,15 @@ function Game(): JSX.Element {
               {alertMsg}
             </Alert>
           </Snackbar>
-          <Actions
-            onDraw={handleDraw}
-            onAuction={handleAuction}
-            disabled={gameEnded || !isPlaying}
-            resetGame={resetGame}
-          />
-        </>
+          <Grid xs={12}>
+            <Actions
+              onDraw={handleDraw}
+              onAuction={handleAuction}
+              disabled={gameEnded || !isPlaying}
+              resetGame={resetGame}
+            />
+          </Grid>
+        </Grid>
       ) : (
         <StartContainer>
           <PlayerForm

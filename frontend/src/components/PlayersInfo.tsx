@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 
+import Grid from '@mui/material/Unstable_Grid2';
+
 import PlayerInfo from './PlayerInfo';
 import type { Player } from '../libs/game';
 
@@ -11,9 +13,6 @@ interface PlayerBoxProps {
 
 // margin-top: auto;
 const PlayerBox = styled.section<PlayerBoxProps>`
-  display: flex;
-  justify-content: space-evenly;
-  width: 80%;
   font-size: 1.5rem;
   border-radius: 15px;
   background-color: ${(props) => (props.isActive ? 'lightblue' : 'lightgray')};
@@ -33,19 +32,21 @@ function PlayersInfo({
   players, active, current, auctionStarted, bidWithSun,
 }: PlayersInfoProps) {
   return (
-    <>
+    <Grid container spacing={{ xs: 1, md: 2 }}>
       {players.map((player: Player, idx: number) => (
-        <PlayerBox key={player.playerName} isActive={active[idx]} isCurrent={current === idx}>
-          <PlayerInfo
-            auctionStarted={auctionStarted}
-            data={players[idx]}
-            isActive={active[idx]}
-            isCurrent={current === idx}
-            bidWithSun={bidWithSun}
-          />
-        </PlayerBox>
+        <Grid xs={12}>
+          <PlayerBox key={player.playerName} isActive={active[idx]} isCurrent={current === idx}>
+            <PlayerInfo
+              auctionStarted={auctionStarted}
+              data={players[idx]}
+              isActive={active[idx]}
+              isCurrent={current === idx}
+              bidWithSun={bidWithSun}
+            />
+          </PlayerBox>
+        </Grid>
       ))}
-    </>
+    </Grid>
   );
 }
 
