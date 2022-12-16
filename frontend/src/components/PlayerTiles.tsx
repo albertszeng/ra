@@ -21,7 +21,15 @@ function PlayerTiles({ tiles }: PlayerTilesProps): JSX.Element {
   const theme = useTheme();
   const matchDownMd = useMediaQuery(theme.breakpoints.down('sm'));
   const height = 100;
-  const renderTile = (tile: TileInfo) => {
+
+  const tileCounts = tiles.reduce((counter, tile: TileInfo) => {
+    const { name } = tile;
+    const currentCount = (counter[name]) ? counter[name][0] + 1 : 1;
+    return {
+      ...counter, [name]: [currentCount, tile] as [number, TileInfo],
+    };
+  }, {} as { [key: string]: [number, TileInfo] });
+  const renderTile = ([count, tile]: [number, TileInfo]) => {
     const { name, tileType } = tile;
     return (
       <ImageListItem key={name}>
@@ -29,14 +37,19 @@ function PlayerTiles({ tiles }: PlayerTilesProps): JSX.Element {
         <ImageListItemBar
           title={name}
           subtitle={tileType}
-          actionIcon={<Avatar sx={{ bgcolor: deepPurple[500] }}>1</Avatar>}
+          actionIcon={(
+            <Avatar sx={{ bgcolor: deepPurple[500] }}>
+              {count}
+            </Avatar>
+          )}
         />
       </ImageListItem>
     );
   };
+
   return (
     <ImageList sx={{ height }} cols={(matchDownMd) ? 3 : 5} rowHeight={height}>
-      {tiles.map(renderTile)}
+      {Object.values(tileCounts).map(renderTile)}
     </ImageList>
   );
 }

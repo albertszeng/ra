@@ -34,8 +34,8 @@ function PlayersInfo({
   return (
     <Grid container spacing={{ xs: 1, md: 2 }}>
       {players.map((player: Player, idx: number) => (
-        <Grid xs={12}>
-          <PlayerBox key={player.playerName} isActive={active[idx]} isCurrent={current === idx}>
+        <Grid key={player.playerName} xs={12}>
+          <PlayerBox isActive={active[idx]} isCurrent={current === idx}>
             <PlayerInfo
               auctionStarted={auctionStarted}
               data={players[idx]}
