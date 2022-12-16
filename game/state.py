@@ -115,7 +115,7 @@ class PlayerState:
             unusableSun=self.unusable_sun,
             collection=[gi.index_to_tile(
                 idx) for idx, count in enumerate(self.collection)
-                if count > 0]
+                for _ in range(count)]
         )
 
     def add_tiles(self, lst_of_indexes: Iterable[int]) -> None:
