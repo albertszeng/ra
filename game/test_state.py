@@ -76,7 +76,8 @@ class PlayerStateTests(unittest.TestCase):
 
         # Check collection.
         player.add_tiles(
-            [gi.INDEX_OF_GOLD, gi.INDEX_OF_GOLD, gi.INDEX_OF_PHAR, gi.INDEX_OF_NILE])
+            [gi.INDEX_OF_GOLD, gi.INDEX_OF_GOLD, gi.INDEX_OF_PHAR,
+             gi.INDEX_OF_NILE])
         self.assertCountEqual(player.serialize()['collection'], [
             gi.TILE_INFO[gi.INDEX_OF_GOLD],
             gi.TILE_INFO[gi.INDEX_OF_GOLD],
@@ -84,7 +85,8 @@ class PlayerStateTests(unittest.TestCase):
             gi.TILE_INFO[gi.INDEX_OF_NILE],
         ])
         player.add_tiles(
-            [gi.INDEX_OF_GOLD, gi.INDEX_OF_GOLD, gi.INDEX_OF_PHAR, gi.INDEX_OF_NILE])
+            [gi.INDEX_OF_GOLD, gi.INDEX_OF_GOLD, gi.INDEX_OF_PHAR,
+             gi.INDEX_OF_NILE])
         self.assertCountEqual(player.serialize()['collection'], [
             gi.TILE_INFO[gi.INDEX_OF_GOLD],
             gi.TILE_INFO[gi.INDEX_OF_GOLD],
