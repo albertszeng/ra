@@ -19,12 +19,14 @@ jobs:
         with:
           filters: |
             backend:
+              - '.github/**'
               - '*.py'
               - 'Dockerfile'
               - '*.toml'
               - 'Pipfile*'
               - 'game/**'
             frontend:
+              - '.github/**'
               - 'frontend/**'
   deploy-server:
     needs: changes
@@ -49,12 +51,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --upgrade pipenv
       
-      - id: cache-pipenv
-        uses: actions/cache@v1
-        with:
-          path: ~/.local/share/virtualenvs
-          key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
-
       - name: Install dependencies
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
