@@ -118,11 +118,18 @@ const DefaultGame: Game = {
   gameState: DefaultGameState,
 };
 
+type WarningLevel = 'success' | 'info' | 'warning' | 'error';
 type ApiResponse = {
+  level?: WarningLevel;
   message?: string;
   gameId?: string;
   gameAsStr?: string;
   gameState?: Game;
+};
+type AlertData = {
+  show: boolean;
+  message: string;
+  level?: WarningLevel;
 };
 
 const apiUrl = (process.env.REACT_APP_BACKEND) ? `https://${process.env.REACT_APP_BACKEND}` : 'http://0.0.0.0:8080';
@@ -187,6 +194,7 @@ async function listGames(): Promise<ListGamesResponse> {
 }
 
 export type {
+  AlertData,
   ApiResponse,
   Game,
   GameState,
@@ -194,6 +202,7 @@ export type {
   Player,
   Tile,
   TileAction,
+  WarningLevel,
 };
 
 export {

@@ -5,12 +5,10 @@ import React, {
 } from 'react';
 
 import {
-  Alert,
   Autocomplete,
   Button,
   ButtonGroup,
   Paper,
-  Snackbar,
   TextField,
   Tooltip,
   Typography,
@@ -18,10 +16,12 @@ import {
 import Grid from '@mui/material/Unstable_Grid2';
 
 import { listGames, deleteGame } from '../libs/game';
+import type { AlertData } from '../libs/game';
 
 type PlayerFormProps = {
   handleNewGame: (players: string[]) => void;
   handleLoadGame: (gameId: string) => void;
+  setAlert: (alert: AlertData) => void;
 };
 
 function isValid(input: string): boolean {
@@ -38,11 +38,10 @@ function isValid(input: string): boolean {
   return hex.length === 32;
 }
 
-function PlayerForm({ handleNewGame, handleLoadGame }: PlayerFormProps): JSX.Element {
+function PlayerForm({ handleNewGame, handleLoadGame, setAlert }: PlayerFormProps): JSX.Element {
   const [input, setInput] = useState<string>('');
   const [formValid, setFormValid] = useState(false);
   const [games, setGames] = useState<string[]>([]);
-  const [userMsg, setUserMsg] = useState('');
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -70,11 +69,11 @@ function PlayerForm({ handleNewGame, handleLoadGame }: PlayerFormProps): JSX.Ele
   };
   const handleDelete = () => {
     const remoteDelete = async () => {
-      const { message } = await deleteGame(input);
+      const { message, level } = await deleteGame(input);
       const { gameIds } = await listGames();
       setGames(gameIds);
-      if (message) {
-        setUserMsg(message);
+      if (message || level) {
+        setAlert({ show: true, message: message || 'Empty response.', level });
       }
     };
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -82,77 +81,62 @@ function PlayerForm({ handleNewGame, handleLoadGame }: PlayerFormProps): JSX.Ele
   };
   const tooltipText = 'Enter comma-seperated list of players or the Game ID of an existing game.';
   return (
-    <>
-      <Paper elevation={1}>
-        <Grid container spacing={3}>
-          <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
-            <Typography variant="h4">
-              Start a Game of Ra!
-            </Typography>
-          </Grid>
-          <Grid xs={2} />
-          <Grid xs={8}>
-            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-            <Tooltip
-              followCursor
-              title={tooltipText}
-              enterDelay={250}
-            >
-              <Autocomplete
-                freeSolo
-                id="players"
-                options={games}
-                value={input}
-                onInputChange={handleChange}
-                renderInput={(params) => (
-                  <TextField
-                    /* eslint-disable-next-line react/jsx-props-no-spreading */
-                    {...params}
-                    label="Player Names/Game ID"
-                  />
-                )}
-              />
-            </Tooltip>
-          </Grid>
-          <Grid xs={2} />
-          <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
-            <ButtonGroup
-              variant="contained"
-              size="large"
-              aria-label="load action buttons"
-            >
-              <Button
-                color={(input.includes('-')) ? 'secondary' : 'primary'}
-                disabled={!formValid}
-                onClick={handleSubmit}
-              >
-                {(input.includes('-')) ? 'Load' : 'Start'}
-              </Button>
-              <Button
-                color="error"
-                disabled={!formValid && !input.includes(',')}
-                onClick={handleDelete}
-              >
-                Delete
-              </Button>
-            </ButtonGroup>
-          </Grid>
+    <Paper elevation={1}>
+      <Grid container spacing={3}>
+        <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
+          <Typography variant="h4">
+            Start a Game of Ra!
+          </Typography>
         </Grid>
-      </Paper>
-      <Snackbar
-        open={!!userMsg}
-        autoHideDuration={6000}
-        onClose={() => setUserMsg('')}
-      >
-        <Alert
-          onClose={() => setUserMsg('')}
-          severity="warning"
-          sx={{ width: '100%' }}
-        >
-          {userMsg}
-        </Alert>
-      </Snackbar>
-    </>
+        <Grid xs={2} />
+        <Grid xs={8}>
+          {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+          <Tooltip
+            followCursor
+            title={tooltipText}
+            enterDelay={250}
+          >
+            <Autocomplete
+              freeSolo
+              id="players"
+              options={games}
+              value={input}
+              onInputChange={handleChange}
+              renderInput={(params) => (
+                <TextField
+                  /* eslint-disable-next-line react/jsx-props-no-spreading */
+                  {...params}
+                  label="Player Names/Game ID"
+                />
+              )}
+            />
+          </Tooltip>
+        </Grid>
+        <Grid xs={2} />
+        <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
+          <ButtonGroup
+            variant="contained"
+            size="large"
+            aria-label="load action buttons"
+          >
+            <Button
+              color={(input.includes('-')) ? 'secondary' : 'primary'}
+              disabled={!formValid}
+              onClick={handleSubmit}
+            >
+              {(input.includes('-')) ? 'Load' : 'Start'}
+            </Button>
+            <Button
+              color="error"
+              disabled={!formValid && !input.includes(',')}
+              onClick={handleDelete}
+            >
+              Delete
+            </Button>
+          </ButtonGroup>
+        </Grid>
+      </Grid>
+    </Paper>
   );
 }
 
