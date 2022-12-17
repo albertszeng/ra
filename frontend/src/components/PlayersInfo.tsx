@@ -4,28 +4,20 @@ import React, {
   useState,
   SyntheticEvent,
 } from 'react';
-import styled from 'styled-components';
 
 import { Leaderboard } from '@mui/icons-material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
-import { Badge, Box, Tab } from '@mui/material';
+import {
+  Badge,
+  Box,
+  Card,
+  CardActions,
+  Tab,
+} from '@mui/material';
 
 import { Actions, ActionsProps } from './Actions';
 import PlayerInfo from './PlayerInfo';
 import type { Player, Tile } from '../libs/game';
-
-interface PlayerBoxProps {
-  readonly isActive: boolean;
-  readonly isCurrent: boolean;
-}
-
-// margin-top: auto;
-const PlayerBox = styled.section<PlayerBoxProps>`
-  font-size: 1.5rem;
-  border-radius: 15px;
-  background-color: ${(props) => (props.isActive ? 'lightblue' : 'lightgray')};
-  border: 2px solid ${(props) => (props.isCurrent ? 'blue' : 'black')};
-`;
 
 type PlayersInfoProps = {
   players: Player[];
@@ -80,16 +72,15 @@ function PlayersInfo({
         </Box>
         {players.map((player: Player, idx: number) => (
           <TabPanel key={`${player.playerName}`} value={idx.toString()}>
-            <PlayerBox
-              isActive={active[idx]}
-              isCurrent={current === idx}
-            >
-              <Actions
-                onDraw={onDraw}
-                onAuction={onAuction}
-                disabled={actionsDisabled || current !== idx}
-                resetGame={resetGame}
-              />
+            <Card variant={(current === idx) ? 'outlined' : undefined}>
+              <CardActions>
+                <Actions
+                  onDraw={onDraw}
+                  onAuction={onAuction}
+                  disabled={actionsDisabled || current !== idx}
+                  resetGame={resetGame}
+                />
+              </CardActions>
               <PlayerInfo
                 auctionStarted={auctionStarted}
                 data={players[idx]}
@@ -98,7 +89,7 @@ function PlayersInfo({
                 bidWithSun={bidWithSun}
                 selectTile={selectTile}
               />
-            </PlayerBox>
+            </Card>
           </TabPanel>
         ))}
       </TabContext>

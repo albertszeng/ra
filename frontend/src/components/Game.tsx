@@ -5,6 +5,7 @@ import {
   Alert,
   AlertTitle,
   Container,
+  Paper,
   Snackbar,
 } from '@mui/material';
 
@@ -193,24 +194,33 @@ function Game(): JSX.Element {
     <Container disableGutters>
       {gameEnded ? <EndInfo resetGame={resetGame} /> : <div /> }
       {(!gameEnded && isPlaying) ? (
-        <Grid container spacing={{ xs: 2, md: 3 }}>
-          <Grid xs={12}>
-            <CardGrid game={gameState} selectTileForSwap={handleSelectCardFromGrid} />
+        <>
+          <Grid container spacing={{ xs: 2, md: 3 }}>
+            <Grid xs={12}>
+              <Paper elevation={3}>
+                <CardGrid game={gameState} selectTileForSwap={handleSelectCardFromGrid} />
+              </Paper>
+            </Grid>
+            <Grid xs={12} />
+            <Grid xs={12}>
+              <Paper elevation={3}>
+                <PlayersInfo
+                  players={playerStates}
+                  auctionStarted={auctionStarted}
+                  active={activePlayers}
+                  current={currentPlayer}
+                  bidWithSun={handleBidAction}
+                  selectTile={handlePlayerSelectTile}
+                  actionsProps={{
+                    onDraw: handleDraw,
+                    onAuction: handleAuction,
+                    disabled: gameEnded || !isPlaying,
+                    resetGame,
+                  }}
+                />
+              </Paper>
+            </Grid>
           </Grid>
-          <PlayersInfo
-            players={playerStates}
-            auctionStarted={auctionStarted}
-            active={activePlayers}
-            current={currentPlayer}
-            bidWithSun={handleBidAction}
-            selectTile={handlePlayerSelectTile}
-            actionsProps={{
-              onDraw: handleDraw,
-              onAuction: handleAuction,
-              disabled: gameEnded || !isPlaying,
-              resetGame,
-            }}
-          />
           <Snackbar
             open={!!alertMsg}
             autoHideDuration={2500}
@@ -225,7 +235,7 @@ function Game(): JSX.Element {
               {alertMsg}
             </Alert>
           </Snackbar>
-        </Grid>
+        </>
       ) : (
         <PlayerForm
           handleNewGame={handleNewGame}
