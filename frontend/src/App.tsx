@@ -65,7 +65,7 @@ function App() {
             </IconButton>
           </Toolbar>
         </AppBar>
-        <Container maxWidth="md">
+        <Container maxWidth="lg">
           <Grid container spacing={2}>
             <Grid xs />
             <Grid xs={12}>
