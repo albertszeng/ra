@@ -11,6 +11,7 @@ type PlayerInfoProps = {
   isActive: boolean;
   isCurrent: boolean;
   auctionStarted: boolean;
+  minBidSun: number;
   // Called with the index of the bid tile. 0 is lowest.
   bidWithSun: (idx: number) => void;
   // When a tile is selected by the player, this is called.
@@ -19,7 +20,7 @@ type PlayerInfoProps = {
 };
 
 function PlayerInfo({
-  data: player, isActive, isCurrent, auctionStarted, bidWithSun, selectTile,
+  data: player, isActive, isCurrent, auctionStarted, minBidSun, bidWithSun, selectTile,
 }: PlayerInfoProps): JSX.Element {
   const { collection, usableSun, unusableSun } = player;
   const handleTileClick = useCallback(
@@ -32,6 +33,7 @@ function PlayerInfo({
         isActive={isActive}
         isCurrent={isCurrent}
         auctionStarted={auctionStarted}
+        minBidSun={minBidSun}
         availableSun={usableSun}
         unavailableSun={unusableSun}
         bidWithSun={bidWithSun}

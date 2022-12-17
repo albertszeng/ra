@@ -193,6 +193,10 @@ async function listGames(): Promise<ListGamesResponse> {
   return res.json() as Promise<ListGamesResponse>;
 }
 
+function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
+  return value !== null && value !== undefined;
+}
+
 export type {
   AlertData,
   ApiResponse,
@@ -212,6 +216,7 @@ export {
   getTileAction,
   handleCommand,
   listGames,
+  notEmpty,
   startGame,
   socket,
 };

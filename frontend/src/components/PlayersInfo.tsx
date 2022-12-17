@@ -17,6 +17,7 @@ import Grid from '@mui/material/Unstable_Grid2';
 
 import { Actions, ActionsProps } from './Actions';
 import PlayerInfo from './PlayerInfo';
+import { notEmpty } from '../libs/game';
 import type { Player, Tile } from '../libs/game';
 
 type PlayersInfoProps = {
@@ -24,6 +25,8 @@ type PlayersInfoProps = {
   active: boolean[];
   current: number;
   centerSun: number;
+  // For each player i, how much sun they have bid (if any).
+  auctionSuns: (number | null)[];
   auctionStarted: boolean;
   // Called with the index of the bid tile. 0 is lowest.
   bidWithSun: (idx: number) => void;
@@ -33,7 +36,8 @@ type PlayersInfoProps = {
 };
 
 function PlayersInfo({
-  players, active, current, auctionStarted, bidWithSun, selectTile, centerSun,
+  players, active, current, auctionStarted, bidWithSun,
+  selectTile, centerSun, auctionSuns,
   actionsProps: {
     disabled: actionsDisabled, onDraw, onAuction, resetGame,
   },
@@ -44,6 +48,9 @@ function PlayersInfo({
   }, []);
   // Update value when current changes.
   useEffect(() => setValue(current.toString()), [current]);
+  // Minimum of actually bid values. Otherwise, minimum is 0;
+  const bidValues = auctionSuns.filter(notEmpty);
+  const minBidSun = (bidValues.length > 0) ? Math.min(...bidValues) : 0;
   return (
     <Box sx={{ width: '100%', typography: 'body1' }}>
       <TabContext value={value}>
@@ -55,20 +62,23 @@ function PlayersInfo({
             indicatorColor="primary"
             aria-label="player tabs"
           >
-            {players.map(({ playerName, points }, idx) => (
-              <Tab
-                iconPosition="start"
-                key={playerName}
-                label={playerName}
-                value={idx.toString()}
-                disabled={!active[idx]}
-                icon={(
-                  <Badge badgeContent={points} color="secondary">
-                    <Leaderboard fontSize="large" color="action" />
-                  </Badge>
-                )}
-              />
-            ))}
+            {players.map(({ playerName, points }, idx) => {
+              const labelSuffix = (auctionSuns[idx]) ? ` (${auctionSuns[idx] || ''})` : '';
+              return (
+                <Tab
+                  iconPosition="start"
+                  key={playerName}
+                  label={`${playerName}${labelSuffix}`}
+                  value={idx.toString()}
+                  disabled={!active[idx]}
+                  icon={(
+                    <Badge badgeContent={points} color="secondary">
+                      <Leaderboard fontSize="large" color="action" />
+                    </Badge>
+                  )}
+                />
+              );
+            })}
             <Tab
               disabled
               iconPosition="end"
@@ -97,6 +107,7 @@ function PlayersInfo({
                   isActive={active[idx]}
                   isCurrent={current === idx}
                   bidWithSun={bidWithSun}
+                  minBidSun={minBidSun}
                   selectTile={selectTile}
                 />
               </Grid>
