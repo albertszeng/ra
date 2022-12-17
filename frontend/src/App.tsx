@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import { CssBaseline, useMediaQuery } from '@mui/material';
+import { CssBaseline, Container, useMediaQuery } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 import ColorModeContext from './common';
@@ -39,8 +39,10 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Header />
-        <Game />
+        <Container maxWidth="md">
+          <Header />
+          <Game />
+        </Container>
       </ThemeProvider>
     </ColorModeContext.Provider>
   );
