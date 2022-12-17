@@ -83,7 +83,7 @@ def action(game: ra.RaGame, move: str) -> Union[Message, ActResponse]:
 
     parsedMove = ra.parse_action(move)
     if parsedMove < 0:
-        return WarningMessage(message=f'Unrecognized action.')
+        return WarningMessage(message='Unrecognized action.')
 
     if game.game_state.is_game_ended():
         return response

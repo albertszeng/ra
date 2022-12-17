@@ -414,6 +414,7 @@ action_option_lst: List[Tuple[int, List[str], str]] = [
 def action_description(action: int) -> str:
     return action_option_lst[action][2]
 
+
 # sanity check to make sure no options overlap
 for i in range(len(action_option_lst)):
     options_1 = action_option_lst[i][1]
