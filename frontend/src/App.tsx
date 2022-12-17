@@ -1,6 +1,14 @@
 import React, { useMemo, useState } from 'react';
 
-import { CssBaseline, Container, useMediaQuery } from '@mui/material';
+import { Brightness4, Brightness7, Menu } from '@mui/icons-material';
+import {
+  AppBar,
+  CssBaseline,
+  Container,
+  IconButton,
+  Toolbar,
+  useMediaQuery,
+} from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Grid from '@mui/material/Unstable_Grid2';
 
@@ -40,11 +48,25 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <AppBar position="static">
+          <Toolbar>
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              sx={{ mr: 2 }}
+            >
+              <Menu />
+            </IconButton>
+            <Header />
+            <IconButton onClick={colorMode.toggleColorMode} color="inherit">
+              {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
+          </Toolbar>
+        </AppBar>
         <Container maxWidth="md">
           <Grid container spacing={2}>
-            <Grid xs={12}>
-              <Header />
-            </Grid>
             <Grid xs />
             <Grid xs={12}>
               <Game />
