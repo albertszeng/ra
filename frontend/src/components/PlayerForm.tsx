@@ -16,7 +16,7 @@ import {
 import Grid from '@mui/material/Unstable_Grid2';
 
 import { listGames, deleteGame } from '../libs/game';
-import type { AlertData } from '../libs/game';
+import type { AlertData, ListGame } from '../libs/game';
 
 type PlayerFormProps = {
   handleNewGame: (players: string[]) => void;
@@ -41,12 +41,12 @@ function isValid(input: string): boolean {
 function PlayerForm({ handleNewGame, handleLoadGame, setAlert }: PlayerFormProps): JSX.Element {
   const [input, setInput] = useState<string>('');
   const [formValid, setFormValid] = useState(false);
-  const [games, setGames] = useState<string[]>([]);
+  const [gameList, setGameList] = useState<ListGame[]>([]);
 
   useEffect(() => {
     const fetchGames = async () => {
-      const { gameIds } = await listGames();
-      setGames(gameIds);
+      const { games } = await listGames();
+      setGameList(games);
     };
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const _ = fetchGames();
@@ -70,8 +70,8 @@ function PlayerForm({ handleNewGame, handleLoadGame, setAlert }: PlayerFormProps
   const handleDelete = () => {
     const remoteDelete = async () => {
       const { message, level } = await deleteGame(input);
-      const { gameIds } = await listGames();
-      setGames(gameIds);
+      const { games } = await listGames();
+      setGameList(games);
       if (message || level) {
         setAlert({ show: true, message: message || 'Empty response.', level });
       }
@@ -99,7 +99,20 @@ function PlayerForm({ handleNewGame, handleLoadGame, setAlert }: PlayerFormProps
             <Autocomplete
               freeSolo
               id="players"
-              options={games}
+              options={gameList}
+              renderOption={(props, { id, players }: ListGame) => (
+                // eslint-disable-next-line react/jsx-props-no-spreading
+                <li {...props}>
+                  {`${id.substring(0, 4)}: ${players.toString()}`}
+                </li>
+              )}
+              getOptionLabel={(option: ListGame | string) => {
+                if (typeof option === 'string') {
+                  return option;
+                }
+                return option.id;
+              }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
               value={input}
               onInputChange={handleChange}
               renderInput={(params) => (

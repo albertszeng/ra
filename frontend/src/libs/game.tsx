@@ -180,9 +180,13 @@ async function deleteGame(gameId: string): Promise<ApiResponse> {
   return res.json() as ApiResponse;
 }
 
+type ListGame = {
+  id: string;
+  players: string[];
+};
 type ListGamesResponse = {
   total: number;
-  gameIds: string[];
+  games: ListGame[];
 };
 async function listGames(): Promise<ListGamesResponse> {
   const requestOptions = {
@@ -202,6 +206,7 @@ export type {
   ApiResponse,
   Game,
   GameState,
+  ListGame,
   ListGamesResponse,
   Player,
   Tile,
