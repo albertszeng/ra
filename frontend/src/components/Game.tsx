@@ -39,40 +39,6 @@ function Game(): JSX.Element {
   // When true and set to a valid index, swap occurs.
   const [swapInfo, setSwapInfo] = useState<[boolean, number]>([false, -1]);
 
-  // Store local game state to storage.
-  useEffect(() => {
-    if (game !== DefaultGame) {
-      window.localStorage.setItem(GAME_STATE_KEY, JSON.stringify({
-        game, gameId, isPlaying,
-      }));
-    }
-  }, [game, isPlaying, gameId]);
-  useEffect(() => {
-    const data = window.localStorage.getItem(GAME_STATE_KEY);
-    if (data !== null) {
-      const {
-        game: restoredGame,
-        gameId: restoredGameId,
-        isPlaying: restoredIsPlaying,
-      } = JSON.parse(data) as { game: GameState, isPlaying: boolean, gameId: string };
-      setGame(restoredGame);
-      setIsPlaying(restoredIsPlaying);
-      setGameId(restoredGameId);
-      // Also let the server know we've joined again.
-      socket.emit('join', { gameId: restoredGameId });
-    }
-  }, []);
-  useEffect(() => {
-    socket.on('update', ({ gameState }: ApiResponse) => {
-      if (gameState) {
-        setGame(gameState);
-      }
-    });
-    return () => {
-      socket.off('update');
-    };
-  }, []);
-
   const handleNewGame = useCallback(async (players: string[]) => {
     const {
       message,
@@ -184,11 +150,34 @@ function Game(): JSX.Element {
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, [gameId, swapInfo]);
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setIsPlaying(false);
     // Let the server know we've left the game.
     socket.emit('leave', { gameId });
-  };
+  }, [gameId]);
+
+  useEffect(() => {
+    // When the gameId changes, store in local storage.
+    window.localStorage.setItem(GAME_STATE_KEY, gameId);
+  }, [isPlaying, gameId]);
+  useEffect(() => {
+    // On refresh of component, get latest game state if we had a gameId.
+    const restoredGameId = window.localStorage.getItem(GAME_STATE_KEY);
+    if (restoredGameId !== null) {
+      // Attempt to join the game again.
+      undefined(await handleLoadGame(restoredGameId));
+    }
+  }, [handleLoadGame]);
+  useEffect(() => {
+    socket.on('update', ({ gameState }: ApiResponse) => {
+      if (gameState) {
+        setGame(gameState);
+      }
+    });
+    return () => {
+      socket.off('update');
+    };
+  }, []);
 
   const { gameState } = game;
   const {
