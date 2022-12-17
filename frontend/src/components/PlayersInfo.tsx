@@ -77,7 +77,7 @@ function PlayersInfo({
                 <Actions
                   onDraw={onDraw}
                   onAuction={onAuction}
-                  disabled={actionsDisabled || current !== idx}
+                  disabled={actionsDisabled || current !== idx || auctionStarted}
                   resetGame={resetGame}
                 />
                 <PlayerInfo
