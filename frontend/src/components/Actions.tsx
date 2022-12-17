@@ -2,6 +2,7 @@ import React from 'react';
 
 import { Button, ButtonGroup } from '@mui/material';
 import { Groups, ResetTv, ShoppingBag } from '@mui/icons-material';
+import Grid from '@mui/material/Unstable_Grid2';
 
 type ActionsProps = {
   disabled: boolean;
@@ -13,35 +14,39 @@ function Actions({
   disabled, onDraw, onAuction, resetGame,
 }: ActionsProps): JSX.Element {
   return (
-    <>
-      <ButtonGroup
-        disabled={disabled}
-        size="large"
-        variant="contained"
-        aria-label="large action button group"
-      >
-        <Button
-          onClick={onDraw}
-          startIcon={<ShoppingBag />}
+    <Grid container spacing={2}>
+      <Grid xs={8} display="flex" justifyContent="left" alignItems="left">
+        <ButtonGroup
+          disabled={disabled}
+          size="large"
+          variant="contained"
+          aria-label="large action button group"
         >
-          Draw
-        </Button>
+          <Button
+            onClick={onDraw}
+            startIcon={<ShoppingBag />}
+          >
+            Draw
+          </Button>
+          <Button
+            onClick={onAuction}
+            endIcon={<Groups />}
+          >
+            Auction
+          </Button>
+        </ButtonGroup>
+      </Grid>
+      <Grid xs={4} display="flex" justifyContent="right" alignItems="right">
         <Button
-          onClick={onAuction}
-          endIcon={<Groups />}
+          variant="contained"
+          size="large"
+          onClick={resetGame}
+          endIcon={<ResetTv />}
         >
-          Auction
+          Leave
         </Button>
-      </ButtonGroup>
-      <Button
-        variant="contained"
-        size="large"
-        onClick={resetGame}
-        endIcon={<ResetTv />}
-      >
-        Leave
-      </Button>
-    </>
+      </Grid>
+    </Grid>
   );
 }
 

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Button, ButtonGroup } from '@mui/material';
+import Grid from '@mui/material/Unstable_Grid2';
 import { NextPlan, StrikethroughS, WbSunny } from '@mui/icons-material';
 
 type PlayerActionsProps = {
@@ -17,50 +18,54 @@ function PlayerActions({
   availableSun, unavailableSun, isActive, isCurrent, auctionStarted, bidWithSun,
 }: PlayerActionsProps) {
   return (
-    <>
-      <ButtonGroup
-        disabled={!isActive || !isCurrent || !auctionStarted}
-        size="large"
-        color="success"
-        aria-label="available sun button group"
-      >
-        {availableSun.map((sun: number, idx: number) => (
-          <Button
-            endIcon={<WbSunny />}
-            variant="contained"
-            key={sun}
-            onClick={() => bidWithSun(idx)}
-          >
-            {sun}
-          </Button>
-        ))}
-        <Button
-          endIcon={<NextPlan />}
-          variant="contained"
-          color="secondary"
-          onClick={() => bidWithSun(-1)}
+    <Grid container spacing={2}>
+      <Grid xs={6} display="flex" justifyContent="center" alignItems="center">
+        <ButtonGroup
+          disabled={!isActive || !isCurrent || !auctionStarted}
+          size="large"
+          color="success"
+          aria-label="available sun button group"
         >
-          Pass
-        </Button>
-      </ButtonGroup>
-      <ButtonGroup
-        disabled={!isActive || !isCurrent || !auctionStarted}
-        size="large"
-        color="success"
-        aria-label="unavailable sun button group"
-      >
-        {unavailableSun.map((sun: number) => (
+          {availableSun.map((sun: number, idx: number) => (
+            <Button
+              endIcon={<WbSunny />}
+              variant="contained"
+              key={sun}
+              onClick={() => bidWithSun(idx)}
+            >
+              {sun}
+            </Button>
+          ))}
+        </ButtonGroup>
+      </Grid>
+      <Grid xs={6} display="flex" justifyContent="center" alignItems="center">
+        <ButtonGroup
+          disabled={!isActive || !isCurrent || !auctionStarted}
+          size="large"
+          color="success"
+          aria-label="unavailable sun button group"
+        >
+          {unavailableSun.map((sun: number) => (
+            <Button
+              disabled
+              endIcon={<StrikethroughS />}
+              variant="contained"
+              key={sun}
+            >
+              {sun}
+            </Button>
+          ))}
           <Button
-            disabled
-            endIcon={<StrikethroughS />}
+            endIcon={<NextPlan />}
             variant="contained"
-            key={sun}
+            color="secondary"
+            onClick={() => bidWithSun(-1)}
           >
-            {sun}
+            Pass
           </Button>
-        ))}
-      </ButtonGroup>
-    </>
+        </ButtonGroup>
+      </Grid>
+    </Grid>
   );
 }
 

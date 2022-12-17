@@ -28,7 +28,7 @@ function PlayerInfo({
   );
   return (
     <Grid container spacing={{ xs: 1, md: 2 }}>
-      <Grid xs={2}>
+      <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
         <PlayerActions
           isActive={isActive}
           isCurrent={isCurrent}
@@ -38,7 +38,7 @@ function PlayerInfo({
           bidWithSun={bidWithSun}
         />
       </Grid>
-      <Grid xs={12}>
+      <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
         <PlayerTiles tiles={collection} onTileClick={handleTileClick} />
       </Grid>
     </Grid>

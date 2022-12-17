@@ -11,9 +11,9 @@ import {
   Badge,
   Box,
   Card,
-  CardActions,
   Tab,
 } from '@mui/material';
+import Grid from '@mui/material/Unstable_Grid2';
 
 import { Actions, ActionsProps } from './Actions';
 import PlayerInfo from './PlayerInfo';
@@ -73,22 +73,26 @@ function PlayersInfo({
         {players.map((player: Player, idx: number) => (
           <TabPanel key={`${player.playerName}`} value={idx.toString()}>
             <Card variant={(current === idx) ? 'outlined' : undefined}>
-              <CardActions>
-                <Actions
-                  onDraw={onDraw}
-                  onAuction={onAuction}
-                  disabled={actionsDisabled || current !== idx}
-                  resetGame={resetGame}
-                />
-              </CardActions>
-              <PlayerInfo
-                auctionStarted={auctionStarted}
-                data={players[idx]}
-                isActive={active[idx]}
-                isCurrent={current === idx}
-                bidWithSun={bidWithSun}
-                selectTile={selectTile}
-              />
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <Actions
+                    onDraw={onDraw}
+                    onAuction={onAuction}
+                    disabled={actionsDisabled || current !== idx}
+                    resetGame={resetGame}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <PlayerInfo
+                    auctionStarted={auctionStarted}
+                    data={players[idx]}
+                    isActive={active[idx]}
+                    isCurrent={current === idx}
+                    bidWithSun={bidWithSun}
+                    selectTile={selectTile}
+                  />
+                </Grid>
+              </Grid>
             </Card>
           </TabPanel>
         ))}
