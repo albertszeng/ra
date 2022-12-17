@@ -11,13 +11,13 @@ type PlayerActionsProps = {
   isActive: boolean;
   isCurrent: boolean;
   auctionStarted: boolean;
-  minBidSun: number;
+  maxBidSun: number;
   // Called with the index of the bid tile. 0 is lowest.
   bidWithSun: (idx: number) => void;
 };
 
 function PlayerActions({
-  availableSun, unavailableSun, isActive, isCurrent, auctionStarted, bidWithSun, minBidSun,
+  availableSun, unavailableSun, isActive, isCurrent, auctionStarted, bidWithSun, maxBidSun,
 }: PlayerActionsProps) {
   const theme = useTheme();
   const matchDownSm = useMediaQuery(theme.breakpoints.down('sm'));
@@ -33,7 +33,7 @@ function PlayerActions({
         >
           {availableSun.map((sun: number, idx: number) => (
             <Button
-              disabled={sun <= minBidSun}
+              disabled={sun <= maxBidSun}
               endIcon={<WbSunny />}
               variant="contained"
               key={sun}

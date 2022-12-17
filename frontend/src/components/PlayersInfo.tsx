@@ -12,7 +12,9 @@ import {
   Box,
   Card,
   Tab,
+  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Grid from '@mui/material/Unstable_Grid2';
 
 import { Actions, ActionsProps } from './Actions';
@@ -48,29 +50,34 @@ function PlayersInfo({
   }, []);
   // Update value when current changes.
   useEffect(() => setValue(current.toString()), [current]);
-  // Minimum of actually bid values. Otherwise, minimum is 0;
+  const theme = useTheme();
+  const matchDownSm = useMediaQuery(theme.breakpoints.down('sm'));
+  // Maximum of actually bid values. Otherwise, maximum is 0;
   const bidValues = auctionSuns.filter(notEmpty);
-  const minBidSun = (bidValues.length > 0) ? Math.min(...bidValues) : 0;
+  const maxBidSun = (bidValues.length > 0) ? Math.max(...bidValues) : 0;
   return (
     <Box sx={{ width: '100%', typography: 'body1' }}>
       <TabContext value={value}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <TabList
             onChange={handleChange}
-            centered
+            variant={(matchDownSm) ? 'scrollable' : 'standard'}
+            centered={!matchDownSm}
             textColor="primary"
             indicatorColor="primary"
             aria-label="player tabs"
           >
             {players.map(({ playerName, points }, idx) => {
-              const labelSuffix = (auctionSuns[idx]) ? ` (${auctionSuns[idx] || ''})` : '';
+              // eslint-disable-next-line no-nested-ternary
+              const labelSuffix = (auctionSuns[idx])
+                ? ` (${auctionSuns[idx] || ''})`
+                : (!active[idx]) ? ' (P)' : '';
               return (
                 <Tab
                   iconPosition="start"
                   key={playerName}
                   label={`${playerName}${labelSuffix}`}
                   value={idx.toString()}
-                  disabled={!active[idx]}
                   icon={(
                     <Badge badgeContent={points} color="secondary">
                       <Leaderboard fontSize="large" color="action" />
@@ -107,7 +114,7 @@ function PlayersInfo({
                   isActive={active[idx]}
                   isCurrent={current === idx}
                   bidWithSun={bidWithSun}
-                  minBidSun={minBidSun}
+                  maxBidSun={maxBidSun}
                   selectTile={selectTile}
                 />
               </Grid>

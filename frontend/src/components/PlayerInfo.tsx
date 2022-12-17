@@ -1,7 +1,5 @@
 import React, { useCallback } from 'react';
 
-import Grid from '@mui/material/Unstable_Grid2';
-
 import PlayerActions from './PlayerActions';
 import PlayerTiles from './PlayerTiles';
 import type { Player, Tile } from '../libs/game';
@@ -11,7 +9,7 @@ type PlayerInfoProps = {
   isActive: boolean;
   isCurrent: boolean;
   auctionStarted: boolean;
-  minBidSun: number;
+  maxBidSun: number;
   // Called with the index of the bid tile. 0 is lowest.
   bidWithSun: (idx: number) => void;
   // When a tile is selected by the player, this is called.
@@ -20,7 +18,7 @@ type PlayerInfoProps = {
 };
 
 function PlayerInfo({
-  data: player, isActive, isCurrent, auctionStarted, minBidSun, bidWithSun, selectTile,
+  data: player, isActive, isCurrent, auctionStarted, maxBidSun, bidWithSun, selectTile,
 }: PlayerInfoProps): JSX.Element {
   const { collection, usableSun, unusableSun } = player;
   const handleTileClick = useCallback(
@@ -33,14 +31,12 @@ function PlayerInfo({
         isActive={isActive}
         isCurrent={isCurrent}
         auctionStarted={auctionStarted}
-        minBidSun={minBidSun}
+        maxBidSun={maxBidSun}
         availableSun={usableSun}
         unavailableSun={unusableSun}
         bidWithSun={bidWithSun}
       />
-      <Grid xs={12}>
-        <PlayerTiles tiles={collection} onTileClick={handleTileClick} />
-      </Grid>
+      <PlayerTiles tiles={collection} onTileClick={handleTileClick} />
     </>
   );
 }

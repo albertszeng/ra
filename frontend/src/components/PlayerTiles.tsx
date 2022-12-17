@@ -22,7 +22,7 @@ function PlayerTiles({ tiles, onTileClick }: PlayerTilesProps): JSX.Element {
   const theme = useTheme();
   const matchDownSm = useMediaQuery(theme.breakpoints.down('sm'));
   const matchDownMd = useMediaQuery(theme.breakpoints.down('md'));
-  const height = (matchDownSm) ? undefined : 200;
+  const height = (matchDownSm) ? undefined : 300;
   const rowHeight = (height) ? (height - 10) / 2 : undefined;
 
   const tileCounts = tiles.reduce((counter, tile: TileInfo) => {
@@ -50,7 +50,7 @@ function PlayerTiles({ tiles, onTileClick }: PlayerTilesProps): JSX.Element {
     );
   };
   // eslint-disable-next-line no-nested-ternary
-  const cols = (matchDownSm) ? 3 : (matchDownMd) ? 5 : 6;
+  const cols = (matchDownSm) ? 3 : (matchDownMd) ? 4 : 5;
   const values = Object.values(tileCounts);
   return (
     (values.length > 0) ? (
