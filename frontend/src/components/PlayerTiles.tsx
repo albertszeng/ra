@@ -51,10 +51,13 @@ function PlayerTiles({ tiles, onTileClick }: PlayerTilesProps): JSX.Element {
   };
   // eslint-disable-next-line no-nested-ternary
   const cols = (matchDownSm) ? 3 : (matchDownMd) ? 5 : 6;
+  const values = Object.values(tileCounts);
   return (
-    <ImageList sx={{ height }} cols={cols} rowHeight={rowHeight}>
-      {Object.values(tileCounts).map(renderTile)}
-    </ImageList>
+    (values.length > 0) ? (
+      <ImageList sx={{ height }} cols={cols} rowHeight={rowHeight}>
+        {values.map(renderTile)}
+      </ImageList>
+    ) : <div />
   );
 }
 
