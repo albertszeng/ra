@@ -48,7 +48,6 @@ class Game(db.Model):  # pyre-ignore[11]
     # We use the uuid.hex property, which is 32-char string.
     # pyre-ignore[11]
     id: db.Column = db.Column(db.String(32), primary_key=True)
-
     # This is a pickle-d version of the game so we can restore state.
     data: db.Column = db.Column(db.PickleType, nullable=False)
 
@@ -76,8 +75,8 @@ async def hello_world() -> str:
 
 @app.route("/list", methods=["GET", "POST"])  # pyre-ignore[56]
 async def list() -> routes.ListGamesResponse:
-    results = db.session.scalars(expression.select(Game.id)).all()
-    return routes.list(results)
+    results = db.session.scalars(expression.select(Game)).all()
+    return routes.list([ (result.id, result.data) for result in results])
 
 
 @app.route("/start", methods=["POST"])  # pyre-ignore[56]

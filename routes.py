@@ -40,9 +40,14 @@ class JoinLeaveRequest(TypedDict):
     gameId: NotRequired[str]
 
 
+class GameInfo(TypedDict):
+    id: uuid.UUID
+    players: List[str]
+
+
 class ListGamesResponse(TypedDict):
     total: int
-    gameIds: List[uuid.UUID]
+    games: List[GameInfo]
 
 
 def get_game_repr(game: ra.RaGame) -> str:
@@ -54,11 +59,17 @@ def get_game_repr(game: ra.RaGame) -> str:
     return f"{val}\n\n{prompt}"
 
 
-def list(dbGames: Sequence[str]) -> ListGamesResponse:
+def list(dbGames: Sequence[Tuple[str, ra.RaGame]]) -> ListGamesResponse:
     """Generates a response from all available games in the database."""
     return ListGamesResponse(
         total=len(dbGames),
-        gameIds=[uuid.UUID(gameIdStr) for gameIdStr in dbGames])
+        games=[
+            GameInfo(
+                id=uuid.UUID(gameIdStr),
+                players=game.player_names)
+            for gameIdStr, game
+            in dbGames
+        ])
 
 
 def start(gameId: uuid.UUID,

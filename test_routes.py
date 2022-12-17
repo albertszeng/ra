@@ -60,20 +60,35 @@ Possible actions:
 
     def test_list_empty(self) -> None:
         self.assertEqual(routes.list(
-            []), routes.ListGamesResponse(total=0, gameIds=[]))
+            []), routes.ListGamesResponse(total=0, games=[]))
 
     def test_list_single(self) -> None:
-        testIDs = ['12345678123456781234567812345678']
-        self.assertEqual(routes.list(testIDs), routes.ListGamesResponse(
-            total=1, gameIds=[uuid.UUID('12345678123456781234567812345678')]))
+        testID = '12345678123456781234567812345678'
+        testGame = ra.RaGame(randomize_play_order=False,
+                             player_names=['Name1', 'Name2'])
+        self.assertEqual(routes.list([(testID, testGame)]),
+                         routes.ListGamesResponse(
+            total=1, games=[
+                routes.GameInfo(
+                    id=uuid.UUID('12345678123456781234567812345678'),
+                    players=['Name1', 'Name2'])
+            ]))
 
     def test_list_many(self) -> None:
         testIDs = ['12345678123456781234567812345678',
                    '23456781234567812345678123456781']
+        testGames = [ra.RaGame(randomize_play_order=False, player_names=['Game10', 'Game11']),
+                     ra.RaGame(randomize_play_order=False, player_names=['Game20', 'Game21'])]
         self.assertEqual(routes.list(
-            testIDs), routes.ListGamesResponse(total=2, gameIds=[
-                uuid.UUID('12345678123456781234567812345678'),
-                uuid.UUID('23456781234567812345678123456781')]))
+            list(zip(testIDs, testGames))),
+            routes.ListGamesResponse(total=2, games=[
+                routes.GameInfo(
+                    id=uuid.UUID('12345678123456781234567812345678'),
+                    players=['Game10', 'Game11']),
+                routes.GameInfo(
+                    id=uuid.UUID('23456781234567812345678123456781'),
+                    players=['Game20', 'Game21']),
+            ]))
 
     def test_start_no_players(self) -> None:
         with self.assertRaises(ValueError):
