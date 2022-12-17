@@ -5,7 +5,7 @@ import React, {
   SyntheticEvent,
 } from 'react';
 
-import { Leaderboard } from '@mui/icons-material';
+import { Leaderboard, WbSunny } from '@mui/icons-material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import {
   Badge,
@@ -23,6 +23,7 @@ type PlayersInfoProps = {
   players: Player[];
   active: boolean[];
   current: number;
+  centerSun: number;
   auctionStarted: boolean;
   // Called with the index of the bid tile. 0 is lowest.
   bidWithSun: (idx: number) => void;
@@ -32,7 +33,7 @@ type PlayersInfoProps = {
 };
 
 function PlayersInfo({
-  players, active, current, auctionStarted, bidWithSun, selectTile,
+  players, active, current, auctionStarted, bidWithSun, selectTile, centerSun,
   actionsProps: {
     disabled: actionsDisabled, onDraw, onAuction, resetGame,
   },
@@ -68,6 +69,16 @@ function PlayersInfo({
                 )}
               />
             ))}
+            <Tab
+              disabled
+              iconPosition="end"
+              label="Center Sun"
+              icon={(
+                <Badge badgeContent={centerSun} color="secondary">
+                  <WbSunny fontSize="large" color="action" />
+                </Badge>
+              )}
+            />
           </TabList>
         </Box>
         {players.map((player: Player, idx: number) => (

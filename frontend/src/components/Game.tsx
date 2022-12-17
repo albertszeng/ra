@@ -192,7 +192,7 @@ function Game(): JSX.Element {
 
   const { gameState } = game;
   const {
-    gameEnded, playerStates, activePlayers, currentPlayer, auctionStarted,
+    centerSun, gameEnded, playerStates, activePlayers, currentPlayer, auctionStarted,
   } = gameState;
   return (
     <Container disableGutters>
@@ -212,6 +212,7 @@ function Game(): JSX.Element {
                 auctionStarted={auctionStarted}
                 active={activePlayers}
                 current={currentPlayer}
+                centerSun={centerSun}
                 bidWithSun={handleBidAction}
                 selectTile={handlePlayerSelectTile}
                 actionsProps={{
