@@ -7,7 +7,24 @@ from typing_extensions import NotRequired, TypedDict
 
 
 class Message(TypedDict):
+    level: str
     message: str
+
+
+def ErrorMessage(message: str) -> Message:
+    return Message(level="error", message=message)
+
+
+def WarningMessage(message: str) -> Message:
+    return Message(level="warning", message=message)
+
+
+def InfoMessage(message: str) -> Message:
+    return Message(level="info", message=message)
+
+
+def SuccessMessage(message: str) -> Message:
+    return Message(level="success", message=message)
 
 
 class ActResponse(TypedDict):
@@ -66,15 +83,15 @@ def action(game: ra.RaGame, move: str) -> Union[Message, ActResponse]:
 
     parsedMove = ra.parse_action(move)
     if parsedMove < 0:
-        return Message(message=f'Unrecognized action: {parsedMove}')
+        return WarningMessage(message=f'Unrecognized action: {parsedMove}')
 
     if game.game_state.is_game_ended():
         return response
     legal_moves = ra.get_possible_actions(game.game_state)
     if not legal_moves:
-        return Message(message='Internal Error: No valid actions. ')
+        return ErrorMessage(message='Internal Error: No valid actions. ')
     if parsedMove not in legal_moves:
-        return Message(message=f'Only legal actions are: {legal_moves}')
+        return InfoMessage(message=f'Only legal actions are: {legal_moves}')
     game.execute_action(parsedMove, legal_moves)
     return ActResponse(
         gameState=game.serialize(), gameAsStr=get_game_repr(game))

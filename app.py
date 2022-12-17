@@ -84,7 +84,8 @@ async def list() -> routes.ListGamesResponse:
 async def start() -> Union[routes.Message, routes.StartResponse]:
     if (not (players := (await request.json).get("playerNames"))
             or len(players) < 2):
-        return routes.Message(message='Cannot start game. Need player names.')
+        return routes.WarningMessage(
+            message='Cannot start game. Need player names.')
 
     gameId = uuid.uuid4()
     response = routes.start(gameId, players)
@@ -103,29 +104,31 @@ async def start() -> Union[routes.Message, routes.StartResponse]:
 @app.route("/delete", methods=["POST"])  # pyre-ignore[56]
 async def delete() -> routes.Message:
     if not (gameIdStr := (await request.json).get('gameId')):
-        return routes.Message(message='Invalid request.')
+        return routes.ErrorMessage(message='Invalid request.')
 
     gameId = uuid.UUID(gameIdStr)
     if not (dbGame := db.session.get(Game, gameId.hex)):
-        return routes.Message(message=f'No game with id {gameId} found.')
+        return routes.WarningMessage(
+            message=f'No game with id {gameId} found.')
 
     db.session.delete(dbGame)
     db.session.commit()
-    return routes.Message(message=f'Deleted game: {gameId}')
+    return routes.SuccessMessage(message=f'Deleted game: {gameId}')
 
 
 @app.route("/action", methods=["POST"])  # pyre-ignore[56]
 async def action() -> Union[routes.Message, routes.ActResponse]:
     if not (gameIdStr := (await request.json).get('gameId')):
-        return routes.Message(
+        return routes.WarningMessage(
             message=f'Cannot act on non-existing game: {gameIdStr}')
     gameId = uuid.UUID(gameIdStr)
     action = (await request.json).get("command")
     if not action:
-        return routes.Message(message='No action')
+        return routes.ErrorMessage(message='No action')
 
     if not (dbGame := db.session.get(Game, gameId.hex)):
-        return routes.Message(message=f'No active game with id: {gameId}')
+        return routes.WarningMessage(
+            message=f'No active game with id: {gameId}')
     game = dbGame.data
     sid = (await request.json).get('socketId')
 

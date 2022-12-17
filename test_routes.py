@@ -148,3 +148,9 @@ Possible actions:
         self.assertEqual(firstMove[0], '0')
         self.assertEqual(response, routes.ActResponse(
             gameState=game.serialize(), gameAsStr=routes.get_game_repr(game)))
+
+    def test_message_types(self) -> None:
+        self.assertEqual(routes.ErrorMessage("Unused")["level"], "error")
+        self.assertEqual(routes.WarningMessage("Unused")["level"], "warning")
+        self.assertEqual(routes.InfoMessage("Unused")["level"], "info")
+        self.assertEqual(routes.SuccessMessage("Unused")["level"], "success")
