@@ -1,8 +1,9 @@
 import React from 'react';
 
-import { Button, ButtonGroup } from '@mui/material';
+import { Button, ButtonGroup, useMediaQuery } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 import { NextPlan, StrikethroughS, WbSunny } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 
 type PlayerActionsProps = {
   availableSun: number[],
@@ -17,12 +18,15 @@ type PlayerActionsProps = {
 function PlayerActions({
   availableSun, unavailableSun, isActive, isCurrent, auctionStarted, bidWithSun,
 }: PlayerActionsProps) {
+  const theme = useTheme();
+  const matchDownSm = useMediaQuery(theme.breakpoints.down('sm'));
+  const size = (matchDownSm) ? undefined : 'large';
   return (
-    <Grid container spacing={2}>
-      <Grid xs={6} display="flex" justifyContent="center" alignItems="center">
+    <>
+      <Grid xs={6} display="flex" justifyContent="left" alignItems="left">
         <ButtonGroup
           disabled={!isActive || !isCurrent || !auctionStarted}
-          size="large"
+          size={size}
           color="success"
           aria-label="available sun button group"
         >
@@ -38,10 +42,10 @@ function PlayerActions({
           ))}
         </ButtonGroup>
       </Grid>
-      <Grid xs={6} display="flex" justifyContent="center" alignItems="center">
+      <Grid xs={6} display="flex" justifyContent="right" alignItems="right">
         <ButtonGroup
           disabled={!isActive || !isCurrent || !auctionStarted}
-          size="large"
+          size={size}
           color="success"
           aria-label="unavailable sun button group"
         >
@@ -65,7 +69,7 @@ function PlayerActions({
           </Button>
         </ButtonGroup>
       </Grid>
-    </Grid>
+    </>
   );
 }
 

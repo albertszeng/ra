@@ -27,21 +27,19 @@ function PlayerInfo({
     [player, selectTile],
   );
   return (
-    <Grid container spacing={{ xs: 1, md: 2 }}>
-      <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
-        <PlayerActions
-          isActive={isActive}
-          isCurrent={isCurrent}
-          auctionStarted={auctionStarted}
-          availableSun={usableSun}
-          unavailableSun={unusableSun}
-          bidWithSun={bidWithSun}
-        />
-      </Grid>
-      <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
+    <>
+      <PlayerActions
+        isActive={isActive}
+        isCurrent={isCurrent}
+        auctionStarted={auctionStarted}
+        availableSun={usableSun}
+        unavailableSun={unusableSun}
+        bidWithSun={bidWithSun}
+      />
+      <Grid xs={12}>
         <PlayerTiles tiles={collection} onTileClick={handleTileClick} />
       </Grid>
-    </Grid>
+    </>
   );
 }
 

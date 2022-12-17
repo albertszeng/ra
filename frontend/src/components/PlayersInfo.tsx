@@ -73,25 +73,21 @@ function PlayersInfo({
         {players.map((player: Player, idx: number) => (
           <TabPanel key={`${player.playerName}`} value={idx.toString()}>
             <Card variant={(current === idx) ? 'outlined' : undefined}>
-              <Grid container spacing={2}>
-                <Grid xs={12}>
-                  <Actions
-                    onDraw={onDraw}
-                    onAuction={onAuction}
-                    disabled={actionsDisabled || current !== idx}
-                    resetGame={resetGame}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <PlayerInfo
-                    auctionStarted={auctionStarted}
-                    data={players[idx]}
-                    isActive={active[idx]}
-                    isCurrent={current === idx}
-                    bidWithSun={bidWithSun}
-                    selectTile={selectTile}
-                  />
-                </Grid>
+              <Grid container spacing={2} columns={{ xs: 12 }}>
+                <Actions
+                  onDraw={onDraw}
+                  onAuction={onAuction}
+                  disabled={actionsDisabled || current !== idx}
+                  resetGame={resetGame}
+                />
+                <PlayerInfo
+                  auctionStarted={auctionStarted}
+                  data={players[idx]}
+                  isActive={active[idx]}
+                  isCurrent={current === idx}
+                  bidWithSun={bidWithSun}
+                  selectTile={selectTile}
+                />
               </Grid>
             </Card>
           </TabPanel>

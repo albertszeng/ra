@@ -14,7 +14,7 @@ function Actions({
   disabled, onDraw, onAuction, resetGame,
 }: ActionsProps): JSX.Element {
   return (
-    <Grid container spacing={2}>
+    <>
       <Grid xs={8} display="flex" justifyContent="left" alignItems="left">
         <ButtonGroup
           disabled={disabled}
@@ -41,12 +41,13 @@ function Actions({
           variant="contained"
           size="large"
           onClick={resetGame}
+          color="secondary"
           endIcon={<ResetTv />}
         >
           Leave
         </Button>
       </Grid>
-    </Grid>
+    </>
   );
 }
 

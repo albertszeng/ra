@@ -22,7 +22,8 @@ function PlayerTiles({ tiles, onTileClick }: PlayerTilesProps): JSX.Element {
   const theme = useTheme();
   const matchDownSm = useMediaQuery(theme.breakpoints.down('sm'));
   const matchDownMd = useMediaQuery(theme.breakpoints.down('md'));
-  const height = 200;
+  const height = (matchDownSm) ? undefined : 200;
+  const rowHeight = (height) ? (height - 10) / 2 : undefined;
 
   const tileCounts = tiles.reduce((counter, tile: TileInfo) => {
     const { name } = tile;
@@ -51,7 +52,7 @@ function PlayerTiles({ tiles, onTileClick }: PlayerTilesProps): JSX.Element {
   // eslint-disable-next-line no-nested-ternary
   const cols = (matchDownSm) ? 3 : (matchDownMd) ? 5 : 6;
   return (
-    <ImageList sx={{ height }} cols={cols} rowHeight={height / 2}>
+    <ImageList sx={{ height }} cols={cols} rowHeight={rowHeight}>
       {Object.values(tileCounts).map(renderTile)}
     </ImageList>
   );
