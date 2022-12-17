@@ -47,6 +47,8 @@ function Game(): JSX.Element {
   const [isPlaying, setIsPlaying] = useState(false);
   const [gameId, setGameId] = useState<string>('');
   const [alertMsg, setAlertMsg] = useState<string>('');
+  // When true and set to a valid index, swap occurs.
+  const [swapInfo, setSwapInfo] = useState<[boolean, number]>([false, -1]);
 
   // Store local game state to storage.
   useEffect(() => {
@@ -136,7 +138,7 @@ function Game(): JSX.Element {
     if (!gameId) {
       return;
     }
-    // 1-indexed. 0 corresponds to passing.
+    // 1-indexed. 0 corresponds to passing in which case idx === -1.
     const { message, gameState } = await handleCommand(gameId, `B${idx + 1}`);
     if (message || !gameState) {
       setAlertMsg(message || 'Unknown error.');
@@ -144,19 +146,42 @@ function Game(): JSX.Element {
     }
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
   }, [gameId]);
+  const handleSelectCardFromGrid = useCallback(async (idx: number, { name }: Tile) => {
+    if (!gameId) {
+      return;
+    }
+    const [shouldSwap] = swapInfo;
+    if (!shouldSwap) {
+      setAlertMsg(`Click your Golden God to atttempt a swap for ${name}.`);
+      setSwapInfo([shouldSwap, idx]);
+      return;
+    }
+    // Server command is 1-indexed, so we increment here.
+    const { message, gameState } = await handleCommand(gameId, `G${idx + 1}`);
+    if (message || !gameState) {
+      setAlertMsg(message || 'Unknown error.');
+      return;
+    }
+    setSwapInfo([false, -1]); // Reset swap info.
+    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
+  }, [gameId, swapInfo]);
   const handlePlayerSelectTile = useCallback(async (player: Player, tile: Tile) => {
     if (!gameId) {
       setAlertMsg('No active game.');
       return;
     }
-    const action = getTileAction(tile);
+    let action = getTileAction(tile);
     if (!action) {
       setAlertMsg(`${tile.name} is not play-able.`);
       return;
     }
     if (action === 'SWAP') {
-      // TODO: handle golden god.
-      return;
+      const [/* shouldSwap */, swapIdx] = swapInfo;
+      if (swapIdx < 0) {
+        setAlertMsg('Click the card you wish to swap for your Golden God');
+        return;
+      }
+      action = `G${swapIdx + 1}`;
     }
 
     const { message, gameState } = await handleCommand(gameId, action);
@@ -164,8 +189,9 @@ function Game(): JSX.Element {
       setAlertMsg(message || 'Unknown error.');
       return;
     }
+    setSwapInfo([false, -1]); // Reset swap info.
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId]);
+  }, [gameId, swapInfo]);
 
   const resetGame = () => {
     setIsPlaying(false);
@@ -183,7 +209,7 @@ function Game(): JSX.Element {
       {(!gameEnded && isPlaying) ? (
         <Grid container spacing={{ xs: 2, md: 3 }}>
           <Grid xs={12}>
-            <CardGrid game={gameState} />
+            <CardGrid game={gameState} selectTileForSwap={handleSelectCardFromGrid} />
           </Grid>
           <PlayersInfo
             players={playerStates}

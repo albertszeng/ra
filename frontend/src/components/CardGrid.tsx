@@ -3,15 +3,17 @@ import React from 'react';
 import Grid from '@mui/material/Unstable_Grid2';
 
 import { RaTile, SlotTile, Tile } from './Tile';
-import type { GameState } from '../libs/game';
+import type { GameState, Tile as TileInfo } from '../libs/game';
 
 type CardGridProps = {
   game: GameState;
+  // Called when a player selects one of the cards in the grid.
+  selectTileForSwap: (idx: number, tile: TileInfo) => void;
 };
 function CardGrid({
   game: {
     numRasPerRound, numRasThisRound, maxAuctionTiles, auctionTiles,
-  },
+  }, selectTileForSwap,
 }: CardGridProps): JSX.Element {
   const renderRaTile = (idx: number) => (
     <Grid key={idx} xs={2} sm={1}>
@@ -24,7 +26,12 @@ function CardGrid({
       tile = <Tile tile={auctionTiles[idx]} />;
     }
     return (
-      <Grid key={idx} xs={2} sm={1}>
+      <Grid
+        onClick={() => selectTileForSwap(idx, auctionTiles[idx])}
+        key={idx}
+        xs={2}
+        sm={1}
+      >
         {tile}
       </Grid>
     );
