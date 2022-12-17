@@ -17,6 +17,26 @@ type Tile = {
   // Whether we should keep or not.
   toKeep: boolean;
 };
+// These tiles have special actions associated with them.
+type TileAction = 'SWAP' | string;
+function getTileAction({ name }: Tile): TileAction | null {
+  // Currently based on the name.
+  const upper = name.toUpperCase();
+  const getSuffix = () => {
+    const pieces = name.split(' -- ');
+    return pieces[pieces.length - 1];
+  };
+  if (upper.includes('MONUMENT')) {
+    return `DISCARD ${getSuffix()}`;
+  }
+  if (upper.includes('CIVILIZATION')) {
+    return `DISCARD ${getSuffix()}`;
+  }
+  if (upper.includes('GOLDEN GOD')) {
+    return 'SWAP';
+  }
+  return null;
+}
 
 type Player = {
   // The tiles the player currently has in his collection.
@@ -173,12 +193,14 @@ export type {
   ListGamesResponse,
   Player,
   Tile,
+  TileAction,
 };
 
 export {
   DefaultGame,
   DefaultPlayer,
   deleteGame,
+  getTileAction,
   handleCommand,
   listGames,
   startGame,

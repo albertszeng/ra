@@ -15,12 +15,14 @@ import type { Tile as TileInfo } from '../libs/game';
 
 type PlayerTilesProps = {
   tiles: TileInfo[];
+  onTileClick: (tile: TileInfo) => void;
 };
 
-function PlayerTiles({ tiles }: PlayerTilesProps): JSX.Element {
+function PlayerTiles({ tiles, onTileClick }: PlayerTilesProps): JSX.Element {
   const theme = useTheme();
-  const matchDownMd = useMediaQuery(theme.breakpoints.down('sm'));
-  const height = 100;
+  const matchDownSm = useMediaQuery(theme.breakpoints.down('sm'));
+  const matchDownMd = useMediaQuery(theme.breakpoints.down('md'));
+  const height = 200;
 
   const tileCounts = tiles.reduce((counter, tile: TileInfo) => {
     const { name } = tile;
@@ -32,7 +34,7 @@ function PlayerTiles({ tiles }: PlayerTilesProps): JSX.Element {
   const renderTile = ([count, tile]: [number, TileInfo]) => {
     const { name, tileType } = tile;
     return (
-      <ImageListItem key={name}>
+      <ImageListItem key={name} onClick={() => onTileClick(tile)}>
         <Tile tile={tile} />
         <ImageListItemBar
           title={name}
@@ -46,9 +48,10 @@ function PlayerTiles({ tiles }: PlayerTilesProps): JSX.Element {
       </ImageListItem>
     );
   };
-
+  // eslint-disable-next-line no-nested-ternary
+  const cols = (matchDownSm) ? 3 : (matchDownMd) ? 5 : 6;
   return (
-    <ImageList sx={{ height }} cols={(matchDownMd) ? 3 : 5} rowHeight={height}>
+    <ImageList sx={{ height }} cols={cols} rowHeight={height / 2}>
       {Object.values(tileCounts).map(renderTile)}
     </ImageList>
   );

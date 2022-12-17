@@ -1,4 +1,9 @@
-import React, { useEffect } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+  SyntheticEvent,
+} from 'react';
 import styled from 'styled-components';
 
 import { Leaderboard } from '@mui/icons-material';
@@ -7,7 +12,7 @@ import { Badge, Box, Tab } from '@mui/material';
 
 import { Actions, ActionsProps } from './Actions';
 import PlayerInfo from './PlayerInfo';
-import type { Player } from '../libs/game';
+import type { Player, Tile } from '../libs/game';
 
 interface PlayerBoxProps {
   readonly isActive: boolean;
@@ -29,19 +34,21 @@ type PlayersInfoProps = {
   auctionStarted: boolean;
   // Called with the index of the bid tile. 0 is lowest.
   bidWithSun: (idx: number) => void;
+  // Called when a player selects a tile in their bag.
+  selectTile: (player: Player, tile: Tile) => void;
   actionsProps: ActionsProps;
 };
 
 function PlayersInfo({
-  players, active, current, auctionStarted, bidWithSun,
+  players, active, current, auctionStarted, bidWithSun, selectTile,
   actionsProps: {
     disabled: actionsDisabled, onDraw, onAuction, resetGame,
   },
 }: PlayersInfoProps) {
-  const [value, setValue] = React.useState(current.toString());
-  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+  const [value, setValue] = useState(current.toString());
+  const handleChange = useCallback((event: SyntheticEvent, newValue: string) => {
     setValue(newValue);
-  };
+  }, []);
   // Update value when current changes.
   useEffect(() => setValue(current.toString()), [current]);
   return (
@@ -72,9 +79,8 @@ function PlayersInfo({
           </TabList>
         </Box>
         {players.map((player: Player, idx: number) => (
-          <TabPanel value={idx.toString()}>
+          <TabPanel key={`${player.playerName}`} value={idx.toString()}>
             <PlayerBox
-              key={player.playerName}
               isActive={active[idx]}
               isCurrent={current === idx}
             >
@@ -90,6 +96,7 @@ function PlayersInfo({
                 isActive={active[idx]}
                 isCurrent={current === idx}
                 bidWithSun={bidWithSun}
+                selectTile={selectTile}
               />
             </PlayerBox>
           </TabPanel>

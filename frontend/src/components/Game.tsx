@@ -11,11 +11,17 @@ import PlayerForm from './PlayerForm';
 
 import {
   DefaultGame,
+  getTileAction,
   handleCommand,
   startGame,
   socket,
 } from '../libs/game';
-import type { ApiResponse, Game as GameState } from '../libs/game';
+import type {
+  ApiResponse,
+  Game as GameState,
+  Player,
+  Tile,
+} from '../libs/game';
 
 const GameContainer = styled.main`
   width: min(99%, 1000px);
@@ -104,6 +110,7 @@ function Game(): JSX.Element {
   }, []);
   const handleDraw = useCallback(async () => {
     if (!gameId) {
+      setAlertMsg('No active game.');
       return;
     }
     const { message, gameState } = await handleCommand(gameId, 'DRAW');
@@ -115,6 +122,7 @@ function Game(): JSX.Element {
   }, [gameId]);
   const handleAuction = useCallback(async () => {
     if (!gameId) {
+      setAlertMsg('No active game.');
       return;
     }
     const { message, gameState } = await handleCommand(gameId, 'AUCTION');
@@ -130,6 +138,28 @@ function Game(): JSX.Element {
     }
     // 1-indexed. 0 corresponds to passing.
     const { message, gameState } = await handleCommand(gameId, `B${idx + 1}`);
+    if (message || !gameState) {
+      setAlertMsg(message || 'Unknown error.');
+      return;
+    }
+    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
+  }, [gameId]);
+  const handlePlayerSelectTile = useCallback(async (player: Player, tile: Tile) => {
+    if (!gameId) {
+      setAlertMsg('No active game.');
+      return;
+    }
+    const action = getTileAction(tile);
+    if (!action) {
+      setAlertMsg(`${tile.name} is not play-able.`);
+      return;
+    }
+    if (action === 'SWAP') {
+      // TODO: handle golden god.
+      return;
+    }
+
+    const { message, gameState } = await handleCommand(gameId, action);
     if (message || !gameState) {
       setAlertMsg(message || 'Unknown error.');
       return;
@@ -161,6 +191,7 @@ function Game(): JSX.Element {
             active={activePlayers}
             current={currentPlayer}
             bidWithSun={handleBidAction}
+            selectTile={handlePlayerSelectTile}
             actionsProps={{
               onDraw: handleDraw,
               onAuction: handleAuction,
