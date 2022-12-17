@@ -5,6 +5,7 @@ import { Leaderboard } from '@mui/icons-material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { Badge, Box, Tab } from '@mui/material';
 
+import { Actions, ActionsProps } from './Actions';
 import PlayerInfo from './PlayerInfo';
 import type { Player } from '../libs/game';
 
@@ -28,10 +29,14 @@ type PlayersInfoProps = {
   auctionStarted: boolean;
   // Called with the index of the bid tile. 0 is lowest.
   bidWithSun: (idx: number) => void;
+  actionsProps: ActionsProps;
 };
 
 function PlayersInfo({
   players, active, current, auctionStarted, bidWithSun,
+  actionsProps: {
+    disabled: actionsDisabled, onDraw, onAuction, resetGame,
+  },
 }: PlayersInfoProps) {
   const [value, setValue] = React.useState(current.toString());
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
@@ -73,6 +78,12 @@ function PlayersInfo({
               isActive={active[idx]}
               isCurrent={current === idx}
             >
+              <Actions
+                onDraw={onDraw}
+                onAuction={onAuction}
+                disabled={actionsDisabled || current !== idx}
+                resetGame={resetGame}
+              />
               <PlayerInfo
                 auctionStarted={auctionStarted}
                 data={players[idx]}

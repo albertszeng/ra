@@ -9,34 +9,41 @@ type ActionsProps = {
   onAuction: () => void;
   resetGame: () => void;
 };
-export default function Actions({
+function Actions({
   disabled, onDraw, onAuction, resetGame,
 }: ActionsProps): JSX.Element {
   return (
-    <ButtonGroup
-      disabled={disabled}
-      size="large"
-      variant="contained"
-      aria-label="outlined primary button group"
-    >
-      <Button
-        onClick={onDraw}
-        startIcon={<ShoppingBag />}
+    <>
+      <ButtonGroup
+        disabled={disabled}
+        size="large"
+        variant="contained"
+        aria-label="large action button group"
       >
-        Draw
-      </Button>
+        <Button
+          onClick={onDraw}
+          startIcon={<ShoppingBag />}
+        >
+          Draw
+        </Button>
+        <Button
+          onClick={onAuction}
+          endIcon={<Groups />}
+        >
+          Auction
+        </Button>
+      </ButtonGroup>
       <Button
-        onClick={onAuction}
-        endIcon={<Groups />}
-      >
-        Auction
-      </Button>
-      <Button
+        variant="contained"
+        size="large"
         onClick={resetGame}
         endIcon={<ResetTv />}
       >
         Leave
       </Button>
-    </ButtonGroup>
+    </>
   );
 }
+
+export type { ActionsProps };
+export { Actions };

@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import Grid from '@mui/material/Unstable_Grid2';
 import { Alert, AlertTitle, Snackbar } from '@mui/material';
 
-import Actions from './Actions';
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
 import PlayersInfo from './PlayersInfo';
@@ -162,6 +161,12 @@ function Game(): JSX.Element {
             active={activePlayers}
             current={currentPlayer}
             bidWithSun={handleBidAction}
+            actionsProps={{
+              onDraw: handleDraw,
+              onAuction: handleAuction,
+              disabled: gameEnded || !isPlaying,
+              resetGame,
+            }}
           />
           <Snackbar
             open={!!alertMsg}
@@ -177,14 +182,6 @@ function Game(): JSX.Element {
               {alertMsg}
             </Alert>
           </Snackbar>
-          <Grid xs={12}>
-            <Actions
-              onDraw={handleDraw}
-              onAuction={handleAuction}
-              disabled={gameEnded || !isPlaying}
-              resetGame={resetGame}
-            />
-          </Grid>
         </Grid>
       ) : (
         <StartContainer>
