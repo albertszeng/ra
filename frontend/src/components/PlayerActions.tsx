@@ -21,10 +21,16 @@ function PlayerActions({
 }: PlayerActionsProps) {
   const theme = useTheme();
   const matchDownSm = useMediaQuery(theme.breakpoints.down('sm'));
-  const size = (matchDownSm) ? undefined : 'large';
+  const widthLt470px = useMediaQuery('(max-width:470px)');
+  const size = (matchDownSm) ? 'medium' : 'large';
   return (
     <>
-      <Grid xs={6} display="flex" justifyContent="left" alignItems="left">
+      <Grid
+        xs={(widthLt470px) ? 12 : 6}
+        display="flex"
+        justifyContent={(widthLt470px) ? 'center' : 'left'}
+        alignItems={(widthLt470px) ? 'center' : 'left'}
+      >
         <ButtonGroup
           disabled={!isActive || !isCurrent || !auctionStarted}
           size={size}
@@ -44,7 +50,12 @@ function PlayerActions({
           ))}
         </ButtonGroup>
       </Grid>
-      <Grid xs={6} display="flex" justifyContent="right" alignItems="right">
+      <Grid
+        xs={(widthLt470px) ? 12 : 6}
+        display="flex"
+        justifyContent={(widthLt470px) ? 'center' : 'right'}
+        alignItems={(widthLt470px) ? 'center' : 'right'}
+      >
         <ButtonGroup
           disabled={!isActive || !isCurrent || !auctionStarted}
           size={size}

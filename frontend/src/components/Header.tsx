@@ -20,8 +20,8 @@ function Header() {
         <img src={sword} alt="sword" width={iconSize} height={iconSize} />
       </Grid>
       <Grid display="flex" justifyContent="center" alignItems="center" xs={7}>
-        <Typography variant={(matchDownSm) ? 'h5' : 'h3'}>
-          <b>Online Ra Game</b>
+        <Typography variant={(matchDownSm) ? 'h3' : 'h2'}>
+          <b>Ra</b>
         </Typography>
       </Grid>
       <Grid display="flex" justifyContent="left" alignItems="left" xs={2}>
