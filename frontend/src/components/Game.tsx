@@ -1,8 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
 
 import Grid from '@mui/material/Unstable_Grid2';
-import { Alert, AlertTitle, Snackbar } from '@mui/material';
+import {
+  Alert,
+  AlertTitle,
+  Container,
+  Snackbar,
+} from '@mui/material';
 
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
@@ -22,24 +26,6 @@ import type {
   Player,
   Tile,
 } from '../libs/game';
-
-const GameContainer = styled.main`
-  width: min(99%, 1000px);
-  margin: 0 auto;
-  justify-content: center;
-  align-items: center;
-  height: 82vh;
-  /* border: 1px solid var(--oxford-blue); */
-  box-shadow: var(--oxford-blue-light) 0px 1px 6px;
-  border-radius: 0.5rem;
-  padding: 2rem 0 0 0;
-  background-color: var(--mauvelous-light);
-`;
-
-const StartContainer = styled.div`
-  text-align: center;
-  margin-top: auto;
-`;
 
 function Game(): JSX.Element {
   const GAME_STATE_KEY = 'LOCAL_GAME_STATE';
@@ -204,7 +190,7 @@ function Game(): JSX.Element {
     gameEnded, playerStates, activePlayers, currentPlayer, auctionStarted,
   } = gameState;
   return (
-    <GameContainer>
+    <Container disableGutters>
       {gameEnded ? <EndInfo resetGame={resetGame} /> : <div /> }
       {(!gameEnded && isPlaying) ? (
         <Grid container spacing={{ xs: 2, md: 3 }}>
@@ -241,14 +227,12 @@ function Game(): JSX.Element {
           </Snackbar>
         </Grid>
       ) : (
-        <StartContainer>
-          <PlayerForm
-            handleNewGame={handleNewGame}
-            handleLoadGame={handleLoadGame}
-          />
-        </StartContainer>
+        <PlayerForm
+          handleNewGame={handleNewGame}
+          handleLoadGame={handleLoadGame}
+        />
       )}
-    </GameContainer>
+    </Container>
   );
 }
 

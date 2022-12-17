@@ -3,22 +3,21 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import styled from 'styled-components';
 
 import {
   Alert,
   Autocomplete,
   Button,
+  ButtonGroup,
+  Paper,
   Snackbar,
   TextField,
   Tooltip,
+  Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Unstable_Grid2';
 
 import { listGames, deleteGame } from '../libs/game';
-
-const IntroText = styled.p`
-  font-size: 2rem;
-`;
 
 type PlayerFormProps = {
   handleNewGame: (players: string[]) => void;
@@ -84,46 +83,62 @@ function PlayerForm({ handleNewGame, handleLoadGame }: PlayerFormProps): JSX.Ele
   const tooltipText = 'Enter comma-seperated list of players or the Game ID of an existing game.';
   return (
     <>
-      <IntroText>Start a Game of Ra!</IntroText>
-      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-      <Tooltip
-        followCursor
-        title={tooltipText}
-        enterDelay={500}
-      >
-        <Autocomplete
-          freeSolo
-          id="players"
-          options={games}
-          value={input}
-          onInputChange={handleChange}
-          renderInput={(params) => (
-            <TextField
-              /* eslint-disable-next-line react/jsx-props-no-spreading */
-              {...params}
-              label="Player Names/Game ID"
-            />
-          )}
-        />
-      </Tooltip>
-      <Button
-        size="large"
-        variant="contained"
-        color={(input.includes('-')) ? 'secondary' : 'primary'}
-        disabled={!formValid}
-        onClick={handleSubmit}
-      >
-        {(input.includes('-')) ? 'Load' : 'Start'}
-      </Button>
-      <Button
-        size="large"
-        variant="contained"
-        color="error"
-        disabled={!formValid && !input.includes(',')}
-        onClick={handleDelete}
-      >
-        Delete
-      </Button>
+      <Paper elevation={1}>
+        <Grid container spacing={3}>
+          <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
+            <Typography variant="h4">
+              Start a Game of Ra!
+            </Typography>
+          </Grid>
+          <Grid xs={2} />
+          <Grid xs={8}>
+            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+            <Tooltip
+              followCursor
+              title={tooltipText}
+              enterDelay={250}
+            >
+              <Autocomplete
+                freeSolo
+                id="players"
+                options={games}
+                value={input}
+                onInputChange={handleChange}
+                renderInput={(params) => (
+                  <TextField
+                    /* eslint-disable-next-line react/jsx-props-no-spreading */
+                    {...params}
+                    label="Player Names/Game ID"
+                  />
+                )}
+              />
+            </Tooltip>
+          </Grid>
+          <Grid xs={2} />
+          <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
+            <ButtonGroup
+              variant="contained"
+              size="large"
+              aria-label="load action buttons"
+            >
+              <Button
+                color={(input.includes('-')) ? 'secondary' : 'primary'}
+                disabled={!formValid}
+                onClick={handleSubmit}
+              >
+                {(input.includes('-')) ? 'Load' : 'Start'}
+              </Button>
+              <Button
+                color="error"
+                disabled={!formValid && !input.includes(',')}
+                onClick={handleDelete}
+              >
+                Delete
+              </Button>
+            </ButtonGroup>
+          </Grid>
+        </Grid>
+      </Paper>
       <Snackbar
         open={!!userMsg}
         autoHideDuration={6000}
