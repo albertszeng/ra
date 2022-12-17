@@ -74,3 +74,10 @@ class InfoTests(unittest.TestCase):
 
         self.assertEqual(info.get_civs_from_collection(
             collection=[]), [])
+
+    def test_action_description(self) -> None:
+        self.assertIn("Draw", info.action_description(info.DRAW))
+        self.assertIn("Auction", info.action_description(info.AUCTION))
+        self.assertIn("God", info.action_description(info.GOD_1))
+        self.assertIn("Bid", info.action_description(info.BID_1))
+        self.assertIn("Discard", info.action_description(info.DISCARD_AGR))

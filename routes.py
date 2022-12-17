@@ -1,6 +1,6 @@
 import uuid
 
-from game import ra
+from game import info, ra
 
 from typing import Sequence, List, Union, Tuple
 from typing_extensions import NotRequired, TypedDict
@@ -83,7 +83,7 @@ def action(game: ra.RaGame, move: str) -> Union[Message, ActResponse]:
 
     parsedMove = ra.parse_action(move)
     if parsedMove < 0:
-        return WarningMessage(message=f'Unrecognized action: {parsedMove}')
+        return WarningMessage(message=f'Unrecognized action.')
 
     if game.game_state.is_game_ended():
         return response
@@ -91,7 +91,9 @@ def action(game: ra.RaGame, move: str) -> Union[Message, ActResponse]:
     if not legal_moves:
         return ErrorMessage(message='Internal Error: No valid actions. ')
     if parsedMove not in legal_moves:
-        return InfoMessage(message=f'Only legal actions are: {legal_moves}')
+        description = [info.action_description(
+            legal_move) for legal_move in legal_moves]
+        return InfoMessage(message=f'Only legal actions are: {description}')
     game.execute_action(parsedMove, legal_moves)
     return ActResponse(
         gameState=game.serialize(), gameAsStr=get_game_repr(game))
