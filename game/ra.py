@@ -235,9 +235,11 @@ class RaGame:
             # write the player names to the outfile
             outfile.write(f"{' '.join(self.player_names)}\n")
 
-    def base_round_scoring(
-            self, player_states: Iterable[gs.PlayerState]) -> None:
-        """Gives points to each player based on their tiles."""
+    def calculate_round_end_points_gained(self, player_states: Iterable[gs.PlayerState]) -> Mapping[str, int]:
+        """
+        Calculates how many base-round-end points should be added for each player.
+        Returns a mapping of player_name -> points gained.
+        """
         def least_and_most_num_pharoahs(
                 player_states: Iterable[gs.PlayerState]
         ) -> Tuple[float, float]:
@@ -255,37 +257,49 @@ class RaGame:
                 player_state.collection)
             return len([n for n in collection_of_civs if n > 0])
 
+        points_gained = {player_state.get_player_name(): 0 for player_state in player_states}
+
         for player_state in player_states:
+            current_player_name = player_state.get_player_name()
+
             # golden gods
-            player_state.add_points(
-                player_state.collection[gi.INDEX_OF_GOD] * gi.POINTS_PER_GOD)
+            points_gained[current_player_name] += player_state.collection[gi.INDEX_OF_GOD] * gi.POINTS_PER_GOD
 
             # gold
-            player_state.add_points(
-                player_state.collection[gi.INDEX_OF_GOLD] * gi.POINTS_PER_GOLD)
+            points_gained[current_player_name] += player_state.collection[gi.INDEX_OF_GOLD] * gi.POINTS_PER_GOLD
 
             # pharoahs
             least_num_pharoahs, most_num_pharoahs = (
                 least_and_most_num_pharoahs(player_states))
             if player_state.collection[gi.INDEX_OF_PHAR] == least_num_pharoahs:
-                player_state.add_points(gi.POINTS_FOR_LEAST_PHAR)
+                points_gained[current_player_name] += gi.POINTS_FOR_LEAST_PHAR
             if player_state.collection[gi.INDEX_OF_PHAR] == most_num_pharoahs:
-                player_state.add_points(gi.POINTS_FOR_MOST_PHAR)
+                points_gained[current_player_name] += gi.POINTS_FOR_MOST_PHAR
 
             # niles and floods
             if player_state.collection[gi.INDEX_OF_FLOOD] > 0:
-                player_state.add_points(
+                points_gained[current_player_name] += (
                     player_state.collection[gi.INDEX_OF_NILE] +
                     player_state.collection[gi.INDEX_OF_FLOOD]
                 )
 
             # civilizations
-            player_state.add_points(
-                gi.POINTS_FOR_CIVS[num_distinct_civs(player_state)])
+            points_gained[current_player_name] += gi.POINTS_FOR_CIVS[num_distinct_civs(player_state)]
 
-    def final_round_scoring(
+        return points_gained
+
+    def base_round_scoring(
             self, player_states: Iterable[gs.PlayerState]) -> None:
-        """Gives points to each player based on final round scoring."""
+        """Gives points to each player based on their tiles."""
+        points_gained = self.calculate_round_end_points_gained(player_states)
+        for player_state in player_states:
+            player_state.add_points(points_gained[player_state.get_player_name()])
+
+    def calculate_game_end_points_gained(self, player_states: Iterable[gs.PlayerState]) -> Mapping[str, int]:
+        """
+        Calculates how many base-round-end points should be added for each player.
+        Returns a mapping of player_name -> points gained.
+        """
         def sum_suns(player_state: gs.PlayerState) -> int:
             return sum(player_state.get_all_sun())
 
@@ -313,16 +327,28 @@ class RaGame:
 
             return monument_points
 
+        points_gained = {player_state.get_player_name(): 0 for player_state in player_states}
+
         for player_state in player_states:
             # monuments
-            player_state.add_points(monument_points(player_state))
+            points_gained[current_player_name] += monument_points(player_state)
 
             # suns
             least_suns, most_suns = least_and_most_suns(player_states)
             if sum_suns(player_state) == least_suns:
-                player_state.add_points(gi.POINTS_FOR_LEAST_SUN)
+                points_gained[current_player_name] += gi.POINTS_FOR_LEAST_SUN
             if sum_suns(player_state) == most_suns:
-                player_state.add_points(gi.POINTS_FOR_MOST_SUN)
+                points_gained[current_player_name] += gi.POINTS_FOR_MOST_SUN
+
+        return points_gained
+
+    def final_round_scoring(
+            self, player_states: Iterable[gs.PlayerState]) -> None:
+        """Gives points to each player based on final round scoring."""
+        points_gained = self.calculate_game_end_points_gained(player_states)
+        for player_state in player_states:
+            player_state.add_points(points_gained[player_state.get_player_name()])
+
 
     def end_round(self) -> None:
         """Ends the round and transitions to the next one if necessary."""
