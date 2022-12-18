@@ -1,9 +1,19 @@
 import uuid
 
 from game import info, ra
+from sqlalchemy.ext import mutable
 
-from typing import Sequence, List, Union, Tuple
+from typing import Dict, Sequence, List, Union, Tuple
 from typing_extensions import NotRequired, TypedDict
+
+
+class RaGame(mutable.Mutable, ra.RaGame):
+    """Required so database can update on changes to state."""
+
+    def __getstate__(self) -> Dict[str, str]:
+        d = self.__dict__.copy()
+        d.pop('_parents', None)
+        return d
 
 
 class Message(TypedDict):
@@ -38,6 +48,7 @@ class StartResponse(ActResponse):
 
 class JoinLeaveRequest(TypedDict):
     gameId: NotRequired[str]
+    name: NotRequired[str]
 
 
 class GameInfo(TypedDict):
@@ -75,7 +86,7 @@ def list(dbGames: Sequence[Tuple[str, ra.RaGame]]) -> ListGamesResponse:
 def start(gameId: uuid.UUID,
           players: List[str]
           ) -> Tuple[ra.RaGame, StartResponse]:
-    game = ra.RaGame(
+    game = RaGame(
         player_names=players,
         outfile=f"{gameId}.txt"
     )
