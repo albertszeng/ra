@@ -130,7 +130,6 @@ async def action() -> Union[routes.Message, routes.ActResponse]:
         return routes.ErrorMessage(
             message='Cannot determine player state. Refresh?')
     session = await sio.get_session(sid)
-    name = session.get('name')
     if (playerIdx := session.get('playerIdx')) is None:
         return routes.InfoMessage(
             message=f'{sid} is in spectator mode. Join an open game.')
@@ -165,7 +164,7 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
             if not occupied and player.lower() == name.lower()]
         if not idxs:
             logger.info("Client %s (%s) SPECTATING room: %s",
-                sid, name, gameIdStr)
+                        sid, name, gameIdStr)
             await sio.emit('spectate', to=sid)
             sio.enter_room(sid, gameIdStr)
             return

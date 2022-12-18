@@ -673,7 +673,8 @@ class GameState:
 
     def get_all_player_points(self) -> Dict[str, int]:
         return {
-            player_state.get_player_name(): player_state.get_player_points() for player_state in self.player_states
+            player_state.get_player_name(): player_state.get_player_points()
+            for player_state in self.player_states
         }
 
     # logging functions

@@ -47,8 +47,8 @@ class SerializedRaGame(TypedDict):
     playerNames: List[str]
     gameLog: List[Union[Tuple[str, Optional[int]], int]]
     gameState: gs.SerializedGameState
-    unrealized_points: Mapping[str, int]
-    auction_tile_values: Mapping[str, int]
+    unrealizedPoints: Mapping[str, int]
+    auctionTileValues: Mapping[str, int]
 
 
 # Get the possible actions for a gamestate
@@ -226,8 +226,11 @@ class RaGame:
             playerNames=self.player_names,
             gameState=self.game_state.serialize(),
             gameLog=self.logged_moves,
-            unrealized_points=self.calculate_unrealized_points(self.game_state.player_states),
-            auction_tile_values=self.calculate_value_of_auction_tiles(self.game_state.get_auction_tiles(), self.game_state.player_states)
+            unrealizedPoints=self.calculate_unrealized_points(
+                self.game_state.player_states),
+            auctionTileValues=self.calculate_value_of_auction_tiles(
+                self.game_state.get_auction_tiles(),
+                self.game_state.player_states)
         )
 
     def is_valid_num_players(self, num_players: int) -> bool:
@@ -248,9 +251,10 @@ class RaGame:
             player_states: Iterable[gs.PlayerState],
             player_to_calc: Optional[str] = None) -> Mapping[str, int]:
         """
-        Calculates how many base-round-end points should be added for each player.
-        Returns a mapping of player_name -> points gained.
-        Optionally provide a player name, and only the points for that player will be calced.
+        Calculates how many base-round-end points should be added for each
+        player. Returns a mapping of player_name -> points gained.
+        Optionally provide a player name, and only the points for that player
+        will be calced.
         """
         def least_and_most_num_pharoahs(
                 player_states: Iterable[gs.PlayerState]
@@ -271,20 +275,26 @@ class RaGame:
 
         player_states_to_calc = (
             player_states if player_to_calc is None
-            else [player_state for player_state in player_states if player_state.get_player_name() == player_to_calc]
+            else [player_state for player_state in player_states
+                  if player_state.get_player_name() == player_to_calc]
         )
-        assert len(list(player_states_to_calc)) > 0, f"Round points cannot be calced for player name '{player_to_calc}' because it does not exist."
+        assert len(list(player_states_to_calc)) > 0, f"Round points cannot \
+        be calced for player name '{player_to_calc}' because it does \
+        not exist."
 
-        points_gained = {player_state.get_player_name(): 0 for player_state in player_states_to_calc}
+        points_gained = {player_state.get_player_name(
+        ): 0 for player_state in player_states_to_calc}
 
         for player_state in player_states_to_calc:
             current_player_name = player_state.get_player_name()
 
             # golden gods
-            points_gained[current_player_name] += player_state.collection[gi.INDEX_OF_GOD] * gi.POINTS_PER_GOD
+            points_gained[current_player_name] += player_state.collection[
+                gi.INDEX_OF_GOD] * gi.POINTS_PER_GOD
 
             # gold
-            points_gained[current_player_name] += player_state.collection[gi.INDEX_OF_GOLD] * gi.POINTS_PER_GOLD
+            points_gained[current_player_name] += player_state.collection[
+                gi.INDEX_OF_GOLD] * gi.POINTS_PER_GOLD
 
             # pharoahs
             least_num_pharoahs, most_num_pharoahs = (
@@ -302,16 +312,18 @@ class RaGame:
                 )
 
             # civilizations
-            points_gained[current_player_name] += gi.POINTS_FOR_CIVS[num_distinct_civs(player_state)]
+            points_gained[current_player_name] += gi.POINTS_FOR_CIVS[
+                num_distinct_civs(player_state)]
 
         return points_gained
 
     def base_round_scoring(
             self, player_states: Iterable[gs.PlayerState]) -> None:
-        """Gives points to each player based on their tiles at end of round."""
+        """Gives points to each player based on tiles at end of round."""
         points_gained = self.calculate_round_end_points_gained(player_states)
         for player_state in player_states:
-            player_state.add_points(points_gained[player_state.get_player_name()])
+            player_state.add_points(
+                points_gained[player_state.get_player_name()])
 
     def calculate_game_end_points_gained(
             self,
@@ -320,7 +332,8 @@ class RaGame:
         """
         Calculates how many game-end points should be added for each player.
         Returns a mapping of player_name -> points gained.
-        Optionally provide a player name, and only the points for that player will be calced.
+        Optionally provide a player name, and only the points for that player
+        will be calced.
         """
         def sum_suns(player_state: gs.PlayerState) -> int:
             return sum(player_state.get_all_sun())
@@ -351,11 +364,15 @@ class RaGame:
 
         player_states_to_calc = (
             player_states if player_to_calc is None
-            else [player_state for player_state in player_states if player_state.get_player_name() == player_to_calc]
+            else [player_state for player_state in player_states
+                  if player_state.get_player_name() == player_to_calc]
         )
-        assert len(list(player_states_to_calc)) > 0, f"Round points cannot be calced for player name '{player_to_calc}' because it does not exist."
+        assert len(list(player_states_to_calc)) > 0, f"Round points cannot \
+        be calced for player name '{player_to_calc}' because it \
+        does not exist."
 
-        points_gained = {player_state.get_player_name(): 0 for player_state in player_states_to_calc}
+        points_gained = {player_state.get_player_name(
+        ): 0 for player_state in player_states_to_calc}
 
         for player_state in player_states_to_calc:
             current_player_name = player_state.get_player_name()
@@ -374,53 +391,69 @@ class RaGame:
 
     def final_round_scoring(
             self, player_states: Iterable[gs.PlayerState]) -> None:
-        """Gives points to each player based on final round scoring at end of game."""
+        """Gives points to each player based on final round scoring."""
         points_gained = self.calculate_game_end_points_gained(player_states)
         for player_state in player_states:
-            player_state.add_points(points_gained[player_state.get_player_name()])
+            player_state.add_points(
+                points_gained[player_state.get_player_name()])
 
-    def calculate_unrealized_points(self, player_states: Iterable[gs.PlayerState]) -> Mapping[str, int]:
+    def calculate_unrealized_points(
+            self, player_states: Iterable[gs.PlayerState]
+    ) -> Mapping[str, int]:
         if self.game_state.is_final_round():
-            round_end_points = self.calculate_round_end_points_gained(player_states)
-            game_end_points = self.calculate_game_end_points_gained(player_states)
-            return {name: round_end_points[name] + game_end_points[name] for name in round_end_points.keys()}
+            round_end_points = self.calculate_round_end_points_gained(
+                player_states)
+            game_end_points = self.calculate_game_end_points_gained(
+                player_states)
+            return {name: round_end_points[name] + game_end_points[name]
+                    for name in round_end_points.keys()}
         else:
             return self.calculate_round_end_points_gained(player_states)
 
     def calculate_value_of_auction_tiles(
-            self, auction_tiles: Iterable[int], player_states: Iterable[gs.PlayerState]
+            self, auction_tiles: Iterable[int],
+            p_states: Iterable[gs.PlayerState]
     ) -> Mapping[str, int]:
         """
-        Calculate how many points the current auction tiles would give each player.
-        Return a mapping of player_name -> points gained.
+        Calculate how many points the current auction tiles would give each
+        player. Return a mapping of player_name -> points gained.
         """
-        # for each player, calculate points gained if they had the auction tiles
-        simulated_player_states = deepcopy(player_states)
-        simulated_points_gained = {player_state.get_player_name(): 0 for player_state in player_states}
-        for player_state in simulated_player_states:
-            current_player_name = player_state.get_player_name()
-            player_state.add_tiles(auction_tiles)
-            current_simulation_player_states = [
-                base_player_state for base_player_state in player_states if base_player_state.get_player_name() != current_player_name
-            ] + [player_state]
+        # per player, calculate points gained if they had the auction tiles
+        sim_p_states = deepcopy(p_states)
+        sim_p_gained = {
+            p_state.get_player_name(): 0 for p_state in p_states}
+        for p_state in sim_p_states:
+            cur_p_name = p_state.get_player_name()
+            p_state.add_tiles(auction_tiles)
+            current_simulation_p_states = [
+                base_p_state for base_p_state in p_states
+                if base_p_state.get_player_name() != cur_p_name
+            ] + [p_state]
 
-            current_player_name = player_state.get_player_name()
-            simulated_round_end_points_gained = self.calculate_round_end_points_gained(current_simulation_player_states, current_player_name)
-            simulated_game_end_points_gained = self.calculate_game_end_points_gained(current_simulation_player_states, current_player_name)
-            simulated_points_gained[current_player_name] = simulated_round_end_points_gained[current_player_name] + simulated_game_end_points_gained[current_player_name]
+            cur_p_name = p_state.get_player_name()
+            sim_end_p_gained = self.calculate_round_end_points_gained(
+                current_simulation_p_states, cur_p_name)
+            sim_g_end_gained = self.calculate_game_end_points_gained(
+                current_simulation_p_states, cur_p_name)
+            sim_p_gained[cur_p_name] = sim_end_p_gained[cur_p_name] + \
+                sim_g_end_gained[cur_p_name]
 
         # for each player, calculate points gained without auction tiles
-        default_points_gained = {player_state.get_player_name(): 0 for player_state in player_states}
-        default_round_end_points_gained = self.calculate_round_end_points_gained(player_states)
-        default_game_end_points_gained = self.calculate_game_end_points_gained(player_states)
-        for player_name in default_points_gained.keys():
-            default_points_gained[player_name] += default_round_end_points_gained[player_name] + default_game_end_points_gained[player_name]
+        def_p_gained = {
+            p_state.get_player_name(): 0 for p_state in p_states}
+        def_end_p_gained = self.calculate_round_end_points_gained(
+            p_states)
+        default_game_end_points_gained = self.calculate_game_end_points_gained(
+            p_states)
+        for player_name in def_p_gained.keys():
+            def_p_gained[player_name] += def_end_p_gained[player_name] + \
+                default_game_end_points_gained[player_name]
 
         # subtract default points gained from simulated points gained
-        for player_name in simulated_points_gained.keys():
-            simulated_points_gained[player_name] -= default_points_gained[player_name]
+        for player_name in sim_p_gained.keys():
+            sim_p_gained[player_name] -= def_p_gained[player_name]
 
-        return simulated_points_gained
+        return sim_p_gained
 
     def end_round(self) -> None:
         """Ends the round and transitions to the next one if necessary."""

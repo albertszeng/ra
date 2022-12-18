@@ -26,7 +26,8 @@ class RaTest(unittest.TestCase):
         player2_state = gs.PlayerState('P2', gi.STARTING_SUN[2][:][1])
         dummy_ra_game = ra.RaGame(['P1', 'P2'])  # create a dummy ra game
 
-        values0 = dummy_ra_game.calculate_value_of_auction_tiles([], [player1_state, player2_state])
+        values0 = dummy_ra_game.calculate_value_of_auction_tiles(
+            [], [player1_state, player2_state])
         self.assertTrue(values0['P1'] == 0)
         self.assertTrue(values0['P2'] == 0)
 
@@ -40,12 +41,14 @@ class RaTest(unittest.TestCase):
             gi.INDEX_OF_FORT
         ]
 
-        values1 = dummy_ra_game.calculate_value_of_auction_tiles(auction_tiles, [player1_state, player2_state])
+        values1 = dummy_ra_game.calculate_value_of_auction_tiles(
+            auction_tiles, [player1_state, player2_state])
         self.assertTrue(values1['P1'] == 15)
         self.assertTrue(values1['P2'] == 15)
 
         player1_state.add_tiles(auction_tiles)
-        values2 = dummy_ra_game.calculate_value_of_auction_tiles(auction_tiles, [player1_state, player2_state])
+        values2 = dummy_ra_game.calculate_value_of_auction_tiles(
+            auction_tiles, [player1_state, player2_state])
         self.assertTrue(values2['P1'] == 7)
         self.assertTrue(values2['P2'] == 18)
 
@@ -57,7 +60,8 @@ class RaTest(unittest.TestCase):
             gi.INDEX_OF_FORT,
             gi.INDEX_OF_FORT
         ]
-        values3 = dummy_ra_game.calculate_value_of_auction_tiles(auction_tiles_2, [player1_state, player2_state])
+        values3 = dummy_ra_game.calculate_value_of_auction_tiles(
+            auction_tiles_2, [player1_state, player2_state])
         self.assertTrue(values3['P1'] == 7)
         self.assertTrue(values3['P2'] == 8)
 
@@ -66,7 +70,8 @@ class RaTest(unittest.TestCase):
         player2_state = gs.PlayerState('P2', gi.STARTING_SUN[2][:][1])
         dummy_ra_game = ra.RaGame(['P1', 'P2'])  # create a dummy ra game
 
-        unrealized_points = dummy_ra_game.calculate_unrealized_points([player1_state, player2_state])
+        unrealized_points = dummy_ra_game.calculate_unrealized_points(
+            [player1_state, player2_state])
         self.assertTrue(unrealized_points['P1'] == -2)
         self.assertTrue(unrealized_points['P2'] == -2)
 
@@ -80,14 +85,17 @@ class RaTest(unittest.TestCase):
             gi.INDEX_OF_FORT
         ]
         player1_state.add_tiles(tiles)
-        player1_state.exchange_sun(player1_state.get_usable_sun()[0], gi.STARTING_CENTER_SUN)
+        player1_state.exchange_sun(player1_state.get_usable_sun()[
+                                   0], gi.STARTING_CENTER_SUN)
 
-        unrealized_points2 = dummy_ra_game.calculate_unrealized_points([player1_state, player2_state])
+        unrealized_points2 = dummy_ra_game.calculate_unrealized_points(
+            [player1_state, player2_state])
         self.assertTrue(unrealized_points2['P1'] == 12)
         self.assertTrue(unrealized_points2['P2'] == -7)
 
         dummy_ra_game.game_state.current_round = gi.NUM_ROUNDS
-        unrealized_points3 = dummy_ra_game.calculate_unrealized_points([player1_state, player2_state])
+        unrealized_points3 = dummy_ra_game.calculate_unrealized_points(
+            [player1_state, player2_state])
         self.assertTrue(unrealized_points3['P1'] == 8)
         self.assertTrue(unrealized_points3['P2'] == -2)
 
@@ -95,7 +103,9 @@ class RaTest(unittest.TestCase):
         game = ra.RaGame(player_names=['P1', 'P2'])
 
         num_ras_per_round = gi.NUM_RAS_PER_ROUND[2]
-        round_action_list = [[str(gi.DRAW), str(gi.INDEX_OF_RA)], [str(gi.BID_NOTHING)], [str(gi.BID_NOTHING)]] * (num_ras_per_round - 1) + [[str(gi.DRAW), str(gi.INDEX_OF_RA)]]
+        round_action_list = [[str(gi.DRAW), str(gi.INDEX_OF_RA)], [
+            str(gi.BID_NOTHING)], [str(gi.BID_NOTHING)]] * (
+            num_ras_per_round - 1) + [[str(gi.DRAW), str(gi.INDEX_OF_RA)]]
 
         game.load_actions(round_action_list)
 
@@ -110,10 +120,12 @@ class RaTest(unittest.TestCase):
         self.assertTrue(game.game_state.get_num_auction_tiles() == 0)
 
         # Verify center sun is still the default one
-        self.assertTrue(game.game_state.get_center_sun() == gi.STARTING_CENTER_SUN)
+        self.assertTrue(game.game_state.get_center_sun()
+                        == gi.STARTING_CENTER_SUN)
 
         # Verify number of tiles drawn is expected
-        self.assertTrue(game.game_state.get_num_tiles_left() == gi.STARTING_NUM_TILES - num_ras_per_round)
+        self.assertTrue(game.game_state.get_num_tiles_left() ==
+                        gi.STARTING_NUM_TILES - num_ras_per_round)
 
 
 if __name__ == "__main__":
