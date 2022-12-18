@@ -47,6 +47,8 @@ class SerializedRaGame(TypedDict):
     playerNames: List[str]
     gameLog: List[Union[Tuple[str, Optional[int]], int]]
     gameState: gs.SerializedGameState
+    unrealized_points: Mapping[str, int]
+    auction_tile_values: Mapping[str, int]
 
 
 # Get the possible actions for a gamestate
@@ -221,6 +223,8 @@ class RaGame:
             playerNames=self.player_names,
             gameState=self.game_state.serialize(),
             gameLog=self.logged_moves,
+            unrealized_points=self.calculate_unrealized_points(self.game_state.player_states),
+            auction_tile_values=self.calculate_value_of_auction_tiles(self.game_state.get_auction_tiles(), self.game_state.player_states)
         )
 
     def is_valid_num_players(self, num_players: int) -> bool:
@@ -371,6 +375,14 @@ class RaGame:
         points_gained = self.calculate_game_end_points_gained(player_states)
         for player_state in player_states:
             player_state.add_points(points_gained[player_state.get_player_name()])
+
+    def calculate_unrealized_points(self, player_states: Iterable[gs.PlayerState]) -> Mapping[str, int]:
+        if self.game_state.is_final_round():
+            round_end_points = self.calculate_round_end_points_gained(player_states)
+            game_end_points = self.calculate_game_end_points_gained(player_states)
+            return {name: round_end_points[name] + game_end_points[name] for name in round_end_points.keys()}
+        else:
+            return self.calculate_round_end_points_gained(player_states)
 
     def calculate_value_of_auction_tiles(
             self, auction_tiles: Iterable[int], player_states: Iterable[gs.PlayerState]
