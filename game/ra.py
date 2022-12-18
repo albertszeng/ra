@@ -176,14 +176,14 @@ class RaGame:
     MAX_ACTION_ATTEMPTS: Final[int] = 10
 
     def __init__(
-        self,
-        player_names: List[str],
-        randomize_play_order: bool = True,
-        outfile: Optional[str] = None,
-        move_history_file: Optional[str] = None,
-        # dict mapping player-name to ai_function
-        ai_player_action_functions: Optional[Mapping[
-            str, Callable[[gs.GameState], int]]] = None) -> None:
+            self,
+            player_names: List[str],
+            randomize_play_order: bool = True,
+            outfile: Optional[str] = None,
+            move_history_file: Optional[str] = None,
+            # dict mapping player-name to ai_function
+            ai_player_action_functions: Optional[Mapping[
+                str, Callable[[gs.GameState], int]]] = None) -> None:
         self.num_players = len(player_names)
         # Initialize empty before loading history.
         self.logged_moves = []

@@ -4,7 +4,7 @@ import logging
 import random
 import textwrap
 
-from typing import cast, Iterable, List, TypedDict, Optional
+from typing import cast, Dict, Iterable, List, TypedDict, Optional
 
 
 # Gamestate class and helper classes
@@ -670,6 +670,11 @@ class GameState:
         if self.auction_winning_player is None:
             raise ValueError('No auction run.')
         return self.auction_winning_player
+
+    def get_all_player_points(self) -> Dict[str, int]:
+        return {
+            player_state.get_player_name(): player_state.get_player_points() for player_state in self.player_states
+        }
 
     # logging functions
 
