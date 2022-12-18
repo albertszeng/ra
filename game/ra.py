@@ -290,7 +290,7 @@ class RaGame:
 
     def base_round_scoring(
             self, player_states: Iterable[gs.PlayerState]) -> None:
-        """Gives points to each player based on their tiles."""
+        """Gives points to each player based on their tiles at end of round."""
         points_gained = self.calculate_round_end_points_gained(player_states)
         for player_state in player_states:
             player_state.add_points(points_gained[player_state.get_player_name()])
@@ -344,7 +344,7 @@ class RaGame:
 
     def final_round_scoring(
             self, player_states: Iterable[gs.PlayerState]) -> None:
-        """Gives points to each player based on final round scoring."""
+        """Gives points to each player based on final round scoring at end of game."""
         points_gained = self.calculate_game_end_points_gained(player_states)
         for player_state in player_states:
             player_state.add_points(points_gained[player_state.get_player_name()])
