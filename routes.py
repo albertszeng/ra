@@ -97,18 +97,23 @@ def start(gameId: uuid.UUID,
         gameAsStr=get_game_repr(game))
 
 
-def action(game: ra.RaGame, move: str) -> Union[Message, ActResponse]:
-    response = ActResponse(
-        gameState=game.serialize(), gameAsStr=get_game_repr(game))
-    if move.upper() == "LOAD":
-        return response
-
+def action(
+        game: ra.RaGame,
+        playerIdx: int,
+        move: str) -> Union[Message, ActResponse]:
     parsedMove = ra.parse_action(move)
     if parsedMove < 0:
         return WarningMessage(message='Unrecognized action.')
 
+    response = ActResponse(
+        gameState=game.serialize(), gameAsStr=get_game_repr(game))
     if game.game_state.is_game_ended():
         return response
+    currIdx = game.game_state.current_player
+    if playerIdx != currIdx:
+        return WarningMessage(
+            message=f'{game.player_names[playerIdx]} cannot make move. \
+            Current player is: {game.player_names[currIdx]}')
     legal_moves = ra.get_possible_actions(game.game_state)
     if not legal_moves:
         return ErrorMessage(message='Internal Error: No valid actions. ')

@@ -77,8 +77,10 @@ Possible actions:
     def test_list_many(self) -> None:
         testIDs = ['12345678123456781234567812345678',
                    '23456781234567812345678123456781']
-        testGames = [ra.RaGame(randomize_play_order=False, player_names=['Game10', 'Game11']),
-                     ra.RaGame(randomize_play_order=False, player_names=['Game20', 'Game21'])]
+        testGames = [ra.RaGame(
+            randomize_play_order=False, player_names=['Game10', 'Game11']),
+            ra.RaGame(
+            randomize_play_order=False, player_names=['Game20', 'Game21'])]
         self.assertEqual(routes.list(
             list(zip(testIDs, testGames))),
             routes.ListGamesResponse(total=2, games=[
@@ -109,18 +111,6 @@ Possible actions:
             gameAsStr=routes.get_game_repr(game),
         ))
 
-    def test_action_load(self) -> None:
-        self.maxDiff = None
-        game = ra.RaGame(
-            player_names=['Player 1', 'Player 2'],
-        )
-        game.init_game()
-        expected = routes.ActResponse(
-            gameState=game.serialize(), gameAsStr=routes.get_game_repr(game))
-        self.assertEqual(routes.action(game, 'LOAD'), expected)
-        self.assertEqual(routes.action(game, 'load'), expected)
-        self.assertEqual(routes.action(game, 'Load'), expected)
-
     def test_action_game_ended(self) -> None:
         self.maxDiff = None
         game = ra.RaGame(
@@ -128,7 +118,8 @@ Possible actions:
         )
         game.init_game()
         game.game_state.set_game_ended()
-        self.assertEqual(routes.action(game, 'draw'), routes.ActResponse(
+        self.assertEqual(routes.action(game, playerIdx=0, move='draw'),
+                         routes.ActResponse(
             gameState=game.serialize(), gameAsStr=routes.get_game_repr(game)))
 
     def test_action_unrecognized(self) -> None:
@@ -137,7 +128,8 @@ Possible actions:
             player_names=['Player 1', 'Player 2'],
         )
         game.init_game()
-        response = cast(routes.Message, routes.action(game, 'INVALID'))
+        response = cast(routes.Message, routes.action(
+            game, playerIdx=0, move='INVALID'))
         self.assertIsNotNone(response['message'])
         self.assertIn("Unrecognized", response['message'])
 
@@ -146,16 +138,27 @@ Possible actions:
             player_names=['Player 1', 'Player 2'],
         )
         game.init_game()
-        response = cast(routes.Message, routes.action(game, 'god1'))
+        response = cast(routes.Message, routes.action(
+            game, playerIdx=0, move='god1'))
         self.assertIsNotNone(response['message'])
         self.assertIn('Only legal actions', response['message'])
+
+    def test_action_wrong_player(self) -> None:
+        game = ra.RaGame(
+            player_names=['Player 1', 'Player 2'],
+        )
+        game.init_game()
+        response = cast(routes.Message, routes.action(
+            game, playerIdx=1, move='draw'))
+        self.assertIsNotNone(response['message'])
+        self.assertIn('Current player is', response['message'])
 
     def test_action(self) -> None:
         game = ra.RaGame(
             player_names=['Player 1', 'Player 2'],
         )
         game.init_game()
-        response = routes.action(game, 'draw')
+        response = routes.action(game, playerIdx=0, move='draw')
 
         self.assertGreater(len(game.logged_moves), 0)
         firstMove = game.logged_moves[0]

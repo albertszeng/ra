@@ -119,12 +119,25 @@ async def action() -> Union[routes.Message, routes.ActResponse]:
             message=f'No active game with id: {gameId}')
     game = dbGame.data
     sid = (await request.json).get('socketId')
+    if action.upper() == "LOAD":
+        if sid:
+            sio.enter_room(sid, gameIdStr)
+        return routes.ActResponse(
+            gameState=game.serialize(), gameAsStr=routes.get_game_repr(game))
+    if not sid:
+        return routes.ErrorMessage(
+            message='Cannot determine player state. Refresh?')
+    session = await sio.get_session(sid)
+    name = session.get('name')
+    if (not (sessId := session.get('gameId'))
+            or sessId != gameIdStr):
+        return routes.WarningMessage(
+            message=f'{sid} ({name}) is in game: {sessId} not {gameIdStr}')
+    if (playerIdx := session.get('playerIdx')) is None:
+        return routes.ErrorMessage(
+            message=f'{sid} ({name}) has no valid index. Rejoin.')
 
-    response = routes.action(game, action)
-    if action == 'LOAD':
-        sio.enter_room(sid, gameIdStr)
-        return response
-
+    response = routes.action(game, playerIdx, action)
     dbGame.data = copy.deepcopy(game)
     db.session.commit()
 
@@ -144,6 +157,8 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
         return
     if not (name := data.get('name')):
         return
+    if gameIdStr in sio.rooms(sid):
+        return
     gameId = uuid.UUID(gameIdStr)
     async with app.app_context():
         if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -155,6 +170,7 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
         if not idxs:
             # Can't join the game. Only spectate by listening to moves.
             sio.enter_room(sid, gameIdStr)
+            await sio.emit('spectate', to=sid)
             logger.info("Client %s (%s) SPECTATING room: %s",
                         sid, name, gameIdStr)
             return
@@ -168,6 +184,7 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
     async with sio.session(sid) as session:
         session['gameId'] = gameIdStr
         session['playerIdx'] = playerIdx
+        session['playerName'] = name
     logger.info("Client %s (%s) JOINED room: %s", sid, name, gameIdStr)
     return
 
@@ -200,6 +217,7 @@ async def _leaveGame(
 
     async with sio.session(sid) as session:
         del session['playerIdx']
+        del session['playerName']
 
     logger.info("Client %s (%s) LEFT room: %s", sid, name, gameIdStr)
 
