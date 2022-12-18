@@ -171,6 +171,8 @@ class RaGame:
     outfile: Optional[str]
     move_history_file: Optional[str]
     player_names: List[str]
+    # Tracks whether the player at the given index has joined the game.
+    player_in_game: List[bool]
     game_state: gs.GameState
     logged_moves: List[Union[Tuple[str, Optional[int]], int]]
     MAX_ACTION_ATTEMPTS: Final[int] = 10
@@ -190,6 +192,7 @@ class RaGame:
         if not self.is_valid_num_players(self.num_players):
             raise ValueError("Invalid number of players")
         self.player_names = player_names
+        self.player_in_game = [False] * len(player_names)
 
         # Verify AI action functions dict has valid player names
         self.ai_player_action_functions: Mapping[
