@@ -1,18 +1,28 @@
 import React from 'react';
 
-import { Button, ButtonGroup, useMediaQuery } from '@mui/material';
+import {
+  Badge,
+  Button,
+  ButtonGroup,
+  useMediaQuery,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Groups, ResetTv, ShoppingBag } from '@mui/icons-material';
+import {
+  Groups,
+  ResetTv,
+  ShoppingBag,
+} from '@mui/icons-material';
 import Grid from '@mui/material/Unstable_Grid2';
 
 type ActionsProps = {
   disabled: boolean;
+  pointsIfWin: number | null;
   onDraw: () => void;
   onAuction: () => void;
   resetGame: () => void;
 };
 function Actions({
-  disabled, onDraw, onAuction, resetGame,
+  disabled, onDraw, onAuction, resetGame, pointsIfWin,
 }: ActionsProps): JSX.Element {
   const theme = useTheme();
   const matchDownSm = useMediaQuery(theme.breakpoints.down('sm'));
@@ -40,7 +50,14 @@ function Actions({
           </Button>
           <Button
             onClick={onAuction}
-            endIcon={<Groups />}
+            endIcon={(
+              <Badge
+                color="secondary"
+                badgeContent={pointsIfWin}
+              >
+                <Groups />
+              </Badge>
+            )}
           >
             Auction
           </Button>

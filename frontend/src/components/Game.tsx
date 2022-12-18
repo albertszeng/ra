@@ -230,7 +230,7 @@ function Game(): JSX.Element {
     };
   }, [gameId, name]);
 
-  const { gameState } = game;
+  const { auctionTileValues, gameState } = game;
   const {
     centerSun, gameEnded, playerStates, activePlayers, currentPlayer,
     auctionStarted, auctionSuns,
@@ -251,6 +251,7 @@ function Game(): JSX.Element {
               <PlayersInfo
                 localName={name}
                 players={playerStates}
+                playerPointsIfWin={auctionTileValues}
                 auctionStarted={auctionStarted}
                 active={activePlayers}
                 current={currentPlayer}
@@ -263,6 +264,7 @@ function Game(): JSX.Element {
                   onAuction: handleAuction,
                   disabled: gameEnded || !isPlaying,
                   resetGame,
+                  pointsIfWin: null,
                 }}
               />
             </Paper>

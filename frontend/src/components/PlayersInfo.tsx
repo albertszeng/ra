@@ -20,12 +20,13 @@ import Grid from '@mui/material/Unstable_Grid2';
 import { Actions, ActionsProps } from './Actions';
 import PlayerInfo from './PlayerInfo';
 import { notEmpty } from '../libs/game';
-import type { Player, Tile } from '../libs/game';
+import type { Player, PointMapping, Tile } from '../libs/game';
 
 type PlayersInfoProps = {
   // Name of the local player, if any. Null is when spectating.
   localName: string | null;
   players: Player[];
+  playerPointsIfWin: PointMapping;
   active: boolean[];
   current: number;
   centerSun: number;
@@ -41,7 +42,7 @@ type PlayersInfoProps = {
 
 function PlayersInfo({
   localName, players, active, current, auctionStarted, bidWithSun,
-  selectTile, centerSun, auctionSuns,
+  selectTile, centerSun, auctionSuns, playerPointsIfWin,
   actionsProps: {
     disabled: actionsDisabled, onDraw, onAuction, resetGame,
   },
@@ -107,6 +108,7 @@ function PlayersInfo({
                 <Actions
                   onDraw={onDraw}
                   onAuction={onAuction}
+                  pointsIfWin={playerPointsIfWin[player.playerName]}
                   disabled={actionsDisabled || current !== idx
                     || auctionStarted || player.playerName !== localName}
                   resetGame={resetGame}

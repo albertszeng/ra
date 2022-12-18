@@ -106,16 +106,24 @@ const DefaultGameState = {
   gameEnded: false,
 };
 
+type PointMapping = {
+  [key: string]: number;
+};
 type Game = {
   playerNames: string[];
   gameLog: ([string, number | null] | number)[],
   gameState: GameState;
+  // Mapping from player names to unrealized points.
+  unrealizedPoints: PointMapping;
+  auctionTileValues: PointMapping;
 };
 
 const DefaultGame: Game = {
   playerNames: [],
   gameLog: [],
   gameState: DefaultGameState,
+  unrealizedPoints: {},
+  auctionTileValues: {},
 };
 
 type WarningLevel = 'success' | 'info' | 'warning' | 'error';
@@ -214,6 +222,7 @@ export type {
   ListGame,
   ListGamesResponse,
   Player,
+  PointMapping,
   Tile,
   TileAction,
   WarningLevel,
