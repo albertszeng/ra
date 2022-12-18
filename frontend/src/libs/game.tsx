@@ -130,12 +130,17 @@ type AlertData = {
   show: boolean;
   message: string;
   level?: WarningLevel;
+  permanent?: boolean;
 };
 
 const apiUrl = (process.env.REACT_APP_BACKEND) ? `https://${process.env.REACT_APP_BACKEND}` : 'http://0.0.0.0:8080';
 const socket = io((process.env.REACT_APP_BACKEND) ? `wss://${process.env.REACT_APP_BACKEND}` : 'ws://0.0.0.0:8080');
 
-async function handleCommand(gameId: string, command: string): Promise<ApiResponse> {
+async function handleCommand(
+  gameId: string,
+  name: string | null,
+  command: string,
+): Promise<ApiResponse> {
   const requestOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -145,12 +150,12 @@ async function handleCommand(gameId: string, command: string): Promise<ApiRespon
   const parsed = await res.json() as ApiResponse;
   const { gameId: joinedGameId } = parsed;
   if (joinedGameId) {
-    socket.emit('join', { gameId: joinedGameId });
+    socket.emit('join', { gameId: joinedGameId, name });
   }
   return parsed;
 }
 
-async function startGame(players: string[]): Promise<ApiResponse> {
+async function startGame(players: string[], name: string | null): Promise<ApiResponse> {
   const requestOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -163,7 +168,7 @@ async function startGame(players: string[]): Promise<ApiResponse> {
   const { gameId } = parsed;
   if (gameId) {
     // Let server know we've joined a game.
-    socket.emit('join', { gameId });
+    socket.emit('join', { gameId, name });
   }
   return parsed;
 }

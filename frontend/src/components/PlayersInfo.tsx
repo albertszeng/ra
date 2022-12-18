@@ -23,6 +23,8 @@ import { notEmpty } from '../libs/game';
 import type { Player, Tile } from '../libs/game';
 
 type PlayersInfoProps = {
+  // Name of the local player, if any. Null is when spectating.
+  localName: string | null;
   players: Player[];
   active: boolean[];
   current: number;
@@ -38,7 +40,7 @@ type PlayersInfoProps = {
 };
 
 function PlayersInfo({
-  players, active, current, auctionStarted, bidWithSun,
+  localName, players, active, current, auctionStarted, bidWithSun,
   selectTile, centerSun, auctionSuns,
   actionsProps: {
     disabled: actionsDisabled, onDraw, onAuction, resetGame,
@@ -105,7 +107,8 @@ function PlayersInfo({
                 <Actions
                   onDraw={onDraw}
                   onAuction={onAuction}
-                  disabled={actionsDisabled || current !== idx || auctionStarted}
+                  disabled={actionsDisabled || current !== idx
+                    || auctionStarted || player.playerName !== localName}
                   resetGame={resetGame}
                 />
                 <PlayerInfo
@@ -113,6 +116,7 @@ function PlayersInfo({
                   data={players[idx]}
                   isActive={active[idx]}
                   isCurrent={current === idx}
+                  isLocalPlayer={player.playerName === localName}
                   bidWithSun={bidWithSun}
                   maxBidSun={maxBidSun}
                   selectTile={selectTile}

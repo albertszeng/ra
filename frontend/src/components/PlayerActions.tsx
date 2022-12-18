@@ -8,6 +8,7 @@ import { useTheme } from '@mui/material/styles';
 type PlayerActionsProps = {
   availableSun: number[],
   unavailableSun: number[],
+  isLocalPlayer: boolean;
   isActive: boolean;
   isCurrent: boolean;
   auctionStarted: boolean;
@@ -17,7 +18,8 @@ type PlayerActionsProps = {
 };
 
 function PlayerActions({
-  availableSun, unavailableSun, isActive, isCurrent, auctionStarted, bidWithSun, maxBidSun,
+  availableSun, unavailableSun, isActive, isLocalPlayer, isCurrent,
+  auctionStarted, bidWithSun, maxBidSun,
 }: PlayerActionsProps) {
   const theme = useTheme();
   const matchDownSm = useMediaQuery(theme.breakpoints.down('sm'));
@@ -32,7 +34,7 @@ function PlayerActions({
         alignItems={(widthLt470px) ? 'center' : 'left'}
       >
         <ButtonGroup
-          disabled={!isActive || !isCurrent || !auctionStarted}
+          disabled={!isActive || !isCurrent || !auctionStarted || !isLocalPlayer}
           size={size}
           color="success"
           aria-label="available sun button group"
@@ -57,7 +59,7 @@ function PlayerActions({
         alignItems={(widthLt470px) ? 'center' : 'right'}
       >
         <ButtonGroup
-          disabled={!isActive || !isCurrent || !auctionStarted}
+          disabled={!isActive || !isCurrent || !auctionStarted || !isLocalPlayer}
           size={size}
           color="success"
           aria-label="unavailable sun button group"

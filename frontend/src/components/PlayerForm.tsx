@@ -1,5 +1,6 @@
 import React, {
   SyntheticEvent,
+  useCallback,
   useEffect,
   useState,
 } from 'react';
@@ -19,18 +20,22 @@ import { listGames, deleteGame } from '../libs/game';
 import type { AlertData, ListGame } from '../libs/game';
 
 type PlayerFormProps = {
-  handleNewGame: (players: string[]) => void;
-  handleLoadGame: (gameId: string) => void;
+  handleNewGame: (players: string[], user: string) => void;
+  handleLoadGame: (gameId: string, user: string) => void;
   setAlert: (alert: AlertData) => void;
 };
 
-function isValid(input: string): boolean {
+function isPlayerNames(input: string): boolean {
   if (input.includes(',')) {
     // Must be player names. Validate at least 2.
     const segments = input.split(',');
     return segments && segments.length >= 2;
   }
-  // Must be game id.
+  return false;
+}
+
+function isGameId(input: string): boolean {
+  // Assume it must be a game id.
   let hex = input;
   if (input.includes('-')) {
     hex = input.replace(/-|\s/g, '');
@@ -38,8 +43,15 @@ function isValid(input: string): boolean {
   return hex.length === 32;
 }
 
-function PlayerForm({ handleNewGame, handleLoadGame, setAlert }: PlayerFormProps): JSX.Element {
-  const [input, setInput] = useState<string>('');
+function isValid(input: string): boolean {
+  return input !== '' && (isPlayerNames(input) || isGameId(input));
+}
+
+function PlayerForm({
+  handleNewGame, handleLoadGame, setAlert,
+}: PlayerFormProps): JSX.Element {
+  const [gameOrPlayers, setGameOrPlayers] = useState<string>('');
+  const [user, setUser] = useState<string | null>(null);
   const [formValid, setFormValid] = useState(false);
   const [gameList, setGameList] = useState<ListGame[]>([]);
 
@@ -52,44 +64,70 @@ function PlayerForm({ handleNewGame, handleLoadGame, setAlert }: PlayerFormProps
     const _ = fetchGames();
   }, []);
 
-  const handleChange = (e: SyntheticEvent<Element, Event>, value: string | null): void => {
+  const handleChange = useCallback((
+    e: SyntheticEvent<Element, Event>,
+    value: string | null,
+  ): void => {
     if (!value) {
       return;
     }
     setFormValid(isValid(value));
-    setInput(value);
-  };
-  const handleSubmit = () => {
-    if (input.includes(',')) {
+    setGameOrPlayers(value);
+  }, []);
+  const handleSubmit = useCallback(() => {
+    if (!user) {
+      setAlert({ show: true, message: 'No user specified!', level: 'warning' });
+      return;
+    }
+    if (gameOrPlayers.includes(',')) {
       // Players, start a new game.
-      return handleNewGame(input.split(','));
+      handleNewGame(gameOrPlayers.split(','), user);
+      return;
     }
     // Game id, start load it.
-    return handleLoadGame(input);
-  };
-  const handleDelete = () => {
+    handleLoadGame(gameOrPlayers, user);
+  }, [gameOrPlayers, handleLoadGame, handleNewGame, setAlert, user]);
+  const handleDelete = useCallback(() => {
     const remoteDelete = async () => {
-      const { message, level } = await deleteGame(input);
-      const { games } = await listGames();
-      setGameList(games);
+      const { message, level } = await deleteGame(gameOrPlayers);
       if (message || level) {
         setAlert({ show: true, message: message || 'Empty response.', level });
       }
+      const { games } = await listGames();
+      setGameOrPlayers('');
+      setGameList(games);
     };
+    if (!isGameId(gameOrPlayers)) {
+      setAlert({ show: true, message: 'Invalid game id.', level: 'warning' });
+      return;
+    }
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const _ = remoteDelete();
-  };
+  }, [gameOrPlayers, setAlert]);
+  const getUserOptions = useCallback(() => {
+    if (isPlayerNames(gameOrPlayers)) {
+      return gameOrPlayers.split(',').filter((el) => el);
+    }
+    if (isGameId(gameOrPlayers)) {
+      const game = gameList.filter(({ id }) => id === gameOrPlayers);
+      if (game.length === 0) {
+        // Did not find players. Don't auto-suggest.
+        return [];
+      }
+      return game[0].players;
+    }
+    return [];
+  }, [gameOrPlayers, gameList]);
   const tooltipText = 'Enter comma-seperated list of players or the Game ID of an existing game.';
   return (
     <Paper elevation={1}>
-      <Grid container spacing={3}>
+      <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
         <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
           <Typography variant="h4">
             Start a Game of Ra!
           </Typography>
         </Grid>
-        <Grid xs={2} />
-        <Grid xs={8}>
+        <Grid xs={8} justifyContent="center" alignItems="center">
           {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
           <Tooltip
             followCursor
@@ -98,7 +136,7 @@ function PlayerForm({ handleNewGame, handleLoadGame, setAlert }: PlayerFormProps
           >
             <Autocomplete
               freeSolo
-              id="players"
+              id="games_or_players"
               options={gameList}
               renderOption={(props, { id, players }: ListGame) => (
                 // eslint-disable-next-line react/jsx-props-no-spreading
@@ -113,7 +151,7 @@ function PlayerForm({ handleNewGame, handleLoadGame, setAlert }: PlayerFormProps
                 return option.id;
               }}
               isOptionEqualToValue={(option, value) => option.id === value.id}
-              value={input}
+              value={gameOrPlayers}
               onInputChange={handleChange}
               renderInput={(params) => (
                 <TextField
@@ -125,7 +163,22 @@ function PlayerForm({ handleNewGame, handleLoadGame, setAlert }: PlayerFormProps
             />
           </Tooltip>
         </Grid>
-        <Grid xs={2} />
+        <Grid xs={4} justifyContent="center" alignItems="center">
+          <Autocomplete
+            id="user"
+            disabled={!isValid(gameOrPlayers)}
+            options={getUserOptions()}
+            value={user}
+            onInputChange={(e, value) => setUser(value)}
+            renderInput={(params) => (
+              <TextField
+                /* eslint-disable-next-line react/jsx-props-no-spreading */
+                {...params}
+                label="Player Name"
+              />
+            )}
+          />
+        </Grid>
         <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
           <ButtonGroup
             variant="contained"
@@ -133,15 +186,15 @@ function PlayerForm({ handleNewGame, handleLoadGame, setAlert }: PlayerFormProps
             aria-label="load action buttons"
           >
             <Button
-              color={(input.includes('-')) ? 'secondary' : 'primary'}
+              color={(gameOrPlayers.includes('-')) ? 'secondary' : 'primary'}
               disabled={!formValid}
               onClick={handleSubmit}
             >
-              {(input.includes('-')) ? 'Load' : 'Start'}
+              {(gameOrPlayers.includes('-')) ? 'Load' : 'Start'}
             </Button>
             <Button
               color="error"
-              disabled={!formValid && !input.includes(',')}
+              disabled={!formValid && !gameOrPlayers.includes(',')}
               onClick={handleDelete}
             >
               Delete
