@@ -53,6 +53,7 @@ function Actions({
             endIcon={(
               <Badge
                 color="secondary"
+                showZero
                 badgeContent={pointsIfWin}
               >
                 <Groups />

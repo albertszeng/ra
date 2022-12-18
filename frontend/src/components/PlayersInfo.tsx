@@ -27,6 +27,7 @@ type PlayersInfoProps = {
   localName: string | null;
   players: Player[];
   playerPointsIfWin: PointMapping;
+  playerEstimatedDelta: PointMapping;
   active: boolean[];
   current: number;
   centerSun: number;
@@ -42,7 +43,7 @@ type PlayersInfoProps = {
 
 function PlayersInfo({
   localName, players, active, current, auctionStarted, bidWithSun,
-  selectTile, centerSun, auctionSuns, playerPointsIfWin,
+  selectTile, centerSun, auctionSuns, playerPointsIfWin, playerEstimatedDelta,
   actionsProps: {
     disabled: actionsDisabled, onDraw, onAuction, resetGame,
   },
@@ -71,6 +72,7 @@ function PlayersInfo({
             aria-label="player tabs"
           >
             {players.map(({ playerName, points }, idx) => {
+              const pointDiff = playerEstimatedDelta[playerName];
               // eslint-disable-next-line no-nested-ternary
               const labelSuffix = (auctionSuns[idx])
                 ? ` (${auctionSuns[idx] || ''})`
@@ -82,7 +84,11 @@ function PlayersInfo({
                   label={`${playerName}${labelSuffix}`}
                   value={idx.toString()}
                   icon={(
-                    <Badge badgeContent={points} color="secondary">
+                    <Badge
+                      badgeContent={`${points}(${(pointDiff >= 0) ? '+' : ''}${pointDiff})`}
+                      color="secondary"
+                      max={100000}
+                    >
                       <Leaderboard fontSize="large" color="action" />
                     </Badge>
                   )}

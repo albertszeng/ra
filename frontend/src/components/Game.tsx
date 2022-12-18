@@ -229,7 +229,7 @@ function Game(): JSX.Element {
     };
   }, [gameId, name, resetGame]);
 
-  const { auctionTileValues, gameState } = game;
+  const { auctionTileValues, unrealizedPoints, gameState } = game;
   const {
     centerSun, gameEnded, playerStates, activePlayers, currentPlayer,
     auctionStarted, auctionSuns,
@@ -251,6 +251,7 @@ function Game(): JSX.Element {
                 localName={name}
                 players={playerStates}
                 playerPointsIfWin={auctionTileValues}
+                playerEstimatedDelta={unrealizedPoints}
                 auctionStarted={auctionStarted}
                 active={activePlayers}
                 current={currentPlayer}
