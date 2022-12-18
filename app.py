@@ -93,8 +93,10 @@ async def start() -> Union[routes.Message, routes.StartResponse]:
 async def delete() -> routes.Message:
     if not (gameIdStr := (await request.json).get('gameId')):
         return routes.ErrorMessage(message='Invalid request.')
-
-    gameId = uuid.UUID(gameIdStr)
+    try:
+        gameId = uuid.UUID(gameIdStr)
+    except ValueError as err:
+        return routes.ErrorMessage(message=str(err))
     if not (dbGame := db.session.get(Game, gameId.hex)):
         return routes.WarningMessage(
             message=f'No game with id {gameId} found.')
@@ -129,13 +131,9 @@ async def action() -> Union[routes.Message, routes.ActResponse]:
             message='Cannot determine player state. Refresh?')
     session = await sio.get_session(sid)
     name = session.get('name')
-    if (not (sessId := session.get('gameId'))
-            or sessId != gameIdStr):
-        return routes.WarningMessage(
-            message=f'{sid} ({name}) is in game: {sessId} not {gameIdStr}')
     if (playerIdx := session.get('playerIdx')) is None:
-        return routes.ErrorMessage(
-            message=f'{sid} ({name}) has no valid index. Rejoin.')
+        return routes.InfoMessage(
+            message=f'{sid} is in spectator mode. Join an open game.')
 
     response = routes.action(game, playerIdx, action)
     dbGame.data = copy.deepcopy(game)
@@ -157,8 +155,6 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
         return
     if not (name := data.get('name')):
         return
-    if gameIdStr in sio.rooms(sid):
-        return
     gameId = uuid.UUID(gameIdStr)
     async with app.app_context():
         if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -168,11 +164,10 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
             zip(game.player_in_game, game.player_names))
             if not occupied and player.lower() == name.lower()]
         if not idxs:
-            # Can't join the game. Only spectate by listening to moves.
-            sio.enter_room(sid, gameIdStr)
-            await sio.emit('spectate', to=sid)
             logger.info("Client %s (%s) SPECTATING room: %s",
-                        sid, name, gameIdStr)
+                sid, name, gameIdStr)
+            await sio.emit('spectate', to=sid)
+            sio.enter_room(sid, gameIdStr)
             return
         # Take first available index. Duplicate names are based on join order.
         playerIdx = idxs[0]
@@ -192,16 +187,11 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
 async def _leaveGame(
         sid: str, gameIdStr: str, name: Optional[str] = None) -> None:
     session = await sio.get_session(sid)
-    sessionGameId = session.get('gameId')
-    if sessionGameId != gameIdStr:
-        logger.info("Client %s (%s) CANNOT LEAVE room: %s. IN room: %s",
-                    sid, name, gameIdStr, sessionGameId)
-        return
     sio.leave_room(sid, gameIdStr)
 
     if (playerIdx := session.get('playerIdx')) is None:
         async with sio.session(sid) as session:
-            del session['gameId']
+            session['gameId'] = None
         logger.info("Client %s (%s) LEFT SPECTATING room: %s",
                     sid, name, gameIdStr)
         return
@@ -216,8 +206,8 @@ async def _leaveGame(
         db.session.commit()
 
     async with sio.session(sid) as session:
-        del session['playerIdx']
-        del session['playerName']
+        session['playerIdx'] = None
+        session['playerName'] = None
 
     logger.info("Client %s (%s) LEFT room: %s", sid, name, gameIdStr)
 
@@ -237,8 +227,9 @@ async def connect(sid: str, environ, auth) -> None:  # pyre-ignore[2]
 @sio.event  # pyre-ignore[56]
 async def disconnect(sid: str) -> None:
     session = await sio.get_session(sid)
-    if (gameIdStr := session.get('gameId')):
-        await _leaveGame(sid, gameIdStr, session.get('name'))
+    for room in sio.rooms(sid):
+        if room != sid:
+            await _leaveGame(sid, room, session.get('name'))
     logger.info("Client %s DISCONNECTED.", sid)
 
 
