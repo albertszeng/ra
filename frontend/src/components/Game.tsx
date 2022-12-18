@@ -205,10 +205,8 @@ function Game(): JSX.Element {
         socket.emit('join', { gameId, name });
       }
     });
-    socket.on('disconnect', (reason) => {
-      if (reason === 'io server disconnect') {
-        socket.connect();
-      }
+    socket.on('disconnect', () => {
+      resetGame();
     });
     socket.on('update', ({ gameState }: ApiResponse) => {
       if (gameState) {
@@ -224,11 +222,12 @@ function Game(): JSX.Element {
       });
     });
     return () => {
+      socket.off('spectate');
       socket.off('update');
       socket.off('disconnect');
       socket.off('connect');
     };
-  }, [gameId, name]);
+  }, [gameId, name, resetGame]);
 
   const { auctionTileValues, gameState } = game;
   const {
