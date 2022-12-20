@@ -21,7 +21,7 @@ STARTING_SUN: Dict[int, List[List[int]]] = {
         [6, 11, 12]]}
 
 # num of players: number of ra tiles per round
-NUM_RAS_PER_ROUND: Dict[int, int] = {2: 6, 3: 8, 4: 9, 6: 10}
+NUM_RAS_PER_ROUND: Dict[int, int] = {2: 6, 3: 8, 4: 9, 5: 10}
 
 # number of points each player starts with
 STARTING_PLAYER_POINTS: int = 10
