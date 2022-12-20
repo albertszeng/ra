@@ -899,6 +899,7 @@ class RaGame:
                 legal_actions = get_possible_actions(self.game_state)
                 assert legal_actions is not None, "Game has not ended."
                 action = self.get_action(legal_actions)
+                print('executing action:', gi.ACTION_MAPPING[action])
                 t = self.execute_action(action, legal_actions)
                 yield action, t
         if not self.outfile:

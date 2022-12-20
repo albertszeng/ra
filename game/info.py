@@ -1,5 +1,5 @@
 import enum
-from typing import Dict, List, TypedDict, Tuple
+from typing import Dict, List, Mapping, TypedDict, Tuple
 
 
 # Game Constants
@@ -308,6 +308,37 @@ DISCARD_TEM: int = 24  # discard temple monument
 DISCARD_STAT: int = 25  # discard statue monument
 DISCARD_STE: int = 26  # discard step pyramid monument
 DISCARD_SPH: int = 27  # discard sphinx monument
+
+ACTION_MAPPING: Mapping[int, str] = {
+    DRAW: "draw",
+    AUCTION: "auction",
+    GOD_1: "golden_god_1",
+    GOD_2: "golden_god_2",
+    GOD_3: "golden_god_3",
+    GOD_4: "golden_god_4",
+    GOD_5: "golden_god_5",
+    GOD_6: "golden_god_6",
+    GOD_7: "golden_god_7",
+    GOD_8: "golden_god_8",
+    BID_1: "bid_lowest_sun",
+    BID_2: "bid_second_lowest_sun",
+    BID_3: "bid_third_lowest_sun",
+    BID_4: "bid_fourth_lowest_sun",
+    BID_NOTHING: "bid_nothing",
+    DISCARD_ASTR: "discard_astronomy_civ",
+    DISCARD_AGR: "discard_agriculture_civ",
+    DISCARD_WRI: "discard_writing_civ",
+    DISCARD_REL: "discard_religion_civ",
+    DISCARD_ART: "discard_art_civ",
+    DISCARD_FORT: "discard_fortress_monumnet",
+    DISCARD_OBEL: "discard_obelisk_monumnet",
+    DISCARD_PAL: "discard_palace_monumnet",
+    DISCARD_PYR: "discard_pyramid_monumnet",
+    DISCARD_TEM: "discard_temple_monumnet",
+    DISCARD_STAT: "discard_statue_monumnet",
+    DISCARD_STE: "discard_step_pyramid_monument",
+    DISCARD_SPH: "discard_sphynx_monument",
+}
 
 
 # Valid user inputs for each Action
