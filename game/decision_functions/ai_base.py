@@ -8,6 +8,7 @@ from datetime import datetime
 
 from typing import List
 
+AI_PLAYER_NAME = 'AI_PLAYER'
 OUTFILE_FOLDER_NAME: str = "move_histories"
 DEFAULT_OUTFILE_PREFIX: str = "move_history"
 
@@ -53,11 +54,14 @@ if __name__ == '__main__':
     args: argparse.Namespace = get_args()
     player_names: List[str] = [
         args.player1,
-        "ai_player"
+        AI_PLAYER_NAME
     ]
 
     game = ra.RaGame(
         player_names,
         move_history_file=args.infile,
-        outfile=args.outfile)
+        outfile=args.outfile,
+        ai_player_action_functions={
+            AI_PLAYER_NAME: make_first_move_ai
+        })
     game.start_game()
