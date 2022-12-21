@@ -1,6 +1,6 @@
 from game import info as gi
 
-from typing import List
+from typing import List, Mapping, Tuple
 
 ##### Top-level Evaluation Functions
 
@@ -95,3 +95,60 @@ def value_golden_god(num_new_golden_gods: int, num_current_golden_gods: int) -> 
         return first_god_value + additional_god_value
     else:
         return num_new_golden_gods * 2
+
+def value_pharaohs(
+    num_new_pharaohs: int,  # How many pharaohs are in the auction set
+    num_current_pharaohs: int,  # How many pharaohs the player has currently
+    num_opponent_pharaohs: Mapping[str, Tuple[int, bool]], # player_name -> (num pharaohs, is active)
+    num_rounds_left_inc_this_one: int
+) -> float:
+    if num_new_pharaohs == 0:
+        return 0
+
+    assert num_rounds_left_inc_this_one > 0, "Cannot evaluate pharaohs if no rounds left"
+
+    most_opposing_pharaohs_possible = 0
+    most_opposing_pharaohs_currently = 0
+    least_opposing_pharaohs_currently = 0
+    for _player_name, (num_opp_pharaohs, is_active) in num_opponent_pharaohs.items():
+        most_opposing_pharaohs_possible = max(most_opposing_pharaohs_possible, num_opp_pharaohs + (num_new_pharaohs if is_active else 0))
+        most_opposing_pharaohs_currently = max(most_opposing_pharaohs_currently, num_opp_pharaohs)
+        least_opposing_pharaohs_currently = min(least_opposing_pharaohs_currently, num_opp_pharaohs)
+    num_opp_players_less_pharaohs = len([n for (n, _is_active) in num_opponent_pharaohs.values() if n < num_current_pharaohs])
+    at_risk_of_becoming_last = (
+        num_current_pharaohs > least_opposing_pharaohs_currently and
+        num_opp_players_less_pharaohs == 1 and
+        least_opposing_pharaohs_currently + num_new_pharaohs >= num_current_pharaohs
+    )
+
+    # if way ahead in pharaohs, value pharaohs lightly
+    if num_current_pharaohs > most_opposing_pharaohs_possible:
+        return num_new_pharaohs * num_rounds_left_inc_this_one
+
+    # if currently winning pharaohs, but can be tied, value pharaohs moderately
+    elif num_current_pharaohs >= most_opposing_pharaohs_possible:
+        return num_new_pharaohs * (1 + 2 * (num_rounds_left_inc_this_one - 1))
+
+    # if player is winning, but can be overtaken, value pharaohs highly
+    elif num_current_pharaohs <= most_opposing_pharaohs_possible and num_current_pharaohs >= most_opposing_pharaohs_currently:
+        return num_new_pharaohs * (2.5 + 2 * (num_rounds_left_inc_this_one - 1))
+
+    # if player can take the lead, value pharaohs very highly
+    elif num_current_pharaohs + num_new_pharaohs > most_opposing_pharaohs_currently:
+        return num_new_pharaohs * (3.5 + 2.5 * (num_rounds_left_inc_this_one - 1))
+
+    # if player can tie for the lead in pharaohs, value pharaohs highy but a bit less than above
+    elif num_current_pharaohs + num_new_pharaohs == most_opposing_pharaohs_currently:
+        return num_new_pharaohs * (2.5 + 1.5 * (num_rounds_left_inc_this_one - 1))
+
+    # if player cannot reach the pharaoh leader, and is not at risk of being last, value pharaohs lightly
+    elif num_current_pharaohs + num_new_pharaohs < most_opposing_pharaohs_currently and not at_risk_of_becoming_last:
+        return num_new_pharaohs * num_rounds_left_inc_this_one
+
+    # if player is at risk of being last or is last current but can overtake last, value pharaohs moderately
+    elif at_risk_of_becoming_last or (num_current_pharaohs + num_new_pharaohs > least_opposing_pharaohs_currently and num_current_pharaohs <= least_opposing_pharaohs_currently):
+        return 2 + (num_rounds_left_inc_this_one - 1)
+
+    # the only remaining case should be if the player cannot catch up to 2nd to last. In this case, value pharoahs lightly.
+    else:
+        return num_new_pharaohs * num_rounds_left_inc_this_one
