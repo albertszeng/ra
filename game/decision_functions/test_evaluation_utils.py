@@ -36,5 +36,10 @@ class RaTest(unittest.TestCase):
         self.assertEqual(e.value_niles_and_flood(3, 2, 5, 0, 10, 3), 13) # 2 new flood, 5 current nile
         self.assertEqual(e.value_niles_and_flood(3, 2, 5, 0, 10, 1), 10) # 2 new flood, 5 current nile, 1 round left
 
+    def test_value_3_gold(self) -> None:
+        self.assertEqual(e.value_3_gold(1), 3)
+        self.assertEqual(e.value_3_gold(2), 6)
+        self.assertEqual(e.value_3_gold(3), 9)
+
 if __name__ == "__main__":
     unittest.main()

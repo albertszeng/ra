@@ -75,3 +75,6 @@ def value_niles_and_flood(
     nile_value = num_new_niles * (num_rounds_left_inc_this_one * 0.5 + (0.5 if num_new_floods + num_current_floods > 0 else 0))
     flood_value = num_new_floods + (num_current_niles if num_current_floods == 0 else 0)
     return nile_value + flood_value
+
+def value_3_gold(num_3_gold: int) -> float:
+    return num_3_gold * 3
