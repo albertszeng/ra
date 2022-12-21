@@ -62,3 +62,16 @@ def value_civs(
         5: 20
     }
     return cumulative_new_civ_values[num_distinct_new_civs + num_distinct_current_civs] - cumulative_current_civ_values[num_distinct_current_civs]
+
+def value_niles_and_flood(
+    num_new_niles: int,
+    num_new_floods: int,
+    num_current_niles: int,
+    num_current_floods: int,
+    num_ras_left_in_current_round: int,
+    num_rounds_left_inc_this_one: int
+) -> float:
+    # TODO(albertz): should factor in the number of ras left in the current round
+    nile_value = num_new_niles * (num_rounds_left_inc_this_one * 0.5 + (0.5 if num_new_floods + num_current_floods > 0 else 0))
+    flood_value = num_new_floods + (num_current_niles if num_current_floods == 0 else 0)
+    return nile_value + flood_value

@@ -9,7 +9,6 @@ import unittest
 
 class RaTest(unittest.TestCase):
     def test_value_civs_not_second_civ(self) -> None:
-        auction_tiles = [gi.INDEX_OF_ASTR]
         self.assertEqual(e.value_civs(0, 0, 10, 4), 0.) # no civs
         self.assertEqual(e.value_civs(0, 1, 10, 4), 0.) # no new civs
         self.assertEqual(e.value_civs(1, 0, 10, 4), 5.) # 1 new civ
@@ -17,12 +16,25 @@ class RaTest(unittest.TestCase):
         self.assertEqual(e.value_civs(2, 2, 10, 4), 10.) # 2 additional civs
 
     def test_value_civs_second_civ(self) -> None:
-        auction_tiles = [gi.INDEX_OF_ASTR]
         self.assertEqual(e.value_civs(2, 0, 10, 4), 7.25) # 2 new civs
         self.assertEqual(e.value_civs(1, 1, 10, 4), 2.25) # 1 additional civ
         self.assertEqual(e.value_civs(1, 1, 0, 4), 0.) # 1 additional civ
         self.assertEqual(e.value_civs(1, 1, 1, 4), 0.25) # 1 additional civ
         self.assertEqual(e.value_civs(1, 1, 10, 1), 0.) # 1 additional civ
+
+    def test_value_floods_and_niles(self) -> None:
+        self.assertEqual(e.value_niles_and_flood(1, 0, 0, 0, 10, 3), 1.5) # 1 new nile
+        self.assertEqual(e.value_niles_and_flood(1, 1, 0, 0, 10, 3), 3) # 1 new nile, 1 new flood
+        self.assertEqual(e.value_niles_and_flood(1, 0, 0, 1, 10, 3), 2) # 1 new nile, 1 current flood
+        self.assertEqual(e.value_niles_and_flood(1, 0, 0, 1, 10, 1), 1) # 1 new nile, 1 current flood, 1 round left
+        self.assertEqual(e.value_niles_and_flood(1, 0, 1, 1, 10, 3), 2) # 1 new nile, 1 current nile, 1 current flood
+        self.assertEqual(e.value_niles_and_flood(1, 0, 5, 1, 10, 3), 2) # 1 new nile, 5 current nile, 1 current flood
+        self.assertEqual(e.value_niles_and_flood(1, 1, 0, 1, 10, 3), 3) # 1 new nile, 1 new flood, 1 current flood
+        self.assertEqual(e.value_niles_and_flood(1, 1, 5, 1, 10, 3), 3) # 1 new nile, 1 new flood, 5 current nile, 1 current flood
+        self.assertEqual(e.value_niles_and_flood(0, 1, 5, 0, 10, 3), 6) # 1 new flood, 5 current nile
+        self.assertEqual(e.value_niles_and_flood(0, 2, 5, 0, 10, 3), 7) # 2 new flood, 5 current nile
+        self.assertEqual(e.value_niles_and_flood(3, 2, 5, 0, 10, 3), 13) # 2 new flood, 5 current nile
+        self.assertEqual(e.value_niles_and_flood(3, 2, 5, 0, 10, 1), 10) # 2 new flood, 5 current nile, 1 round left
 
 if __name__ == "__main__":
     unittest.main()
