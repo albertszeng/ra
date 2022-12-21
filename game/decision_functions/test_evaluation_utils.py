@@ -41,5 +41,8 @@ class RaTest(unittest.TestCase):
         self.assertEqual(e.value_3_gold(2), 6)
         self.assertEqual(e.value_3_gold(3), 9)
 
+    def test_value_golden_god(self) -> None:
+        self.assertEqual(e.value_golden_god(1), 3)
+
 if __name__ == "__main__":
     unittest.main()
