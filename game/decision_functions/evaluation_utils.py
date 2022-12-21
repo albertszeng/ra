@@ -6,7 +6,7 @@ from typing import List
 
 def value_auction_tiles(
         auction_tiles: List[int],
-        verbose=True,  # will print out its reasoning
+        verbose: bool = True,  # will print out its reasoning
  ) -> float:
     """
     Estimate the "value" of a set of auction tiles.
