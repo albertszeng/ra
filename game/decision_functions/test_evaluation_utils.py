@@ -17,7 +17,6 @@ class RaTest(unittest.TestCase):
         self.assertEqual(e.value_civs(1, 1, 6, 3), 2) # 1 additional civ
         self.assertEqual(e.value_civs(3, 0, 6, 3), 10) # 3 new civs
         self.assertEqual(e.value_civs(2, 2, 6, 3), 10) # 2 additional civs
-        pass
 
 
 if __name__ == "__main__":
