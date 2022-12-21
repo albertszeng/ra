@@ -79,7 +79,7 @@ def value_niles_and_flood(
 def value_3_gold(num_3_gold: int) -> float:
     return num_3_gold * 3
 
-def value_golden_god(num_golden_gods: int) -> float:
+def value_golden_god(num_new_golden_gods: int, num_current_golden_gods: int) -> float:
     # TODO(albertz): need to factor in a variety of things, including:
     # - Time left in round, eg. num ra tiles left
     # - Whether the player will have time to use the golden god, eg. num suns left
@@ -87,4 +87,11 @@ def value_golden_god(num_golden_gods: int) -> float:
     #     - +3rd Copy Monument
     #     - +7th Distinct Monument
     #     - Civs
-    return num_golden_gods * 3
+    # - Number of golden gods total, since generally only the first is very valuable
+
+    if num_current_golden_gods == 0:
+        first_god_value = 3 if num_new_golden_gods > 0 else 0
+        additional_god_value = 2 * max(num_new_golden_gods - 1, 0)
+        return first_god_value + additional_god_value
+    else:
+        return num_new_golden_gods * 2
