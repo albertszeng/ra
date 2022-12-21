@@ -7,7 +7,7 @@ from typing import List
 def value_auction_tiles(
         auction_tiles: List[int],
         verbose=True,  # will print out its reasoning
- ) -> int:
+ ) -> float:
     """
     Estimate the "value" of a set of auction tiles.
 
@@ -29,18 +29,20 @@ def value_civs(
     num_distinct_current_civs: int,  # Number of distinct civ tiles the player currently has.
     ra_tiles_left_in_round: int,  # Number of ra tiles left before the round ends.
     how_many_sun_left: int,
-) -> int:
+) -> float:
     """
     Evaluate the worth of new civ tiles.
     """
     assert 0 <= num_distinct_new_civs and num_distinct_new_civs <= 5, f"cannot evaluate {num_distinct_new_civs} new civs"
     assert 0 <= num_distinct_current_civs and num_distinct_current_civs <= 5, f"there cannot be {num_distinct_current_civs} current civs"
-    assert gi.NUM_RAS_PER_ROUND[2] <= ra_tiles_left_in_round and ra_tiles_left_in_round <= gi.NUM_RAS_PER_ROUND[5], f"there cannot be {ra_tiles_left_in_round} ra tiles left"
+    assert 0 <= ra_tiles_left_in_round and ra_tiles_left_in_round <= gi.NUM_RAS_PER_ROUND[5], f"there cannot be {ra_tiles_left_in_round} ra tiles left"
 
-    def second_civ_value(ra_tiles_left_in_round: int, how_many_sun_left: int) -> int:
-        # TODO(albertz): the 2nd civ's value should be tempered by the number of ras
-        # left in the round and the number of suns the player has
-        return 2
+    def second_civ_value(ra_tiles_left_in_round: int, how_many_sun_left: int) -> float:
+        # The less ra tiles left, the less valuable the 2nd civ is
+        ra_tile_modifier: float = max(ra_tiles_left_in_round / 10., 0.)
+        # The less suns the player has, the less valuable the 2nd civ is
+        sun_modifier: float = max((how_many_sun_left - 1) / 4., 0.)
+        return min(2.5 * ra_tile_modifier, 3 * sun_modifier)
 
     # The cumulative value of each new distinct civ
     cumulative_new_civ_values = {
