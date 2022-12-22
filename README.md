@@ -87,13 +87,20 @@ Note that above automatically runs all tests found in `test_*.py` files.
 
 ## Deployment
 
-When pushed, this server gets deployed to `nautilik.pythonanywhere.com`.
+When pushed, this server gets deployed to `ra-server.fly.dev`.
 
 # Ra Server
 
-To launch the backend server for debugging, run:
+To launch the backend server for debugging, you first need to define an ENVIRONMENT VARIABLE for the data. If using `pipenv`, create a `.env` file and run:
+
+```
+DATABASE_URL=sqlite:////tmp/game.db
+```
+
+
+Then run:
 ```sh
-pipenv run flask --debug run
+pipenv run uvicorn --host 0.0.0.0 --port 8080 --workers 1 --lifespan on --proxy-headers --log-level debug app:asgi_app
 ```
 
 # Ra Website

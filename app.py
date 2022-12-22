@@ -22,7 +22,8 @@ logger: logging.Logger = logging.getLogger("uvicorn.info")
 
 
 app = quart.Quart(__name__)  # pyre-ignore[5]
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DATABASE_URL', 'sqlite:////tmp/game.db')
 logger.info('Connected to %s', os.environ['DATABASE_URL'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
