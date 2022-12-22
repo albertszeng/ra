@@ -1,7 +1,7 @@
 from game import ra
 from game import state as gs
 from game import info as gi
-from game.decision_functions import evaluation_utils as e
+from game.decision_functions import evaluate_auction_tiles_utils as e
 
 import random
 import unittest
