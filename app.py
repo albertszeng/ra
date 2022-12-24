@@ -1,25 +1,24 @@
-import quart.flask_patch  # pyre-ignore[21]: Manually patched.
+import quart.flask_patch  # pyre-ignore[21]: Manually patched. # isort: skip
 
 import asyncio
 import copy
-import flask_sqlalchemy
 import functools
 import hashlib
 import logging
 import os
+import uuid
+from typing import Awaitable, Callable, Optional, TypeVar, Union, cast
+
+import flask_sqlalchemy
+import jwt
 import quart  # pyre-ignore[21]
 import quart_cors
-import routes
 import socketio  # pyre-ignore[21]
-import uuid
-
-
 from quart import request
 from sqlalchemy.sql import expression
-
-
-from typing import Awaitable, Callable, cast, Optional, TypeVar, Union
 from typing_extensions import ParamSpec
+
+import routes
 
 logger: logging.Logger = logging.getLogger("uvicorn.info")
 
@@ -30,8 +29,10 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
 )
 logger.info("Connected to %s", os.environ["DATABASE_URL"])
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-_DEBUG = os.environ.get("DEBUG", False)
-_DISABLE_AUTH = os.environ.get("DISABLE_AUTH", True)
+_DEBUG: bool = bool(os.environ.get("DEBUG", False))
+_DISABLE_AUTH: bool = bool(os.environ.get("DISABLE_AUTH", True))
+_SECRET_KEY: str = os.environ.get("SECRET_KEY", "debug" if _DEBUG else "")
+assert _SECRET_KEY
 
 
 # For Database support.
@@ -247,10 +248,25 @@ async def act(sid: str, data: routes.ActionRequest) -> None:
 @sio.event  # pyre-ignore[56]
 async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
     """SocketIO handlers for when a user attempts to login/register."""
-    if not (username := data.get("username")):
+    username, password, oldToken = (
+        data.get("username"),
+        data.get("password"),
+        data.get("token"),
+    )
+    # Attempt to login with provided token.
+    if oldToken and (response := routes.authenticate_token(oldToken, _SECRET_KEY)):
+        async with sio.session(sid) as session:
+            session["loggedIn"] = True
+        await sio.emit("login", response, to=sid)
         return
-    if not (password := data.get("password")):
+    # Must have set username and password.
+    if not (username and password):
         return
+
+    # Authenticate with data provided.
+    payload = {"username": username, "_exp": routes.gen_exp()}
+    token = jwt.encode(payload, _SECRET_KEY, algorithm="HS256")
+
     async with app.app_context():
         user = db.session.get(User, username)
         # This is a registration request.
@@ -259,29 +275,32 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
-            await sio.emit(
-                "login",
-                routes.SuccessMessage(
-                    message=f"{username} account created. Successfully logged in."
-                ),
-                to=sid,
+            response = routes.LoginResponse(
+                token=token,
+                username=username,
+                message=f"{username} account created. Successfully logged in.",
+                level="success",
             )
+            await sio.emit("login", response, to=sid)
             return
     if not user.check_password(password):
-        await sio.emit(
-            "login", routes.WarningMessage(message=f"{username} cannot login."), to=sid
-        )
+        response = routes.WarningMessage(message=f"{username} cannot login.")
+        await sio.emit("login", response, to=sid)
         return
     async with sio.session(sid) as session:
         session["loggedIn"] = True
-    await sio.emit(
-        "login", routes.SuccessMessage(message=f"{username} logged in."), to=sid
+    response = routes.LoginResponse(
+        token=token,
+        username=username,
+        message=f"{username} logged in.",
+        level="success",
     )
+    await sio.emit("login", response, to=sid)
 
 
 @sio.event  # pyre-ignore[56]
 async def logout(sid: str) -> None:
-    """SocketIO handler where the currently connected client is requesting to log out."""
+    """SocketIO handler where the client is requesting to log out."""
     async with sio.session(sid) as session:
         session["loggedIn"] = False
     await sio.emit("logout", routes.SuccessMessage("Successfully logged out."), to=sid)
