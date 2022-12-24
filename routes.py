@@ -1,10 +1,13 @@
+import datetime as datetime_lib
 import uuid
+from datetime import datetime
+from typing import Awaitable, Callable, Dict, List, Optional, Sequence, Tuple, Union
+
+import jwt
+from sqlalchemy.ext import mutable
+from typing_extensions import NotRequired, TypedDict
 
 from game import info, ra
-from sqlalchemy.ext import mutable
-
-from typing import Awaitable, Callable, Dict, Sequence, List, Optional, Tuple, Union
-from typing_extensions import NotRequired, TypedDict
 
 
 class RaGame(mutable.Mutable, ra.RaGame):
@@ -45,6 +48,15 @@ class ActionResponse(TypedDict):
 class LoginOrRegisterRequest(TypedDict):
     username: NotRequired[str]
     password: NotRequired[str]
+    # The user can provide a token to restore a previous login.
+    token: NotRequired[str]
+
+
+class LoginResponse(Message):
+    # We return a token on successful login/registration so the client
+    # can cache it.
+    token: str
+    username: str
 
 
 class StartResponse(ActionResponse):
@@ -161,3 +173,36 @@ async def action(
         return ErrorMessage(f"Failed to update game: {gameId}. Repeat action.")
 
     return ActionResponse(gameState=game.serialize(), gameAsStr=get_game_repr(game))
+
+
+def gen_exp() -> float:
+    return (datetime.utcnow() + datetime_lib.timedelta(days=1)).timestamp()
+
+
+def authenticate_token(token: str, secret: str) -> Optional[LoginResponse]:
+    """Authenticates the provided token. On success, returns a LongReponse"""
+    try:
+        payload = jwt.decode(token, secret, algorithms=["HS256"])
+    except:
+        return
+    if not (exp := payload.get("_exp")) or datetime.utcnow() > datetime.fromtimestamp(
+        exp
+    ):
+        # Invalid or expired token.
+        return
+    # Token is valid - refresh deadline, and send along.
+    username = payload.get("username")
+    refreshedToken = jwt.encode(
+        {
+            "username": username,
+            "_exp": gen_exp(),
+        },
+        secret,
+        algorithm="HS256",
+    )
+    return LoginResponse(
+        token=refreshedToken,
+        username=username,
+        level="success",
+        message=f"{username} successfully logged in.",
+    )

@@ -1,15 +1,17 @@
 # flake8: noqa
-import routes
-
+import datetime as datetime_lib
 import random
 import unittest
 import uuid
-
-from game import ra
+from datetime import datetime
+from typing import Optional, cast
 from unittest import mock
 from unittest.mock import patch
 
-from typing import cast, Optional
+import jwt
+
+import routes
+from game import ra
 
 
 class RoutesTest(unittest.TestCase):
@@ -139,6 +141,51 @@ Possible actions:
         self.assertEqual(routes.WarningMessage("Unused")["level"], "warning")
         self.assertEqual(routes.InfoMessage("Unused")["level"], "info")
         self.assertEqual(routes.SuccessMessage("Unused")["level"], "success")
+
+    def test_gen_exp(self) -> None:
+        self.assertIsNotNone(routes.gen_exp())
+
+    def test_authenticate_invalid_or_expired_token(self) -> None:
+        invalidToken = jwt.encode(
+            {"username": "user", "_exp": 100}, "bad", algorithm="HS256"
+        )
+        self.assertIsNone(routes.authenticate_token(invalidToken, "secret"))
+
+        expiredToken = jwt.encode(
+            {
+                "username": "user",
+                # Experied 1-hour ago.
+                "_exp": (
+                    datetime.utcnow() - datetime_lib.timedelta(hours=1)
+                ).timestamp(),
+            },
+            "secret",
+            algorithm="HS256",
+        )
+        self.assertIsNone(routes.authenticate_token(expiredToken, "secret"))
+
+    def test_authenticate_and_refresh_valid_token(self) -> None:
+        validToken = jwt.encode(
+            {
+                "username": "user",
+                # Will expire in 1-hour from now.
+                "_exp": (
+                    datetime.utcnow() + datetime_lib.timedelta(hours=1)
+                ).timestamp(),
+            },
+            "secret",
+            algorithm="HS256",
+        )
+        token = routes.authenticate_token(validToken, "secret").get("token")
+        self.assertIsNotNone(token)
+        self.assertNotEqual(token, validToken)
+        # Decode response and validate it's been refreshed correctly.
+        payload = jwt.decode(token, "secret", algorithms=["HS256"])
+        self.assertEqual(payload.get("username"), "user")
+        self.assertGreater(
+            payload.get("_exp"),
+            (datetime.utcnow() + datetime_lib.timedelta(hours=1)).timestamp(),
+        )
 
 
 class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
