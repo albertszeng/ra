@@ -199,6 +199,8 @@ function Game(): JSX.Element {
       const _ = handleLoadGame(restoredGameId, restoredName);
     }
   }, [handleLoadGame]);
+  const [timestampMs, setTimestampMs] = useState(Date.now());
+  const AIUIDelayMs = 2000;
   useEffect(() => {
     socket.on('connect', () => {
       if (gameId && name) {
@@ -208,9 +210,26 @@ function Game(): JSX.Element {
     socket.on('disconnect', () => {
       resetGame();
     });
-    socket.on('update', ({ gameState }: ApiResponse) => {
-      if (gameState) {
+    socket.on('update', ({ level, message, gameState }: ApiResponse) => {
+      const now = Date.now();
+      if (now >= timestampMs + AIUIDelayMs) {
+        setTimestampMs(now);
+        if (message || level || !gameState) {
+          setAlertData({ show: true, message: message || 'Unknown error.', level });
+          return;
+        }
         setGame(gameState);
+      } else {
+        // Increase timestamp so next action happens at at least this delay.
+        setTimestampMs((prev) => prev + AIUIDelayMs);
+        // Need to enqueue the action to execute later.
+        setTimeout(() => {
+          if (message || level || !gameState) {
+            setAlertData({ show: true, message: message || 'Unknown error.', level });
+            return;
+          }
+          setGame(gameState);
+        }, (timestampMs + AIUIDelayMs) - now);
       }
     });
     socket.on('spectate', () => {
@@ -227,7 +246,7 @@ function Game(): JSX.Element {
       socket.off('disconnect');
       socket.off('connect');
     };
-  }, [gameId, name, resetGame]);
+  }, [gameId, name, resetGame, timestampMs]);
 
   const { auctionTileValues, unrealizedPoints, gameState } = game;
   const {
