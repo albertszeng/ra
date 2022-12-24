@@ -1,6 +1,5 @@
 import enum
-from typing import Dict, List, Mapping, TypedDict, Tuple
-
+from typing import Dict, List, Mapping, Tuple, TypedDict
 
 # Game Constants
 

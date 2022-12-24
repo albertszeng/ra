@@ -1,14 +1,8 @@
 from copy import deepcopy
+from typing import Iterable, Mapping, Optional, Tuple
 
 from game import info as gi
 from game import state as gs
-
-from typing import (
-    Iterable,
-    Mapping,
-    Optional,
-    Tuple,
-)
 
 
 def calculate_round_end_points_gained(

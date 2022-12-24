@@ -1,8 +1,8 @@
-from game import ra
-from game import info as gi
-
 import random
 import unittest
+
+from game import info as gi
+from game import ra
 
 
 class RaTest(unittest.TestCase):

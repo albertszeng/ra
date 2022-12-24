@@ -1,6 +1,6 @@
-from game import info as gi
-
 from typing import List, Mapping, Tuple
+
+from game import info as gi
 
 """ Top-level Evaluation Functions """
 

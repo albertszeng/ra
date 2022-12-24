@@ -1,12 +1,11 @@
 # from game import info as gi
 # from game import state as gs
-from game import state as gs
-from game import ra
-
 import argparse
 from datetime import datetime
-
 from typing import List
+
+from game import ra
+from game import state as gs
 
 AI_PLAYER_NAME = "AI_PLAYER"
 OUTFILE_FOLDER_NAME: str = "move_histories"

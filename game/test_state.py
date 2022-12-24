@@ -1,5 +1,6 @@
 import random
 import unittest
+
 from game import info as gi
 from game import state as gs
 

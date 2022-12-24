@@ -1,17 +1,11 @@
-from game import info as gi
-from game import state as gs
-from game import scoring_utils
-
 import argparse
-from datetime import datetime
 import os
 import random
-
-
+from datetime import datetime
 from typing import (
     Callable,
-    Iterable,
     Final,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -21,6 +15,9 @@ from typing import (
     Union,
 )
 
+from game import info as gi
+from game import scoring_utils
+from game import state as gs
 
 OUTFILE_FOLDER_NAME: str = "move_histories"
 DEFAULT_OUTFILE_PREFIX: str = "move_history"

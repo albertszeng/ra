@@ -1,8 +1,8 @@
+import unittest
+
+from game import info as gi
 from game import scoring_utils
 from game import state as gs
-from game import info as gi
-
-import unittest
 
 
 class RaTest(unittest.TestCase):

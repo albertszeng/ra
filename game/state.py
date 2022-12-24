@@ -1,11 +1,9 @@
-from game import info as gi
-
 import logging
 import random
 import textwrap
+from typing import Dict, Iterable, List, Optional, TypedDict, cast
 
-from typing import cast, Dict, Iterable, List, TypedDict, Optional
-
+from game import info as gi
 
 # Gamestate class and helper classes
 

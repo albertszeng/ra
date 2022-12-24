@@ -1,6 +1,6 @@
-from game.decision_functions import evaluate_auction_tiles_utils as e
-
 import unittest
+
+from game.decision_functions import evaluate_auction_tiles_utils as e
 
 
 class RaTest(unittest.TestCase):

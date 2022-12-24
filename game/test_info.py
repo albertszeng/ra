@@ -1,8 +1,8 @@
-from game import info
-
 import unittest
 
 from parameterized import parameterized  # pyre-ignore[21]
+
+from game import info
 
 
 class InfoTests(unittest.TestCase):
