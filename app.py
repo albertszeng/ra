@@ -103,7 +103,7 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
         # This is a sio event handlers.
         session = await sio.get_session(sid)
         if not session.get("loggedIn"):
-            sio.emit("logout", routes.ErrorMessage("Not logged in!"), to=sid)
+            sio.emit("logout", errorMsg, to=sid)
             return cast(T, errorMsg)
         return await func(*args, **kwargs)
 
