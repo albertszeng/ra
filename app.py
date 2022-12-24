@@ -30,6 +30,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
 )
 logger.info("Connected to %s", os.environ["DATABASE_URL"])
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+_DEBUG = os.environ.get("DEBUG", False)
 
 
 # For Database support.
@@ -104,6 +105,9 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
             return cast(T, errorMsg)
         return await func(*args, **kwargs)
 
+    # When in debug mode, don't enforce login requirements.
+    if _DEBUG:
+        return func
     return wrapper
 
 
@@ -303,7 +307,8 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
             if not occupied and player.lower() == name.lower()
         ]
         if not idxs:
-            logger.info("Client %s (%s) SPECTATING room: %s", sid, name, gameIdStr)
+            if _DEBUG:
+                logger.info("Client %s (%s) SPECTATING room: %s", sid, name, gameIdStr)
             await sio.emit("spectate", to=sid)
             sio.enter_room(sid, gameIdStr)
             return
@@ -318,7 +323,8 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
         session["gameId"] = gameIdStr
         session["playerIdx"] = playerIdx
         session["playerName"] = name
-    logger.info("Client %s (%s) JOINED room: %s", sid, name, gameIdStr)
+    if _DEBUG:
+        logger.info("Client %s (%s) JOINED room: %s", sid, name, gameIdStr)
     return
 
 
@@ -329,7 +335,8 @@ async def _leaveGame(sid: str, gameIdStr: str, name: Optional[str] = None) -> No
     if (playerIdx := session.get("playerIdx")) is None:
         async with sio.session(sid) as session:
             session["gameId"] = None
-        logger.info("Client %s (%s) LEFT SPECTATING room: %s", sid, name, gameIdStr)
+        if _DEBUG:
+            logger.info("Client %s (%s) LEFT SPECTATING room: %s", sid, name, gameIdStr)
         return
 
     gameId = uuid.UUID(gameIdStr)
@@ -345,7 +352,8 @@ async def _leaveGame(sid: str, gameIdStr: str, name: Optional[str] = None) -> No
         session["playerIdx"] = None
         session["playerName"] = None
 
-    logger.info("Client %s (%s) LEFT room: %s", sid, name, gameIdStr)
+    if _DEBUG:
+        logger.info("Client %s (%s) LEFT room: %s", sid, name, gameIdStr)
 
 
 @sio.event  # pyre-ignore[56]
@@ -358,7 +366,8 @@ async def leave(sid: str, data: routes.JoinLeaveRequest) -> None:
 # Client connections. TODO: Use for auth cookies and stuff.
 @sio.event  # pyre-ignore[56]
 async def connect(sid: str, environ, auth) -> None:  # pyre-ignore[2]
-    logger.info("Client %s CONNECTED.", sid)
+    if _DEBUG:
+        logger.info("Client %s CONNECTED.", sid)
 
 
 @sio.event  # pyre-ignore[56]
@@ -367,7 +376,8 @@ async def disconnect(sid: str) -> None:
     for room in sio.rooms(sid):
         if room != sid:
             await _leaveGame(sid, room, session.get("name"))
-    logger.info("Client %s DISCONNECTED.", sid)
+    if _DEBUG:
+        logger.info("Client %s DISCONNECTED.", sid)
 
 
 # pyre-ignore[11]
