@@ -108,7 +108,7 @@ async def delete() -> routes.Message:
     return routes.SuccessMessage(message=f"Deleted game: {gameId}")
 
 
-@app.route("/action", methods=["POST"])
+@app.route("/action", methods=["POST"])  # pyre-ignore[56]
 async def action() -> Union[routes.Message, routes.ActionResponse]:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         if not (dbGame := db.session.get(Game, gameId.hex)):

@@ -6,10 +6,9 @@ from parameterized import parameterized  # pyre-ignore[21]
 
 
 class InfoTests(unittest.TestCase):
+    # pyre-ignore[56]
     @parameterized.expand(
-        [  # pyre-ignore[56]
-            (tile["name"], idx, tile) for idx, tile in enumerate(info.TILE_INFO)
-        ]
+        [(tile["name"], idx, tile) for idx, tile in enumerate(info.TILE_INFO)]
     )
     def test_tile_info(self, name: str, idx: int, tile: info.TileTypeInfo) -> None:
         self.assertEqual(info.tile_starting_num(tile), tile["startingNum"])
@@ -18,8 +17,9 @@ class InfoTests(unittest.TestCase):
         self.assertEqual(info.index_to_tile_name(idx), tile["name"])
         self.assertEqual(info.index_to_starting_num(idx), tile["startingNum"])
 
+    # pyre-ignore[56]
     @parameterized.expand(
-        [  # pyre-ignore[56]
+        [
             (tile["name"], idx)
             for idx, tile in enumerate(info.TILE_INFO)
             if tile["tileType"] == info.TileType.DISASTER
@@ -28,8 +28,9 @@ class InfoTests(unittest.TestCase):
     def test_disaster(self, name: str, idx: int) -> None:
         self.assertTrue(info.index_is_disaster(idx))
 
+    # pyre-ignore[56]
     @parameterized.expand(
-        [  # pyre-ignore[56]
+        [
             (tile["name"], idx)
             for idx, tile in enumerate(info.TILE_INFO)
             if tile["tileType"] == info.TileType.RA
@@ -38,8 +39,9 @@ class InfoTests(unittest.TestCase):
     def test_ra(self, name: str, idx: int) -> None:
         self.assertTrue(info.index_is_ra(idx))
 
+    # pyre-ignore[56]
     @parameterized.expand(
-        [  # pyre-ignore[56]
+        [
             (tile["name"], idx)
             for idx, tile in enumerate(info.TILE_INFO)
             if tile["tileType"] == info.TileType.COLLECTIBLE
@@ -48,8 +50,9 @@ class InfoTests(unittest.TestCase):
     def test_collectible(self, name: str, idx: int) -> None:
         self.assertTrue(info.index_is_collectible(idx))
 
+    # pyre-ignore[56]
     @parameterized.expand(
-        [  # pyre-ignore[56]
+        [
             ("negative", -1),
             ("too_large", 24),
         ]
