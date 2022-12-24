@@ -1,4 +1,4 @@
-import io from 'socket.io-client';
+import { apiUrl, socket } from '../common';
 
 const DefaultPlayer: Player = {
   collection: [],
@@ -140,13 +140,27 @@ type AlertData = {
   level?: WarningLevel;
   permanent?: boolean;
 };
-
-const apiUrl = (process.env.REACT_APP_BACKEND) ? `https://${process.env.REACT_APP_BACKEND}` : 'http://0.0.0.0:8080';
-const socket = io((process.env.REACT_APP_BACKEND) ? `wss://${process.env.REACT_APP_BACKEND}` : 'ws://0.0.0.0:8080');
+type LoginOrRegisterRequest = {
+  username: string;
+  password: string;
+};
+type TokenLoginRequest = {
+  token: string;
+};
+type LoginResponse = {
+  level: WarningLevel;
+  message: string;
+  token?: string;
+  username?: string;
+};
+type LoginSuccess = {
+  token: string;
+  username: string;
+};
 
 async function handleCommand(
   gameId: string,
-  name: string | null,
+  name: string,
   command: string,
 ): Promise<ApiResponse> {
   const requestOptions = {
@@ -221,10 +235,14 @@ export type {
   GameState,
   ListGame,
   ListGamesResponse,
+  LoginOrRegisterRequest,
+  LoginResponse,
+  LoginSuccess,
   Player,
   PointMapping,
   Tile,
   TileAction,
+  TokenLoginRequest,
   WarningLevel,
 };
 

@@ -2,10 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import {
-  Alert,
   Container,
   Paper,
-  Snackbar,
 } from '@mui/material';
 
 import CardGrid from './CardGrid';
@@ -28,15 +26,19 @@ import type {
   Tile,
 } from '../libs/game';
 
-function Game(): JSX.Element {
+type GameProps = {
+  // Sets an alert at the highest level.
+  setAlert: (alert: AlertData) => void;
+  playerName: string;
+  // This is temporarily here for bc. Will remove eventually.
+  setPlayerName: (playerName: string) => void;
+};
+
+function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
   const GAME_STATE_KEY = 'LOCAL_GAME_STATE';
   const [game, setGame] = useState<GameState>(DefaultGame);
-  const [name, setName] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [gameId, setGameId] = useState<string>('');
-  const [alertData, setAlertData] = useState<AlertData>(
-    { show: false, message: '', level: 'info' },
-  );
   // When true and set to a valid index, swap occurs.
   const [swapInfo, setSwapInfo] = useState<[boolean, number]>([false, -1]);
 
@@ -48,146 +50,127 @@ function Game(): JSX.Element {
       gameState,
     } = await startGame(players, user);
     if (message || level || !remoteGameId || !gameState) {
-      setAlertData({ show: true, message: message || 'Unknown error.', level });
+      setAlert({ show: true, message: message || 'Unknown error.', level });
       return;
     }
-    setName(user);
+    setPlayerName(user);
     setIsPlaying(true);
     setGameId(remoteGameId);
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, []);
+  }, [setAlert, setPlayerName]);
   const handleLoadGame = useCallback(async (requestedId: string, user: string) => {
     const { level, message, gameState } = await handleCommand(requestedId, user, 'LOAD');
     if (message || level || !gameState) {
-      setAlertData({ show: true, message: message || 'Unknown error.', level });
+      setAlert({ show: true, message: message || 'Unknown error.', level });
       return;
     }
     // Also let the server know we've joined again.
     socket.emit('join', { gameId: requestedId, name: user });
-    setName(user);
+    setPlayerName(user);
     setIsPlaying(true);
     setGameId(requestedId);
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, []);
+  }, [setAlert, setPlayerName]);
   const handleDraw = useCallback(async () => {
     if (!gameId) {
-      setAlertData({ show: true, message: 'No active game.', level: 'warning' });
+      setAlert({ show: true, message: 'No active game.', level: 'warning' });
       return;
     }
-    if (!name) {
-      setAlertData({ show: true, message: 'No player found. Reload?.', level: 'warning' });
-      return;
-    }
-    const { level, message, gameState } = await handleCommand(gameId, name, 'DRAW');
+    const { level, message, gameState } = await handleCommand(gameId, playerName, 'DRAW');
     if (level || message || !gameState) {
-      setAlertData({ show: true, message: message || 'Unknown error.', level });
+      setAlert({ show: true, message: message || 'Unknown error.', level });
       return;
     }
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId, name]);
+  }, [gameId, playerName, setAlert]);
   const handleAuction = useCallback(async () => {
     if (!gameId) {
-      setAlertData({ show: true, message: 'No active game.', level: 'warning' });
+      setAlert({ show: true, message: 'No active game.', level: 'warning' });
       return;
     }
-    if (!name) {
-      setAlertData({ show: true, message: 'No player found. Reload?.', level: 'warning' });
-      return;
-    }
-    const { level, message, gameState } = await handleCommand(gameId, name, 'AUCTION');
+    const { level, message, gameState } = await handleCommand(gameId, playerName, 'AUCTION');
     if (message || !gameState) {
-      setAlertData({ show: true, message: message || 'Unknown error.', level });
+      setAlert({ show: true, message: message || 'Unknown error.', level });
       return;
     }
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId, name]);
+  }, [gameId, playerName, setAlert]);
   const handleBidAction = useCallback(async (idx: number) => {
     if (!gameId) {
       return;
     }
-    if (!name) {
-      setAlertData({ show: true, message: 'No player found. Reload?.', level: 'warning' });
-      return;
-    }
     // 1-indexed. 0 corresponds to passing in which case idx === -1.
-    const { level, message, gameState } = await handleCommand(gameId, name, `B${idx + 1}`);
+    const { level, message, gameState } = await handleCommand(gameId, playerName, `B${idx + 1}`);
     if (message || !gameState) {
-      setAlertData({ show: true, message: message || 'Unknown error.', level });
+      setAlert({ show: true, message: message || 'Unknown error.', level });
       return;
     }
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId, name]);
+  }, [gameId, playerName, setAlert]);
   const handleSelectCardFromGrid = useCallback(async (idx: number, { name: tileName }: Tile) => {
     if (!gameId) {
       return;
     }
-    if (!name) {
-      setAlertData({ show: true, message: 'No player found. Reload?.', level: 'warning' });
-      return;
-    }
     const [shouldSwap] = swapInfo;
     if (!shouldSwap) {
-      setAlertData({ show: true, message: `Click your Golden God to atttempt a swap for ${tileName}.`, level: 'info' });
+      setAlert({ show: true, message: `Click your Golden God to atttempt a swap for ${tileName}.`, level: 'info' });
       setSwapInfo([shouldSwap, idx]);
       return;
     }
     // Server command is 1-indexed, so we increment here.
-    const { level, message, gameState } = await handleCommand(gameId, name, `G${idx + 1}`);
+    const { level, message, gameState } = await handleCommand(gameId, playerName, `G${idx + 1}`);
     if (message || !gameState) {
-      setAlertData({ show: true, message: message || 'Unknown error.', level });
+      setAlert({ show: true, message: message || 'Unknown error.', level });
       return;
     }
     setSwapInfo([false, -1]); // Reset swap info.
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId, swapInfo, name]);
+  }, [gameId, swapInfo, playerName, setAlert]);
   const handlePlayerSelectTile = useCallback(async (player: Player, tile: Tile) => {
     if (!gameId) {
-      setAlertData({ show: true, message: 'No active game.', level: 'info' });
-      return;
-    }
-    if (!name) {
-      setAlertData({ show: true, message: 'No player found. Reload?.', level: 'warning' });
+      setAlert({ show: true, message: 'No active game.', level: 'info' });
       return;
     }
     let action = getTileAction(tile);
     if (!action) {
-      setAlertData({ show: true, message: `${tile.name} is not play-able.`, level: 'warning' });
+      setAlert({ show: true, message: `${tile.name} is not play-able.`, level: 'warning' });
       return;
     }
     if (action === 'SWAP') {
       const [/* shouldSwap */, swapIdx] = swapInfo;
       if (swapIdx < 0) {
-        setAlertData({ show: true, message: 'Click the card you wish to swap for your Golden God', level: 'info' });
+        setAlert({ show: true, message: 'Click the card you wish to swap for your Golden God', level: 'info' });
         return;
       }
       action = `G${swapIdx + 1}`;
     }
 
-    const { level, message, gameState } = await handleCommand(gameId, name, action);
+    const { level, message, gameState } = await handleCommand(gameId, playerName, action);
     if (message || !gameState) {
-      setAlertData({ show: true, message: message || 'Unknown error.', level });
+      setAlert({ show: true, message: message || 'Unknown error.', level });
       return;
     }
     setSwapInfo([false, -1]); // Reset swap info.
-    setAlertData({ show: true, message: `Performed action: ${action}`, level: 'info' });
+    setAlert({ show: true, message: `Performed action: ${action}`, level: 'info' });
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId, swapInfo, name]);
+  }, [gameId, swapInfo, playerName, setAlert]);
 
   const resetGame = useCallback(() => {
     setIsPlaying(false);
     setGameId('');
-    setName('');
+    // TODO: remove.
+    setPlayerName('');
     window.localStorage.setItem(GAME_STATE_KEY, '{}');
     // Let the server know we've left the game.
-    socket.emit('leave', { gameId, name });
-  }, [gameId, name]);
+    socket.emit('leave', { gameId, name: playerName });
+  }, [gameId, playerName, setPlayerName]);
 
   useEffect(() => {
     // When the gameId changes, store in local storage.
-    if (gameId && name) {
-      window.localStorage.setItem(GAME_STATE_KEY, JSON.stringify({ gameId, name }));
+    if (gameId) {
+      window.localStorage.setItem(GAME_STATE_KEY, JSON.stringify({ gameId, playerName }));
     }
-  }, [gameId, name]);
+  }, [gameId, playerName]);
   useEffect(() => {
     // On refresh of component, get latest game state if we had a gameId.
     const { gameId: restoredGameId, name: restoredName } = JSON.parse(
@@ -203,8 +186,8 @@ function Game(): JSX.Element {
   const AIUIDelayMs = 2000;
   useEffect(() => {
     socket.on('connect', () => {
-      if (gameId && name) {
-        socket.emit('join', { gameId, name });
+      if (gameId) {
+        socket.emit('join', { gameId, name: playerName });
       }
     });
     socket.on('disconnect', () => {
@@ -215,7 +198,7 @@ function Game(): JSX.Element {
       if (now >= timestampMs + AIUIDelayMs) {
         setTimestampMs(now);
         if (message || level || !gameState) {
-          setAlertData({ show: true, message: message || 'Unknown error.', level });
+          setAlert({ show: true, message: message || 'Unknown error.', level });
           return;
         }
         setGame(gameState);
@@ -225,7 +208,7 @@ function Game(): JSX.Element {
         // Need to enqueue the action to execute later.
         setTimeout(() => {
           if (message || level || !gameState) {
-            setAlertData({ show: true, message: message || 'Unknown error.', level });
+            setAlert({ show: true, message: message || 'Unknown error.', level });
             return;
           }
           setGame(gameState);
@@ -233,7 +216,7 @@ function Game(): JSX.Element {
       }
     });
     socket.on('spectate', () => {
-      setAlertData({
+      setAlert({
         show: true,
         message: 'In Spectator Mode',
         level: 'success',
@@ -246,7 +229,7 @@ function Game(): JSX.Element {
       socket.off('disconnect');
       socket.off('connect');
     };
-  }, [gameId, name, resetGame, timestampMs]);
+  }, [gameId, playerName, resetGame, timestampMs, setAlert]);
 
   const { auctionTileValues, unrealizedPoints, gameState } = game;
   const {
@@ -267,7 +250,7 @@ function Game(): JSX.Element {
           <Grid xs={12}>
             <Paper elevation={3}>
               <PlayersInfo
-                localName={name}
+                localName={playerName}
                 players={playerStates}
                 playerPointsIfWin={auctionTileValues}
                 playerEstimatedDelta={unrealizedPoints}
@@ -293,22 +276,9 @@ function Game(): JSX.Element {
         <PlayerForm
           handleNewGame={handleNewGame}
           handleLoadGame={handleLoadGame}
-          setAlert={setAlertData}
+          setAlert={setAlert}
         />
       )}
-      <Snackbar
-        open={alertData.show}
-        autoHideDuration={(alertData.permanent) ? undefined : 5000}
-        onClose={() => setAlertData({ show: false, message: '' })}
-      >
-        <Alert
-          onClose={() => setAlertData({ show: false, message: '' })}
-          variant="filled"
-          severity={alertData.level}
-        >
-          {alertData.message}
-        </Alert>
-      </Snackbar>
     </Container>
   );
 }
