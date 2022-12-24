@@ -107,37 +107,36 @@ async def delete() -> routes.Message:
     return routes.SuccessMessage(message=f'Deleted game: {gameId}')
 
 
-@app.route("/action", methods=["POST"])  # pyre-ignore[56]
-async def action() -> Union[routes.Message, routes.ActResponse]:
-    if not (gameIdStr := (await request.json).get('gameId')):
-        return routes.WarningMessage(
-            message=f'Cannot act on non-existing game: {gameIdStr}')
-    gameId = uuid.UUID(gameIdStr)
-    action = (await request.json).get("command")
-    if not action:
-        return routes.ErrorMessage(message='No action')
+@app.route("/action", methods=["POST"])
+async def action() -> Union[routes.Message, routes.ActionResponse]:
+    async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+        if not (dbGame := db.session.get(Game, gameId.hex)):
+            return None
+        return dbGame.game
 
-    if not (dbGame := db.session.get(Game, gameId.hex)):
-        return routes.WarningMessage(
-            message=f'No active game with id: {gameId}')
-    game = dbGame.data
-    sid = (await request.json).get('socketId')
-    if action.upper() == "LOAD":
+    async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        if not (dbGame := db.session.get(Game, gameId.hex)):
+            return False
+        dbGame.data = copy.deepcopy(game)
+        db.session.commit()
+        return True
+
+    json = await request.json
+    gameIdStr, command, sid = json.get('gameId'), json.get(
+        'command'), json.get('socketId')
+    if command and command.upper() == "LOAD" and (game := await fetchGame(uuid.UUID(gameIdStr))):
         if sid:
             sio.enter_room(sid, gameIdStr)
-        return routes.ActResponse(
+        return routes.ActionResponse(
             gameState=game.serialize(), gameAsStr=routes.get_game_repr(game))
     if not sid:
         return routes.ErrorMessage(
             message='Cannot determine player state. Refresh?')
-    session = await sio.get_session(sid)
-    if (playerIdx := session.get('playerIdx')) is None:
-        return routes.InfoMessage(
-            message=f'{sid} is in spectator mode. Join an open game.')
 
-    response = routes.action(game, playerIdx, action)
-    dbGame.data = copy.deepcopy(game)
-    db.session.commit()
+    command = routes.ActionRequest(gameId=gameIdStr, command=command)
+    session = await sio.get_session(sid)
+    response = await routes.action(request, session.get(
+        'playerIdx'), fetchGame, saveGame)
 
     # Update all connected clients with the updated game except client that
     # sent the update.
@@ -145,6 +144,33 @@ async def action() -> Union[routes.Message, routes.ActResponse]:
 
     # Update the initiator of the event.
     return response
+
+
+@sio.event  # pyre-ignore[56]
+async def action(sid: str, data: routes.ActionRequest) -> None:
+    async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+        async with app.app_context():
+            if not (dbGame := db.session.get(Game, gameId.hex)):
+                return None
+        return dbGame.game
+
+    async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async with app.app_context():
+            if not (dbGame := db.session.get(Game, gameId.hex)):
+                return False
+            dbGame.data = copy.deepcopy(game)
+            db.session.commit()
+        return True
+
+    if (command := data.get('command')) and command.upper() == "LOAD" and (gameIdStr := data.get('gameId')) and (game := await fetchGame(uuid.UUID(gameIdStr))):
+        sio.enter_room(sid, gameIdStr)
+        response = routes.ActionResponse(
+            gameState=game.serialize(), gameAsStr=routes.get_game_repr(game))
+    else:
+        session = await sio.get_session(sid)
+        response = await routes.action(data, session.get(
+            'playerIdx'), fetchGame, saveGame)
+    await sio.emit('update', response, to=data.get('gameId'), skip_sid=sid)
 
 
 # Clients can join and leave specific rooms to listen to the updates

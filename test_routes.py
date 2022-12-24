@@ -7,15 +7,17 @@ import uuid
 
 from game import ra
 from unittest import mock
+from unittest.mock import patch
 
-from typing import cast
+from typing import cast, Optional
 
 
 class RoutesTest(unittest.TestCase):
     def test_get_game_repr(self) -> None:
         random.seed(10)
         self.maxDiff = None
-        game = ra.RaGame(player_names=['P1', 'P2'], randomize_play_order=True)
+        game = routes.RaGame(
+            player_names=['P1', 'P2'], randomize_play_order=True)
         self.assertEqual(routes.get_game_repr(game),
                          r"""-------------------------------------------------
 Player: P2
@@ -63,10 +65,10 @@ Possible actions:
             []), routes.ListGamesResponse(total=0, games=[]))
 
     def test_list_single(self) -> None:
-        testID = '12345678123456781234567812345678'
-        testGame = ra.RaGame(randomize_play_order=False,
-                             player_names=['Name1', 'Name2'])
-        self.assertEqual(routes.list([(testID, testGame)]),
+        testId = '12345678123456781234567812345678'
+        testGame = routes.RaGame(randomize_play_order=False,
+                                 player_names=['Name1', 'Name2'])
+        self.assertEqual(routes.list([(testId, testGame)]),
                          routes.ListGamesResponse(
             total=1, games=[
                 routes.GameInfo(
@@ -75,14 +77,14 @@ Possible actions:
             ]))
 
     def test_list_many(self) -> None:
-        testIDs = ['12345678123456781234567812345678',
+        testIds = ['12345678123456781234567812345678',
                    '23456781234567812345678123456781']
-        testGames = [ra.RaGame(
+        testGames = [routes.RaGame(
             randomize_play_order=False, player_names=['Game10', 'Game11']),
-            ra.RaGame(
+            routes.RaGame(
             randomize_play_order=False, player_names=['Game20', 'Game21'])]
         self.assertEqual(routes.list(
-            list(zip(testIDs, testGames))),
+            list(zip(testIds, testGames))),
             routes.ListGamesResponse(total=2, games=[
                 routes.GameInfo(
                     id=uuid.UUID('12345678123456781234567812345678'),
@@ -100,75 +102,245 @@ Possible actions:
 
     def test_start(self) -> None:
         self.maxDiff = None
-        gameID = uuid.uuid4()
+        gameId = uuid.uuid4()
         with mock.patch('builtins.open', mock.mock_open()) as m:
-            game, response = routes.start(gameID, ['Player 1', 'Player 2'])
-            m.assert_called_once_with(f'move_histories/{gameID}.txt', 'w+')
+            game, response = routes.start(gameId, ['Player 1', 'Player 2'])
+            m.assert_called_once_with(f'move_histories/{gameId}.txt', 'w+')
 
         self.assertEqual(response, routes.StartResponse(
-            gameId=gameID,
+            gameId=gameId,
             gameState=game.serialize(),
             gameAsStr=routes.get_game_repr(game),
         ))
-
-    def test_action_game_ended(self) -> None:
-        self.maxDiff = None
-        game = ra.RaGame(
-            player_names=['Player 1', 'Player 2'],
-        )
-        game.init_game()
-        game.game_state.set_game_ended()
-        self.assertEqual(routes.action(game, playerIdx=0, move='draw'),
-                         routes.ActResponse(
-            gameState=game.serialize(), gameAsStr=routes.get_game_repr(game)))
-
-    def test_action_unrecognized(self) -> None:
-        self.maxDiff = None
-        game = ra.RaGame(
-            player_names=['Player 1', 'Player 2'],
-        )
-        game.init_game()
-        response = cast(routes.Message, routes.action(
-            game, playerIdx=0, move='INVALID'))
-        self.assertIsNotNone(response['message'])
-        self.assertIn("Unrecognized", response['message'])
-
-    def test_action_illegal_move(self) -> None:
-        game = ra.RaGame(
-            player_names=['Player 1', 'Player 2'],
-        )
-        game.init_game()
-        response = cast(routes.Message, routes.action(
-            game, playerIdx=0, move='god1'))
-        self.assertIsNotNone(response['message'])
-        self.assertIn('Only legal actions', response['message'])
-
-    def test_action_wrong_player(self) -> None:
-        game = ra.RaGame(
-            player_names=['Player 1', 'Player 2'],
-        )
-        game.init_game()
-        response = cast(routes.Message, routes.action(
-            game, playerIdx=1, move='draw'))
-        self.assertIsNotNone(response['message'])
-        self.assertIn('Current player is', response['message'])
-
-    def test_action(self) -> None:
-        game = ra.RaGame(
-            player_names=['Player 1', 'Player 2'],
-        )
-        game.init_game()
-        response = routes.action(game, playerIdx=0, move='draw')
-
-        self.assertGreater(len(game.logged_moves), 0)
-        firstMove = game.logged_moves[0]
-        self.assertTrue(isinstance(firstMove, tuple))
-        self.assertEqual(firstMove[0], '0')
-        self.assertEqual(response, routes.ActResponse(
-            gameState=game.serialize(), gameAsStr=routes.get_game_repr(game)))
 
     def test_message_types(self) -> None:
         self.assertEqual(routes.ErrorMessage("Unused")["level"], "error")
         self.assertEqual(routes.WarningMessage("Unused")["level"], "warning")
         self.assertEqual(routes.InfoMessage("Unused")["level"], "info")
         self.assertEqual(routes.SuccessMessage("Unused")["level"], "success")
+
+
+class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
+    async def test_action_no_game_id(self) -> None:
+        async def fetchGame(gameId: uuid.UUID) -> None:
+            return None
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            return True
+        response = cast(routes.Message, await routes.action(
+            routes.ActionRequest(), playerIdx=None,
+            fetchGame=fetchGame,
+            saveGame=saveGame))
+        self.assertIn('message', response)
+        self.assertIn('gameId', response['message'])
+
+    async def test_action_no_command(self) -> None:
+        async def fetchGame(gameId: uuid.UUID) -> None:
+            return None
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            return True
+        response = cast(routes.Message, await routes.action(
+            routes.ActionRequest(gameId=uuid.uuid4().hex), playerIdx=None,
+            fetchGame=fetchGame,
+            saveGame=saveGame))
+        self.assertIn('message', response)
+        self.assertIn('action', response['message'])
+
+    async def test_action_failed_fetch(self) -> None:
+        async def fetchGame(gameId: uuid.UUID) -> None:
+            return None
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            return True
+        response = cast(routes.Message, await routes.action(
+            routes.ActionRequest(gameId=uuid.uuid4().hex, command='draw'),
+            playerIdx=None,
+            fetchGame=fetchGame,
+            saveGame=saveGame))
+        self.assertIn('message', response)
+        self.assertIn('No active game', response['message'])
+
+    async def test_action_unrecognized(self) -> None:
+        testId: uuid.UUID = uuid.uuid4()
+        game: routes.RaGame = routes.RaGame(
+            player_names=['Player 1', 'Player 2'],
+        )
+        game.init_game()
+
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+            self.assertEqual(gameId, testId)
+            return game
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            return True
+        response = cast(routes.Message, await routes.action(
+            routes.ActionRequest(gameId=testId.hex, command='INVALD'),
+            playerIdx=0, fetchGame=fetchGame, saveGame=saveGame))
+        self.assertIn('message', response)
+        self.assertIn("Unrecognized", response['message'])
+
+    async def test_action_game_ended(self) -> None:
+        testId: uuid.UUID = uuid.uuid4()
+        game: routes.RaGame = routes.RaGame(
+            player_names=['Player 1', 'Player 2'],
+        )
+        game.init_game()
+        game.game_state.set_game_ended()
+
+        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+            self.assertEqual(gameId, testId)
+            return game
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            self.assertEqual(gameId, testId)
+            return True
+
+        self.assertEqual(await routes.action(routes.ActionRequest(
+            gameId=testId.hex,
+            command='draw'
+        ), playerIdx=0, fetchGame=fetchGame, saveGame=saveGame),
+            routes.ActionResponse(
+            gameState=game.serialize(), gameAsStr=routes.get_game_repr(game)))
+
+    async def test_action_spectator(self) -> None:
+        testId: uuid.UUID = uuid.uuid4()
+        game: routes.RaGame = routes.RaGame(
+            player_names=['Player 1', 'Player 2'],
+        )
+        game.init_game()
+
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+            self.assertEqual(gameId, testId)
+            return game
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            return True
+        response = cast(routes.Message, await routes.action(
+            routes.ActionRequest(gameId=testId.hex, command='draw'),
+            playerIdx=None, fetchGame=fetchGame, saveGame=saveGame))
+        self.assertIn('message', response)
+        self.assertIn("spectator mode", response['message'])
+
+    async def test_action_wrong_player(self) -> None:
+        testId: uuid.UUID = uuid.uuid4()
+        game: routes.RaGame = routes.RaGame(
+            player_names=['Player 1', 'Player 2'],
+        )
+        game.init_game()
+
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+            self.assertEqual(gameId, testId)
+            return game
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            return True
+        response = cast(routes.Message, await routes.action(
+            routes.ActionRequest(gameId=testId.hex, command='draw'),
+            playerIdx=1, fetchGame=fetchGame, saveGame=saveGame))
+        self.assertIn('message', response)
+        self.assertIn('Current player is', response['message'])
+
+    @patch.object(routes.ra, 'get_possible_actions')  # pyre-ignore[56]
+    async def test_action_no_valid_actions_remain(
+            self, mock_action: mock.MagicMock) -> None:
+        mock_action.return_value = []
+        testId: uuid.UUID = uuid.uuid4()
+        game: routes.RaGame = routes.RaGame(
+            player_names=['Player 1', 'Player 2'],
+        )
+        game.init_game()
+
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+            self.assertEqual(gameId, testId)
+            return game
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            return True
+
+        response = cast(routes.Message, await routes.action(
+            routes.ActionRequest(gameId=testId.hex, command='draw'),
+            playerIdx=0,
+            fetchGame=fetchGame,
+            saveGame=saveGame))
+        self.assertIn('message', response)
+        self.assertIn('No valid actions', response['message'])
+
+    async def test_action_illegal_move(self) -> None:
+        testId: uuid.UUID = uuid.uuid4()
+        game: routes.RaGame = routes.RaGame(
+            player_names=['Player 1', 'Player 2'],
+        )
+        game.init_game()
+
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+            self.assertEqual(gameId, testId)
+            return game
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            return True
+
+        response = cast(routes.Message, await routes.action(
+            routes.ActionRequest(gameId=testId.hex, command='god1'),
+            playerIdx=0,
+            fetchGame=fetchGame,
+            saveGame=saveGame))
+        self.assertIn('message', response)
+        self.assertIn('Only legal actions', response['message'])
+
+    async def test_action_failed_save(self) -> None:
+        testId: uuid.UUID = uuid.uuid4()
+        game: routes.RaGame = routes.RaGame(
+            player_names=['Player 1', 'Player 2'],
+        )
+        game.init_game()
+
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+            self.assertEqual(gameId, testId)
+            return game
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            # Fail to save.
+            return False
+
+        response = cast(routes.Message, await routes.action(
+            routes.ActionRequest(gameId=testId.hex, command='draw'),
+            playerIdx=0,
+            fetchGame=fetchGame,
+            saveGame=saveGame))
+        self.assertIn('message', response)
+        self.assertIn('Failed to update', response['message'])
+
+    async def test_action_success(self) -> None:
+        testId: uuid.UUID = uuid.uuid4()
+        game: routes.RaGame = routes.RaGame(
+            player_names=['Player 1', 'Player 2'],
+        )
+        game.init_game()
+
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+            self.assertEqual(gameId, testId)
+            return game
+
+        storage: set[ra.RaGame] = set()
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+            self.assertEqual(gameId, testId)
+            storage.add(game)
+            return True
+
+        response = cast(routes.ActionResponse, await routes.action(
+            routes.ActionRequest(gameId=testId.hex, command='draw'),
+            playerIdx=0,
+            fetchGame=fetchGame,
+            saveGame=saveGame))
+
+        self.assertEqual(len(storage), 1)
+        savedGame = storage.pop()
+        self.assertGreater(len(savedGame.logged_moves), 0)
+        firstMove = savedGame.logged_moves[0]
+        self.assertTrue(isinstance(firstMove, tuple))
+        self.assertEqual(firstMove[0], '0')
+        self.assertEqual(response, routes.ActionResponse(
+            gameState=savedGame.serialize(),
+            gameAsStr=routes.get_game_repr(savedGame)))
