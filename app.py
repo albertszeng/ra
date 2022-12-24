@@ -31,6 +31,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
 logger.info("Connected to %s", os.environ["DATABASE_URL"])
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 _DEBUG = os.environ.get("DEBUG", False)
+_DISABLE_AUTH = os.environ.get("DISABLE_AUTH", True)
 
 
 # For Database support.
@@ -106,7 +107,7 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
         return await func(*args, **kwargs)
 
     # When in debug mode, don't enforce login requirements.
-    if _DEBUG:
+    if _DISABLE_AUTH:
         return func
     return wrapper
 
