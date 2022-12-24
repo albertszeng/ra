@@ -28,12 +28,9 @@ class TileBagTests(unittest.TestCase):
                 new_collection = t.get_bag_contents()
                 self.assertEqual(
                     current_collection[tile_index_drawn],
-                    new_collection[tile_index_drawn] + 1
+                    new_collection[tile_index_drawn] + 1,
                 )
-                self.assertEqual(
-                    num_tiles_left,
-                    t.get_num_tiles_left() + 1
-                )
+                self.assertEqual(num_tiles_left, t.get_num_tiles_left() + 1)
                 current_collection = new_collection
                 num_tiles_left = t.get_num_tiles_left()
 
@@ -62,54 +59,65 @@ class PlayerStateTests(unittest.TestCase):
         player = gs.PlayerState("Test Player", starting_sun=[1, 2, 3])
         serialized = player.serialize()
 
-        self.assertEqual(serialized, {**serialized, **{
-            'points': 10,
-            'playerName': "Test Player",
-            'collection': [],
-            'unusableSun': [],
-        }})
-        self.assertCountEqual(serialized['usableSun'], [1, 2, 3])
+        self.assertEqual(
+            serialized,
+            {
+                **serialized,
+                **{
+                    "points": 10,
+                    "playerName": "Test Player",
+                    "collection": [],
+                    "unusableSun": [],
+                },
+            },
+        )
+        self.assertCountEqual(serialized["usableSun"], [1, 2, 3])
 
         player.add_points(10)
-        self.assertEqual(player.serialize(),
-                         {**player.serialize(), **{'points': 20}})
+        self.assertEqual(player.serialize(), {**player.serialize(), **{"points": 20}})
 
         # Check collection.
         player.add_tiles(
-            [gi.INDEX_OF_GOLD, gi.INDEX_OF_GOLD, gi.INDEX_OF_PHAR,
-             gi.INDEX_OF_NILE])
-        self.assertCountEqual(player.serialize()['collection'], [
-            gi.TILE_INFO[gi.INDEX_OF_GOLD],
-            gi.TILE_INFO[gi.INDEX_OF_GOLD],
-            gi.TILE_INFO[gi.INDEX_OF_PHAR],
-            gi.TILE_INFO[gi.INDEX_OF_NILE],
-        ])
+            [gi.INDEX_OF_GOLD, gi.INDEX_OF_GOLD, gi.INDEX_OF_PHAR, gi.INDEX_OF_NILE]
+        )
+        self.assertCountEqual(
+            player.serialize()["collection"],
+            [
+                gi.TILE_INFO[gi.INDEX_OF_GOLD],
+                gi.TILE_INFO[gi.INDEX_OF_GOLD],
+                gi.TILE_INFO[gi.INDEX_OF_PHAR],
+                gi.TILE_INFO[gi.INDEX_OF_NILE],
+            ],
+        )
         player.add_tiles(
-            [gi.INDEX_OF_GOLD, gi.INDEX_OF_GOLD, gi.INDEX_OF_PHAR,
-             gi.INDEX_OF_NILE])
-        self.assertCountEqual(player.serialize()['collection'], [
-            gi.TILE_INFO[gi.INDEX_OF_GOLD],
-            gi.TILE_INFO[gi.INDEX_OF_GOLD],
-            gi.TILE_INFO[gi.INDEX_OF_GOLD],
-            gi.TILE_INFO[gi.INDEX_OF_GOLD],
-            gi.TILE_INFO[gi.INDEX_OF_PHAR],
-            gi.TILE_INFO[gi.INDEX_OF_PHAR],
-            gi.TILE_INFO[gi.INDEX_OF_NILE],
-            gi.TILE_INFO[gi.INDEX_OF_NILE],
-        ])
+            [gi.INDEX_OF_GOLD, gi.INDEX_OF_GOLD, gi.INDEX_OF_PHAR, gi.INDEX_OF_NILE]
+        )
+        self.assertCountEqual(
+            player.serialize()["collection"],
+            [
+                gi.TILE_INFO[gi.INDEX_OF_GOLD],
+                gi.TILE_INFO[gi.INDEX_OF_GOLD],
+                gi.TILE_INFO[gi.INDEX_OF_GOLD],
+                gi.TILE_INFO[gi.INDEX_OF_GOLD],
+                gi.TILE_INFO[gi.INDEX_OF_PHAR],
+                gi.TILE_INFO[gi.INDEX_OF_PHAR],
+                gi.TILE_INFO[gi.INDEX_OF_NILE],
+                gi.TILE_INFO[gi.INDEX_OF_NILE],
+            ],
+        )
 
         # Check swapping sun.
         player.exchange_sun(sun_to_give=2, sun_to_receive=13)
-        self.assertCountEqual(player.serialize()['usableSun'], [1, 3])
-        self.assertCountEqual(player.serialize()['unusableSun'], [13])
+        self.assertCountEqual(player.serialize()["usableSun"], [1, 3])
+        self.assertCountEqual(player.serialize()["unusableSun"], [13])
 
         player.exchange_sun(sun_to_give=3, sun_to_receive=9)
-        self.assertCountEqual(player.serialize()['usableSun'], [1])
-        self.assertCountEqual(player.serialize()['unusableSun'], [9, 13])
+        self.assertCountEqual(player.serialize()["usableSun"], [1])
+        self.assertCountEqual(player.serialize()["unusableSun"], [9, 13])
 
         player.exchange_sun(sun_to_give=1, sun_to_receive=4)
-        self.assertCountEqual(player.serialize()['usableSun'], [])
-        self.assertCountEqual(player.serialize()['unusableSun'], [4, 9, 13])
+        self.assertCountEqual(player.serialize()["usableSun"], [])
+        self.assertCountEqual(player.serialize()["unusableSun"], [4, 9, 13])
 
     def test_add_tiles(self) -> None:
         p_state = gs.PlayerState("Test Player", [1, 2, 3])
@@ -123,8 +131,7 @@ class PlayerStateTests(unittest.TestCase):
             random_indx = random.randint(0, len(current_collection) - 1)
             current_collection[random_indx] += 1
             p_state.add_tiles([random_indx])
-            self.assertEqual(current_collection,
-                             p_state.get_player_collection())
+            self.assertEqual(current_collection, p_state.get_player_collection())
 
         # check that adding tiles 3 at at ime works
         for _i in range(self.num_adds):
@@ -135,15 +142,13 @@ class PlayerStateTests(unittest.TestCase):
             current_collection[random_indx_2] += 1
             current_collection[random_indx_3] += 1
             p_state.add_tiles([random_indx_1, random_indx_2, random_indx_3])
-            self.assertEqual(current_collection,
-                             p_state.get_player_collection())
+            self.assertEqual(current_collection, p_state.get_player_collection())
 
     def test_remove_single_tiles_by_index(self) -> None:
         p_state = gs.PlayerState("Test Player", [1, 2, 3])
         added_tile_indexes = []
         for _i in range(self.num_adds):
-            random_indx = random.randint(
-                0, len(p_state.get_player_collection()) - 1)
+            random_indx = random.randint(0, len(p_state.get_player_collection()) - 1)
             added_tile_indexes.append(random_indx)
         p_state.add_tiles(added_tile_indexes)
         current_collection = p_state.get_player_collection()
@@ -155,8 +160,7 @@ class PlayerStateTests(unittest.TestCase):
         for added_tile in added_tile_indexes:
             p_state.remove_single_tiles_by_index([added_tile], log=False)
             current_collection[added_tile] -= 1
-            self.assertEqual(current_collection,
-                             p_state.get_player_collection())
+            self.assertEqual(current_collection, p_state.get_player_collection())
 
         # check that removing tiles all at once works
         p_state.add_tiles(added_tile_indexes)
@@ -174,8 +178,7 @@ class PlayerStateTests(unittest.TestCase):
         p_state = gs.PlayerState("Test Player", [1, 2, 3])
         added_tile_indexes = []
         for _i in range(self.num_adds):
-            random_indx = random.randint(
-                0, len(p_state.get_player_collection()) - 1)
+            random_indx = random.randint(0, len(p_state.get_player_collection()) - 1)
             added_tile_indexes.append(random_indx)
         p_state.add_tiles(added_tile_indexes)
         current_collection = p_state.get_player_collection()
@@ -187,8 +190,7 @@ class PlayerStateTests(unittest.TestCase):
         for added_tile in added_tile_indexes:
             p_state.remove_all_tiles_by_index([added_tile], log=False)
             current_collection[added_tile] = 0
-            self.assertEqual(current_collection,
-                             p_state.get_player_collection())
+            self.assertEqual(current_collection, p_state.get_player_collection())
 
         # check that removing tiles all at once works
         p_state.add_tiles(added_tile_indexes)
@@ -226,8 +228,7 @@ class PlayerStateTests(unittest.TestCase):
             removed_sun.append(old_sun)
             added_sun.append(new_sun)
 
-            self.assertEqual(
-                sorted(p_state.get_usable_sun() + removed_sun), test_sun)
+            self.assertEqual(sorted(p_state.get_usable_sun() + removed_sun), test_sun)
             self.assertEqual(p_state.get_unusable_sun(), sorted(added_sun))
 
     def test_make_all_suns_usable(self) -> None:
@@ -275,84 +276,102 @@ class GameStateTests(unittest.TestCase):
     def test_serialize_default(self) -> None:
         self.maxDiff = None
         g_state = gs.GameState(["Player 1", "Player 2"])
-        self.assertEqual(g_state.serialize(), {**g_state.serialize(), **{
-            'currentRound': 1,
-            'activePlayers': [True, True],
-            'numRasThisRound': 0,
-            'centerSun': gi.STARTING_CENTER_SUN,
-            'auctionTiles': [],
-            'auctionSuns': [None, None],
-            'auctionStarted': False,
-            'currentPlayer': 0,
-            'auctionWinningPlayer': None,
-            'gameEnded': False,
-        }})
+        self.assertEqual(
+            g_state.serialize(),
+            {
+                **g_state.serialize(),
+                **{
+                    "currentRound": 1,
+                    "activePlayers": [True, True],
+                    "numRasThisRound": 0,
+                    "centerSun": gi.STARTING_CENTER_SUN,
+                    "auctionTiles": [],
+                    "auctionSuns": [None, None],
+                    "auctionStarted": False,
+                    "currentPlayer": 0,
+                    "auctionWinningPlayer": None,
+                    "gameEnded": False,
+                },
+            },
+        )
         # Check player states.
-        self.assertCountEqual(g_state.serialize()['playerStates'], [dict(
-            collection=[],
-            playerName='Player 1',
-            points=10,
-            unusableSun=[],
-            usableSun=[2, 5, 6, 9],
-        ),
-            dict(
-                collection=[],
-                playerName='Player 2',
-                points=10,
-                unusableSun=[],
-                usableSun=[3, 4, 7, 8],
-        )])
+        self.assertCountEqual(
+            g_state.serialize()["playerStates"],
+            [
+                dict(
+                    collection=[],
+                    playerName="Player 1",
+                    points=10,
+                    unusableSun=[],
+                    usableSun=[2, 5, 6, 9],
+                ),
+                dict(
+                    collection=[],
+                    playerName="Player 2",
+                    points=10,
+                    unusableSun=[],
+                    usableSun=[3, 4, 7, 8],
+                ),
+            ],
+        )
 
     def test_serialize_changes(self) -> None:
         self.maxDiff = None
         g_state = gs.GameState(["Player 1", "Player 2"])
         g_state.increase_round_number()
-        self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(), **{'currentRound': 2}})
+        self.assertEqual(
+            g_state.serialize(), {**g_state.serialize(), **{"currentRound": 2}}
+        )
 
         g_state.increase_num_ras_this_round()
-        self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(),
-                          **{'numRasThisRound': 1}})
+        self.assertEqual(
+            g_state.serialize(), {**g_state.serialize(), **{"numRasThisRound": 1}}
+        )
 
         g_state.add_tile_to_auction_tiles(gi.INDEX_OF_GOD)
-        self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(), **{'auctionTiles': [
-                             gi.TILE_INFO[gi.INDEX_OF_GOD]]}})
+        self.assertEqual(
+            g_state.serialize(),
+            {
+                **g_state.serialize(),
+                **{"auctionTiles": [gi.TILE_INFO[gi.INDEX_OF_GOD]]},
+            },
+        )
 
         g_state.set_auction_winning_player(winning_player=1)
-        self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(),
-                          **{'auctionWinningPlayer': 1}})
+        self.assertEqual(
+            g_state.serialize(), {**g_state.serialize(), **{"auctionWinningPlayer": 1}}
+        )
 
         g_state.set_current_player(new_player_index=1)
-        self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(),
-                          **{'currentPlayer': 1}})
+        self.assertEqual(
+            g_state.serialize(), {**g_state.serialize(), **{"currentPlayer": 1}}
+        )
 
         g_state.mark_player_passed(player_index=1)
-        self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(),
-                          **{'activePlayers': [True, False]}})
+        self.assertEqual(
+            g_state.serialize(),
+            {**g_state.serialize(), **{"activePlayers": [True, False]}},
+        )
 
         g_state.start_auction(forced=True, start_player=0)
-        self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(),
-                          **{'auctionStarted': True}})
+        self.assertEqual(
+            g_state.serialize(), {**g_state.serialize(), **{"auctionStarted": True}}
+        )
 
         g_state.add_auction_sun(player=1, sun=4)
-        self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(),
-                          **{'auctionSuns': [None, 4]}})
+        self.assertEqual(
+            g_state.serialize(), {**g_state.serialize(), **{"auctionSuns": [None, 4]}}
+        )
 
         g_state.set_center_sun(new_sun=4)
-        self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(),
-                          **{'centerSun': 4}})
+        self.assertEqual(
+            g_state.serialize(), {**g_state.serialize(), **{"centerSun": 4}}
+        )
 
         g_state.set_game_ended()
-        self.assertEqual(g_state.serialize(),
-                         {**g_state.serialize(), **{'gameEnded': True}})
+        self.assertEqual(
+            g_state.serialize(), {**g_state.serialize(), **{"gameEnded": True}}
+        )
 
     def test_increase_round_number(self) -> None:
         g_state = gs.GameState(["Test Player 1", "Test Player 2"])
@@ -362,8 +381,7 @@ class GameStateTests(unittest.TestCase):
         # check that increasing rounds works properly
         for i in range(max_rounds - starting_round):
             g_state.increase_round_number()
-            self.assertEqual(g_state.get_current_round(),
-                             starting_round + i + 1)
+            self.assertEqual(g_state.get_current_round(), starting_round + i + 1)
 
         # check that increasing rounds when on the last round throws an error
         with self.assertRaises(Exception):
@@ -381,12 +399,9 @@ class GameStateTests(unittest.TestCase):
                 new_collection = g_state.get_tile_bag_contents()
                 self.assertEqual(
                     current_collection[tile_index_drawn],
-                    new_collection[tile_index_drawn] + 1
+                    new_collection[tile_index_drawn] + 1,
                 )
-                self.assertEqual(
-                    num_tiles_left,
-                    g_state.get_num_tiles_left() + 1
-                )
+                self.assertEqual(num_tiles_left, g_state.get_num_tiles_left() + 1)
                 current_collection = new_collection
                 num_tiles_left = g_state.get_num_tiles_left()
 
@@ -399,8 +414,7 @@ class GameStateTests(unittest.TestCase):
             _ = g_state.draw_tile()
         self.assertEqual(0, g_state.get_num_tiles_left())
         self.assertEqual(
-            [0] * gi.NUM_TILE_TYPES,
-            g_state.get_tile_bag().get_bag_contents()
+            [0] * gi.NUM_TILE_TYPES, g_state.get_tile_bag().get_bag_contents()
         )
 
         # test that trying to draw a tile after none are left returns none
@@ -498,8 +512,7 @@ class GameStateTests(unittest.TestCase):
         for _i in range(self.num_iterations):
             auction_tiles = []
             # add a random number of collectible tiles to a list
-            num_auction_tiles = random.randint(
-                1, g_state.get_max_auction_tiles() - 1)
+            num_auction_tiles = random.randint(1, g_state.get_max_auction_tiles() - 1)
             for _j in range(num_auction_tiles):
                 t = g_state.draw_tile(log=False)
                 if t is None:
@@ -518,12 +531,11 @@ class GameStateTests(unittest.TestCase):
             for tile in auction_tiles:
                 self.assertEqual(
                     old_player_collection[tile] + auction_tiles.count(tile),
-                    new_player_collection[tile]
+                    new_player_collection[tile],
                 )
 
     def test_set_current_player(self) -> None:
-        g_state = gs.GameState(
-            ["Test Player 1", "Test Player 2", "Test Player 3"])
+        g_state = gs.GameState(["Test Player 1", "Test Player 2", "Test Player 3"])
         num_players = g_state.get_num_players()
 
         # check that current player can be set properly
@@ -541,8 +553,7 @@ class GameStateTests(unittest.TestCase):
 
     def test_mark_player_passed(self) -> None:
         for _i in range(self.num_iterations):
-            g_state = gs.GameState(
-                ["Test Player 1", "Test Player 2", "Test Player 3"])
+            g_state = gs.GameState(["Test Player 1", "Test Player 2", "Test Player 3"])
             player_indexes = [0, 1, 2]
             random.shuffle(player_indexes)
 
@@ -553,13 +564,12 @@ class GameStateTests(unittest.TestCase):
 
     def test_reset_active_players(self) -> None:
         for _i in range(self.num_iterations):
-            g_state = gs.GameState(
-                ["Test Player 1", "Test Player 2", "Test Player 3"])
+            g_state = gs.GameState(["Test Player 1", "Test Player 2", "Test Player 3"])
 
             # mark some players passed
             player_indexes = [0, 1, 2]
             random.shuffle(player_indexes)
-            player_indexes = player_indexes[:(random.randint(0, 3))]
+            player_indexes = player_indexes[: (random.randint(0, 3))]
             for index in player_indexes:
                 g_state.mark_player_passed(index)
 

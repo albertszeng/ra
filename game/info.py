@@ -17,8 +17,8 @@ STARTING_SUN: Dict[int, List[List[int]]] = {
     2: [[2, 5, 6, 9], [3, 4, 7, 8]],
     3: [[2, 5, 8, 13], [3, 6, 9, 12], [4, 7, 10, 11]],
     4: [[2, 6, 13], [3, 7, 12], [4, 8, 11], [5, 9, 10]],
-    5: [[2, 7, 16], [3, 8, 15], [4, 9, 14], [5, 10, 13],
-        [6, 11, 12]]}
+    5: [[2, 7, 16], [3, 8, 15], [4, 9, 14], [5, 10, 13], [6, 11, 12]],
+}
 
 # num of players: number of ra tiles per round
 NUM_RAS_PER_ROUND: Dict[int, int] = {2: 6, 3: 8, 4: 9, 5: 10}
@@ -38,11 +38,12 @@ NUM_DISCARDS_PER_DISASTER: int = 2
 
 # Definitions of each tile type
 
+
 @enum.unique
 class TileType(str, enum.Enum):
-    COLLECTIBLE = 'COLLECTIBLE'
-    DISASTER = 'DISASTER'
-    RA = 'RA'
+    COLLECTIBLE = "COLLECTIBLE"
+    DISASTER = "DISASTER"
+    RA = "RA"
 
 
 class TileTypeInfo(TypedDict):
@@ -55,104 +56,109 @@ class TileTypeInfo(TypedDict):
     tileType: TileType
 
 
-GOD = TileTypeInfo(name="Golden God",
-                   startingNum=8,
-                   toKeep=False,
-                   tileType=TileType.COLLECTIBLE)
-GOLD = TileTypeInfo(name="Gold",
-                    startingNum=5,
-                    toKeep=False,
-                    tileType=TileType.COLLECTIBLE)
+GOD = TileTypeInfo(
+    name="Golden God", startingNum=8, toKeep=False, tileType=TileType.COLLECTIBLE
+)
+GOLD = TileTypeInfo(
+    name="Gold", startingNum=5, toKeep=False, tileType=TileType.COLLECTIBLE
+)
 
-PHAR = TileTypeInfo(name="Pharaoh",
-                    startingNum=25,
-                    toKeep=True,
-                    tileType=TileType.COLLECTIBLE)
+PHAR = TileTypeInfo(
+    name="Pharaoh", startingNum=25, toKeep=True, tileType=TileType.COLLECTIBLE
+)
 
-NILE = TileTypeInfo(name="Nile",
-                    startingNum=25,
-                    toKeep=True,
-                    tileType=TileType.COLLECTIBLE)
-FLOOD = TileTypeInfo(name="Flood",
-                     startingNum=12,
-                     toKeep=False,
-                     tileType=TileType.COLLECTIBLE)
+NILE = TileTypeInfo(
+    name="Nile", startingNum=25, toKeep=True, tileType=TileType.COLLECTIBLE
+)
+FLOOD = TileTypeInfo(
+    name="Flood", startingNum=12, toKeep=False, tileType=TileType.COLLECTIBLE
+)
 
-CIV_ASTR = TileTypeInfo(name="Civilization -- Astronomy",
-                        startingNum=5,
-                        toKeep=False,
-                        tileType=TileType.COLLECTIBLE)
-CIV_AGR = TileTypeInfo(name="Civilization -- Agriculture",
-                       startingNum=5,
-                       toKeep=False,
-                       tileType=TileType.COLLECTIBLE)
-CIV_WRI = TileTypeInfo(name="Civilization -- Writing",
-                       startingNum=5,
-                       toKeep=False,
-                       tileType=TileType.COLLECTIBLE)
-CIV_REL = TileTypeInfo(name="Civilization -- Religion",
-                       startingNum=5,
-                       toKeep=False,
-                       tileType=TileType.COLLECTIBLE)
-CIV_ART = TileTypeInfo(name="Civilization -- Art",
-                       startingNum=5,
-                       toKeep=False,
-                       tileType=TileType.COLLECTIBLE)
+CIV_ASTR = TileTypeInfo(
+    name="Civilization -- Astronomy",
+    startingNum=5,
+    toKeep=False,
+    tileType=TileType.COLLECTIBLE,
+)
+CIV_AGR = TileTypeInfo(
+    name="Civilization -- Agriculture",
+    startingNum=5,
+    toKeep=False,
+    tileType=TileType.COLLECTIBLE,
+)
+CIV_WRI = TileTypeInfo(
+    name="Civilization -- Writing",
+    startingNum=5,
+    toKeep=False,
+    tileType=TileType.COLLECTIBLE,
+)
+CIV_REL = TileTypeInfo(
+    name="Civilization -- Religion",
+    startingNum=5,
+    toKeep=False,
+    tileType=TileType.COLLECTIBLE,
+)
+CIV_ART = TileTypeInfo(
+    name="Civilization -- Art",
+    startingNum=5,
+    toKeep=False,
+    tileType=TileType.COLLECTIBLE,
+)
 
-MON_FORT = TileTypeInfo(name="Monument -- Fortress",
-                        startingNum=5,
-                        toKeep=True,
-                        tileType=TileType.COLLECTIBLE)
-MON_OBEL = TileTypeInfo(name="Monument -- Obelisk",
-                        startingNum=5,
-                        toKeep=True,
-                        tileType=TileType.COLLECTIBLE)
-MON_PAL = TileTypeInfo(name="Monument -- Palace",
-                       startingNum=5,
-                       toKeep=True,
-                       tileType=TileType.COLLECTIBLE)
-MON_PYR = TileTypeInfo(name="Monument -- Pyramid",
-                       startingNum=5,
-                       toKeep=True,
-                       tileType=TileType.COLLECTIBLE)
-MON_TEM = TileTypeInfo(name="Monument -- Temple",
-                       startingNum=5,
-                       toKeep=True,
-                       tileType=TileType.COLLECTIBLE)
-MON_STAT = TileTypeInfo(name="Monument -- Statue",
-                        startingNum=5,
-                        toKeep=True,
-                        tileType=TileType.COLLECTIBLE)
-MON_STE = TileTypeInfo(name="Monument -- Step Pyramid",
-                       startingNum=5,
-                       toKeep=True,
-                       tileType=TileType.COLLECTIBLE)
-MON_SPH = TileTypeInfo(name="Monument -- Sphinx",
-                       startingNum=5,
-                       toKeep=True,
-                       tileType=TileType.COLLECTIBLE)
+MON_FORT = TileTypeInfo(
+    name="Monument -- Fortress",
+    startingNum=5,
+    toKeep=True,
+    tileType=TileType.COLLECTIBLE,
+)
+MON_OBEL = TileTypeInfo(
+    name="Monument -- Obelisk",
+    startingNum=5,
+    toKeep=True,
+    tileType=TileType.COLLECTIBLE,
+)
+MON_PAL = TileTypeInfo(
+    name="Monument -- Palace", startingNum=5, toKeep=True, tileType=TileType.COLLECTIBLE
+)
+MON_PYR = TileTypeInfo(
+    name="Monument -- Pyramid",
+    startingNum=5,
+    toKeep=True,
+    tileType=TileType.COLLECTIBLE,
+)
+MON_TEM = TileTypeInfo(
+    name="Monument -- Temple", startingNum=5, toKeep=True, tileType=TileType.COLLECTIBLE
+)
+MON_STAT = TileTypeInfo(
+    name="Monument -- Statue", startingNum=5, toKeep=True, tileType=TileType.COLLECTIBLE
+)
+MON_STE = TileTypeInfo(
+    name="Monument -- Step Pyramid",
+    startingNum=5,
+    toKeep=True,
+    tileType=TileType.COLLECTIBLE,
+)
+MON_SPH = TileTypeInfo(
+    name="Monument -- Sphinx", startingNum=5, toKeep=True, tileType=TileType.COLLECTIBLE
+)
 
-DIS_PHAR = TileTypeInfo(name="Disaster -- Funeral",
-                        startingNum=2,
-                        toKeep=False,
-                        tileType=TileType.DISASTER)
-DIS_NILE = TileTypeInfo(name="Disaster -- Drought",
-                        startingNum=2,
-                        toKeep=False,
-                        tileType=TileType.DISASTER)
-DIS_CIV = TileTypeInfo(name="Disaster -- War",
-                       startingNum=4,
-                       toKeep=False,
-                       tileType=TileType.DISASTER)
-DIS_MON = TileTypeInfo(name="Disaster -- Earthquake",
-                       startingNum=2,
-                       toKeep=False,
-                       tileType=TileType.DISASTER)
+DIS_PHAR = TileTypeInfo(
+    name="Disaster -- Funeral", startingNum=2, toKeep=False, tileType=TileType.DISASTER
+)
+DIS_NILE = TileTypeInfo(
+    name="Disaster -- Drought", startingNum=2, toKeep=False, tileType=TileType.DISASTER
+)
+DIS_CIV = TileTypeInfo(
+    name="Disaster -- War", startingNum=4, toKeep=False, tileType=TileType.DISASTER
+)
+DIS_MON = TileTypeInfo(
+    name="Disaster -- Earthquake",
+    startingNum=2,
+    toKeep=False,
+    tileType=TileType.DISASTER,
+)
 
-RA = TileTypeInfo(name="Ra",
-                  startingNum=30,
-                  toKeep=False,
-                  tileType=TileType.RA)
+RA = TileTypeInfo(name="Ra", startingNum=30, toKeep=False, tileType=TileType.RA)
 
 
 # a list of all tile types
@@ -160,26 +166,45 @@ RA = TileTypeInfo(name="Ra",
 # WARNING: changing this list changes everything below within this section
 TILE_INFO: List[TileTypeInfo] = [
     GOD,
-    GOLD, PHAR, NILE, FLOOD, CIV_ASTR, CIV_AGR,
-    CIV_WRI, CIV_REL, CIV_ART, MON_FORT, MON_OBEL, MON_PAL,
-    MON_PYR, MON_TEM, MON_STAT, MON_STE, MON_SPH, DIS_PHAR,
-    DIS_NILE, DIS_CIV, DIS_MON, RA]
+    GOLD,
+    PHAR,
+    NILE,
+    FLOOD,
+    CIV_ASTR,
+    CIV_AGR,
+    CIV_WRI,
+    CIV_REL,
+    CIV_ART,
+    MON_FORT,
+    MON_OBEL,
+    MON_PAL,
+    MON_PYR,
+    MON_TEM,
+    MON_STAT,
+    MON_STE,
+    MON_SPH,
+    DIS_PHAR,
+    DIS_NILE,
+    DIS_CIV,
+    DIS_MON,
+    RA,
+]
 
 
 NUM_TILE_TYPES: int = len(TILE_INFO)  # total number of tiles types in the game
 
 STARTING_NUM_TILES: int = 0  # total number of tiles that start in the bag
 for tile in TILE_INFO:
-    STARTING_NUM_TILES += tile['startingNum']
+    STARTING_NUM_TILES += tile["startingNum"]
 
 NUM_AUCTIONABLE_TILE_TYPES: int = 0
 for tile in TILE_INFO:
-    if tile['tileType'] != TileType.RA:
+    if tile["tileType"] != TileType.RA:
         NUM_AUCTIONABLE_TILE_TYPES += 1
 
 NUM_COLLECTIBLE_TILE_TYPES: int = 0  # the number of tiles players can collect
 for tile in TILE_INFO:
-    if tile['tileType'] == TileType.COLLECTIBLE:
+    if tile["tileType"] == TileType.COLLECTIBLE:
         NUM_COLLECTIBLE_TILE_TYPES += 1
 
 INDEX_OF_GOD: int = 0
@@ -218,12 +243,12 @@ STARTING_INDEX_OF_DISASTERS: int = 18
 
 def tile_starting_num(tile: TileTypeInfo) -> int:
     """Given a tile, return how many we start with."""
-    return tile['startingNum']
+    return tile["startingNum"]
 
 
 def tile_name(tile: TileTypeInfo) -> str:
     """Given a tile, return its name."""
-    return tile['name']
+    return tile["name"]
 
 
 def index_to_tile(index: int) -> TileTypeInfo:
@@ -244,38 +269,34 @@ def index_to_starting_num(index: int) -> int:
 
 def index_is_collectible(index: int) -> bool:
     """Return whether the tile of an index is a collectible type."""
-    return index_to_tile(index)['tileType'] == TileType.COLLECTIBLE
+    return index_to_tile(index)["tileType"] == TileType.COLLECTIBLE
 
 
 def index_is_disaster(index: int) -> bool:
-    return index_to_tile(index)['tileType'] == TileType.DISASTER
+    return index_to_tile(index)["tileType"] == TileType.DISASTER
 
 
 def index_is_ra(index: int) -> bool:
-    return index_to_tile(index)['tileType'] == TileType.RA
+    return index_to_tile(index)["tileType"] == TileType.RA
 
 
 def list_of_temporary_collectible_indexes() -> List[int]:
     temp_collectibles = []
     for i in range(NUM_TILE_TYPES):
         curr_tile = TILE_INFO[i]
-        if (curr_tile['tileType'] == TileType.COLLECTIBLE
-                and not curr_tile['toKeep']):
+        if curr_tile["tileType"] == TileType.COLLECTIBLE and not curr_tile["toKeep"]:
             temp_collectibles.append(i)
     return temp_collectibles
 
 
-def get_civs_from_collection(
-        collection: List[int]) -> List[int]:
-    return collection[
-        STARTING_INDEX_OF_CIVS:(STARTING_INDEX_OF_CIVS + NUM_CIVS)]
+def get_civs_from_collection(collection: List[int]) -> List[int]:
+    return collection[STARTING_INDEX_OF_CIVS : (STARTING_INDEX_OF_CIVS + NUM_CIVS)]
 
 
-def get_monuments_from_collection(
-        collection: List[int]) -> List[int]:
+def get_monuments_from_collection(collection: List[int]) -> List[int]:
     return collection[
-        STARTING_INDEX_OF_MONUMENTS:(
-            STARTING_INDEX_OF_MONUMENTS + NUM_MONUMENTS)]
+        STARTING_INDEX_OF_MONUMENTS : (STARTING_INDEX_OF_MONUMENTS + NUM_MONUMENTS)
+    ]
 
 
 # Action definitions
@@ -353,18 +374,21 @@ GOD_6_OPTIONS: List[str] = ["7", "god 6", "g6", "g 6", "god6"]
 GOD_7_OPTIONS: List[str] = ["8", "god 7", "g7", "g 7", "god7"]
 GOD_8_OPTIONS: List[str] = ["9", "god 8", "g8", "g 8", "god8"]
 BID_1_OPTIONS: List[str] = ["10", "bid lowest", "b1", "b 1", "bid1", "bid 1"]
-BID_2_OPTIONS: List[str] = [
-    "11", "bid second lowest", "b2", "b 2", "bid2", "bid 2"]
-BID_3_OPTIONS: List[str] = [
-    "12", "bid third lowest", "b3", "b 3", "bid3", "bid 3"]
-BID_4_OPTIONS: List[str] = [
-    "13", "bid fourth lowest", "b4", "b 4", "bid4", "bid 4"]
-BID_NOTHING_OPTIONS: List[str] = ["14", "b0", "b 0",
-                                  "bid0", "bid 0", "bid nothing", "pass", "p"]
-DISCARD_ASTR_OPTIONS: List[str] = [
-    "15", "discard astronomy", "astronomy", "astr"]
-DISCARD_AGR_OPTIONS: List[str] = [
-    "16", "discard agriculture", "agriculture", "agr"]
+BID_2_OPTIONS: List[str] = ["11", "bid second lowest", "b2", "b 2", "bid2", "bid 2"]
+BID_3_OPTIONS: List[str] = ["12", "bid third lowest", "b3", "b 3", "bid3", "bid 3"]
+BID_4_OPTIONS: List[str] = ["13", "bid fourth lowest", "b4", "b 4", "bid4", "bid 4"]
+BID_NOTHING_OPTIONS: List[str] = [
+    "14",
+    "b0",
+    "b 0",
+    "bid0",
+    "bid 0",
+    "bid nothing",
+    "pass",
+    "p",
+]
+DISCARD_ASTR_OPTIONS: List[str] = ["15", "discard astronomy", "astronomy", "astr"]
+DISCARD_AGR_OPTIONS: List[str] = ["16", "discard agriculture", "agriculture", "agr"]
 DISCARD_WRI_OPTIONS: List[str] = ["17", "discard writing", "writing", "wri"]
 DISCARD_REL_OPTIONS: List[str] = ["18", "discard religion", "religion", "rel"]
 DISCARD_ART_OPTIONS: List[str] = ["19", "discard art", "art"]
@@ -374,8 +398,7 @@ DISCARD_PAL_OPTIONS: List[str] = ["22", "discard palace", "palace", "pal"]
 DISCARD_PYR_OPTIONS: List[str] = ["23", "discard pyramid", "pyramid", "pyr"]
 DISCARD_TEM_OPTIONS: List[str] = ["24", "discard temple", "temple", "tem"]
 DISCARD_STAT_OPTIONS: List[str] = ["25", "discard statue", "statue", "sta"]
-DISCARD_STE_OPTIONS: List[str] = [
-    "26", "discard step pyramid", "step pyramid", "ste"]
+DISCARD_STE_OPTIONS: List[str] = ["26", "discard step pyramid", "step pyramid", "ste"]
 DISCARD_SPH_OPTIONS: List[str] = ["27", "discard sphinx", "sphinx", "sph"]
 
 
@@ -438,7 +461,7 @@ action_option_lst: List[Tuple[int, List[str], str]] = [
     (DISCARD_TEM, DISCARD_TEM_OPTIONS, DISCARD_TEM_DESC),
     (DISCARD_STAT, DISCARD_STAT_OPTIONS, DISCARD_STAT_DESC),
     (DISCARD_STE, DISCARD_STE_OPTIONS, DISCARD_STE_DESC),
-    (DISCARD_SPH, DISCARD_SPH_OPTIONS, DISCARD_SPH_DESC)
+    (DISCARD_SPH, DISCARD_SPH_OPTIONS, DISCARD_SPH_DESC),
 ]
 
 
@@ -452,8 +475,7 @@ for i in range(len(action_option_lst)):
     for j in range(i + 1, len(action_option_lst)):
         options_2 = action_option_lst[j][1]
         if set(options_1) & set(options_2):
-            raise Exception(
-                f"Options are overlapping: {options_1} and {options_2}")
+            raise Exception(f"Options are overlapping: {options_1} and {options_2}")
 
 
 # Scoring

@@ -9,8 +9,10 @@ from typing import cast, Dict, Iterable, List, TypedDict, Optional
 
 # Gamestate class and helper classes
 
+
 class TileBag:
-    """Holds all tiles currently available for draw. """
+    """Holds all tiles currently available for draw."""
+
     # keeps track of how many of each tile are left
     bag: List[int]
     # total number of tiles left
@@ -20,9 +22,7 @@ class TileBag:
         self.bag = [gi.tile_starting_num(tile) for tile in gi.TILE_INFO]
         self.num_tiles_left = gi.STARTING_NUM_TILES
 
-    def draw_tile(self,
-                  tile: Optional[int] = None,
-                  log: bool = True) -> Optional[int]:
+    def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
         """Remove a random tile for the bag.
 
         Args:
@@ -77,6 +77,7 @@ class TileBag:
 
 class SerializedPlayerState(TypedDict):
     """A data-only representation of the current player state."""
+
     # The tiles the player currently has in his collection.
     collection: List[gi.TileTypeInfo]
     # The current point total of the player.
@@ -96,10 +97,12 @@ class PlayerState:
     usable_sun: List[int]
     unusable_sun: List[int]
 
-    def __init__(self,
-                 player_name: str,
-                 starting_sun: List[int],
-                 starting_points: int = gi.STARTING_PLAYER_POINTS) -> None:
+    def __init__(
+        self,
+        player_name: str,
+        starting_sun: List[int],
+        starting_points: int = gi.STARTING_PLAYER_POINTS,
+    ) -> None:
         self.collection = [0] * gi.NUM_COLLECTIBLE_TILE_TYPES
         self.points = starting_points
         self.player_name = player_name
@@ -113,9 +116,11 @@ class PlayerState:
             points=self.points,
             usableSun=self.usable_sun,
             unusableSun=self.unusable_sun,
-            collection=[gi.index_to_tile(
-                idx) for idx, count in enumerate(self.collection)
-                for _ in range(count)]
+            collection=[
+                gi.index_to_tile(idx)
+                for idx, count in enumerate(self.collection)
+                for _ in range(count)
+            ],
         )
 
     def add_tiles(self, lst_of_indexes: Iterable[int]) -> None:
@@ -123,9 +128,9 @@ class PlayerState:
         for index in lst_of_indexes:
             self.collection[index] += 1
 
-    def remove_single_tiles_by_index(self,
-                                     lst_of_indexes: Iterable[int],
-                                     log: bool = True) -> None:
+    def remove_single_tiles_by_index(
+        self, lst_of_indexes: Iterable[int], log: bool = True
+    ) -> None:
         """Remove a list of tile indexes from the player's collection."""
         for index in lst_of_indexes:
             if self.collection[index] > 0:
@@ -133,23 +138,26 @@ class PlayerState:
                     logging.info(
                         f"Removing a single tile \
                         {gi.index_to_tile_name(index)} from player \
-                        {self.player_name}")
+                        {self.player_name}"
+                    )
                 self.collection[index] -= 1
             else:
                 if log:
                     logging.info(
                         f"Player {self.player_name} does not have tile "
-                        f"{gi.index_to_tile_name(index)}")
+                        f"{gi.index_to_tile_name(index)}"
+                    )
 
-    def remove_all_tiles_by_index(self,
-                                  lst_of_indexes: Iterable[int],
-                                  log: bool = True) -> None:
+    def remove_all_tiles_by_index(
+        self, lst_of_indexes: Iterable[int], log: bool = True
+    ) -> None:
         """Remove all tiles whose indexes are in lst_of_indexes."""
         for index in lst_of_indexes:
             if log:
                 logging.info(
                     f"Clearing all tile {gi.index_to_tile_name(index)} "
-                    f"from player {self.player_name}")
+                    f"from player {self.player_name}"
+                )
             self.collection[index] = 0
 
     def exchange_sun(self, sun_to_give: int, sun_to_receive: int) -> None:
@@ -194,32 +202,35 @@ class PlayerState:
         return val
 
     def sun_as_str(self) -> str:
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             Sun of {self.player_name}
             Usable Sun: {self.usable_sun}
             Unusable Sun: {self.unusable_sun}
-            """)
+            """
+        )
 
     def __str__(self) -> str:
         return self.player_state_as_str()
 
-    def player_state_as_str(self,
-                            include_name: bool = True,
-                            verbose: bool = False) -> str:
+    def player_state_as_str(
+        self, include_name: bool = True, verbose: bool = False
+    ) -> str:
         val = f"Player: {self.player_name}\n" if include_name else ""
         val += f"{self.sun_as_str()}\n"
         val += f"{self.collections_as_str(verbose)}\n"
         val += f"Points: {self.points}\n"
         return val
 
-    def print_player_state(self,
-                           print_name: bool = True,
-                           verbose: bool = False) -> None:
+    def print_player_state(
+        self, print_name: bool = True, verbose: bool = False
+    ) -> None:
         print(self.player_state_as_str(print_name, verbose))
 
 
 class SerializedGameState(TypedDict):
     """Fully summarizes in a data-only format the current GameState."""
+
     # Total number of rounds to play.
     totalRounds: int
     # Total number of Ra tiles per round.
@@ -288,10 +299,11 @@ class GameState:
 
     def __init__(self, player_names: List[str]) -> None:
         num_players = len(player_names)
-        if (num_players > gi.MAX_NUM_PLAYERS or
-                num_players < gi.MIN_NUM_PLAYERS):
-            raise Exception(f"Invalid game state. Cannot have {num_players} \
-                players")
+        if num_players > gi.MAX_NUM_PLAYERS or num_players < gi.MIN_NUM_PLAYERS:
+            raise Exception(
+                f"Invalid game state. Cannot have {num_players} \
+                players"
+            )
 
         # constant game state variables
         self.total_rounds = gi.NUM_ROUNDS
@@ -302,14 +314,12 @@ class GameState:
         # current game state variables
         self.tile_bag = TileBag()
         self.current_round = 1
-        self.active_players = [True] * \
-            self.num_players  # players with sun still
+        self.active_players = [True] * self.num_players  # players with sun still
         self.num_ras_this_round = 0
         self.center_sun = gi.STARTING_CENTER_SUN
         self.auction_tiles = []
         # what suns players have bid
-        self.auction_suns = cast(List[Optional[int]], [
-                                 None] * self.num_players)
+        self.auction_suns = cast(List[Optional[int]], [None] * self.num_players)
         self.auction_started = False
         self.auction_forced = False
         self.auction_start_player = None  # player that started the auction
@@ -329,8 +339,9 @@ class GameState:
             self.player_states.append(
                 PlayerState(player_names[i], starting_sun_sets[i])
             )
-        self.player_names = [player_state.get_player_name()
-                             for player_state in self.player_states]
+        self.player_names = [
+            player_state.get_player_name() for player_state in self.player_states
+        ]
 
         self.game_ended = False
 
@@ -357,22 +368,23 @@ class GameState:
     def increase_round_number(self) -> None:
         """Increase the round number by 1 if it's not the last round."""
         if self.current_round >= self.total_rounds:
-            raise Exception(f"Cannot advance round beyond \
-                {self.current_round}")
+            raise Exception(
+                f"Cannot advance round beyond \
+                {self.current_round}"
+            )
         self.current_round += 1
 
-    def draw_tile(
-            self,
-            tile: Optional[int] = None,
-            log: bool = True) -> Optional[int]:
+    def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
         """Draw a tile from the game bag and return the tile index."""
         return self.tile_bag.draw_tile(tile=tile, log=log)
 
     def increase_num_ras_this_round(self) -> None:
         """Increase the number of ras drawn this round by 1 if valid."""
         if self.num_ras_this_round >= self.num_ras_per_round:
-            raise Exception(f"Cannot increase num ras \
-                beyond {self.num_ras_this_round}")
+            raise Exception(
+                f"Cannot increase num ras \
+                beyond {self.num_ras_this_round}"
+            )
         self.num_ras_this_round += 1
 
     def reset_num_ras_this_round(self) -> None:
@@ -385,8 +397,10 @@ class GameState:
         Return: the number of auction tiles
         """
         if len(self.auction_tiles) >= self.max_auction_tiles:
-            raise Exception(f"There are already {len(self.auction_tiles)} \
-                auction tiles. Cannot add another.")
+            raise Exception(
+                f"There are already {len(self.auction_tiles)} \
+                auction tiles. Cannot add another."
+            )
         self.auction_tiles.append(tile_index)
         return len(self.auction_tiles)
 
@@ -394,8 +408,8 @@ class GameState:
         """Remove an auction tile and return tile_index that was removed."""
         if tile_position_index >= len(self.auction_tiles):
             raise Exception(
-                f"Cannot remove tile position index {tile_position_index}. " +
-                f"There are only {len(self.auction_tiles)} auction tiles."
+                f"Cannot remove tile position index {tile_position_index}. "
+                + f"There are only {len(self.auction_tiles)} auction tiles."
             )
 
         return self.auction_tiles.pop(tile_position_index)
@@ -404,48 +418,40 @@ class GameState:
         """Throw away all tiles up for auction."""
         self.auction_tiles = []
 
-    def give_tiles_to_player(self,
-                             player_index: int,
-                             tile_list: Iterable[int]) -> None:
+    def give_tiles_to_player(self, player_index: int, tile_list: Iterable[int]) -> None:
         """Give tiles to a player."""
         self.player_states[player_index].add_tiles(tile_list)
 
     def remove_single_tiles_from_current_player(
-            self, tile_indexes: Iterable[int], log: bool = True) -> None:
+        self, tile_indexes: Iterable[int], log: bool = True
+    ) -> None:
         """Remove a list of tiles from the current player."""
         self.player_states[self.current_player].remove_single_tiles_by_index(
-            tile_indexes,
-            log=log
+            tile_indexes, log=log
         )
 
     def remove_single_tiles_from_player(
-            self,
-            tile_indexes: Iterable[int],
-            player_index: int,
-            log: bool = True) -> None:
+        self, tile_indexes: Iterable[int], player_index: int, log: bool = True
+    ) -> None:
         """Remove a list of tiles from the specified player."""
         self.player_states[player_index].remove_single_tiles_by_index(
-            tile_indexes,
-            log=log
+            tile_indexes, log=log
         )
 
     def remove_all_tiles_by_index_from_current_player(
-            self, tile_indexes: Iterable[int], log: bool = True) -> None:
+        self, tile_indexes: Iterable[int], log: bool = True
+    ) -> None:
         """Remove all tiles in the list of indexes from the current player."""
         self.player_states[self.current_player].remove_all_tiles_by_index(
-            tile_indexes,
-            log=log
+            tile_indexes, log=log
         )
 
     def remove_all_tiles_by_index_from_player(
-            self,
-            tile_indexes: Iterable[int],
-            player_index: int,
-            log: bool = True) -> None:
+        self, tile_indexes: Iterable[int], player_index: int, log: bool = True
+    ) -> None:
         """Remove all tiles in the list of indexes from the current player."""
         self.player_states[player_index].remove_all_tiles_by_index(
-            tile_indexes,
-            log=log
+            tile_indexes, log=log
         )
 
     def set_auction_winning_player(self, winning_player: int) -> None:
@@ -478,8 +484,7 @@ class GameState:
             assert nextPlayer is not None
             self.set_current_player(nextPlayer)
         else:
-            self.set_current_player(
-                (self.current_player + 1) % self.num_players)
+            self.set_current_player((self.current_player + 1) % self.num_players)
 
     def set_auction_start_player(self, player: int) -> None:
         """Mark that someone has started an auction."""
@@ -508,16 +513,14 @@ class GameState:
         self.auction_suns[player] = sun
 
     def clear_auction_suns(self) -> None:
-        self.auction_suns = cast(List[Optional[int]], [
-                                 None] * self.num_players)
+        self.auction_suns = cast(List[Optional[int]], [None] * self.num_players)
 
     def end_auction(self) -> None:
         """End the auction and clear the suns that were bid."""
         self.clear_auction_suns()
         self.auction_started = False
 
-    def exchange_sun(
-            self, player: int, auctioned_sun: int, center_sun: int) -> None:
+    def exchange_sun(self, player: int, auctioned_sun: int, center_sun: int) -> None:
         """Take auctioned_sun from player and give center_sun in exchange."""
         self.player_states[player].exchange_sun(auctioned_sun, center_sun)
 
@@ -657,7 +660,7 @@ class GameState:
 
     def get_auction_start_player(self) -> int:
         if self.auction_start_player is None:
-            raise ValueError('No auction run.')
+            raise ValueError("No auction run.")
         return self.auction_start_player
 
     def get_num_mons_to_discard(self) -> int:
@@ -668,7 +671,7 @@ class GameState:
 
     def get_auction_winning_player(self) -> int:
         if self.auction_winning_player is None:
-            raise ValueError('No auction run.')
+            raise ValueError("No auction run.")
         return self.auction_winning_player
 
     def get_all_player_points(self) -> Dict[str, int]:
@@ -717,8 +720,7 @@ class GameState:
         if self.is_auction_started():
             val += f"Auctioned Suns: {self.auction_suns}\n"
 
-        val += ("\nPlayer To Move: "
-                f"{self.player_names[self.current_player]}\n")
+        val += "\nPlayer To Move: " f"{self.player_names[self.current_player]}\n"
 
         return val
 
