@@ -112,7 +112,7 @@ async def action() -> Union[routes.Message, routes.ActionResponse]:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         if not (dbGame := db.session.get(Game, gameId.hex)):
             return None
-        return dbGame.game
+        return dbGame.data
 
     async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
         if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -135,7 +135,7 @@ async def action() -> Union[routes.Message, routes.ActionResponse]:
 
     command = routes.ActionRequest(gameId=gameIdStr, command=command)
     session = await sio.get_session(sid)
-    response = await routes.action(request, session.get(
+    response = await routes.action(command, session.get(
         'playerIdx'), fetchGame, saveGame)
 
     # Update all connected clients with the updated game except client that
@@ -152,7 +152,7 @@ async def action(sid: str, data: routes.ActionRequest) -> None:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
                 return None
-        return dbGame.game
+        return dbGame.data
 
     async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
         async with app.app_context():
