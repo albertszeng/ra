@@ -65,9 +65,16 @@ You should be able to type check by running:
 pipenv run pyre
 ```
 
-And you should run the linter with:
+We also use black for formatting. If you installed the development dependecies, you can run:
+
+```sh
+pienv run black .
 ```
-pipenv run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
+
+Additionally, we recommend that you enable a `pre-commit` hook. The configuration is included in the repo. You can run:
+
+```sh
+pipenv run pre-commit install
 ```
 
 Note that these commands will be run when push to the `master` branch on github as well. You'll be able to see the results on Github Actions.
