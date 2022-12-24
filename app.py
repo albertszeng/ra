@@ -3,6 +3,8 @@ import quart.flask_patch  # pyre-ignore[21]: Manually patched.
 import asyncio
 import copy
 import flask_sqlalchemy
+import functools
+import hashlib
 import logging
 import os
 import quart  # pyre-ignore[21]
@@ -16,7 +18,8 @@ from quart import request
 from sqlalchemy.sql import expression
 
 
-from typing import Union, Optional
+from typing import Awaitable, Callable, cast, Optional, TypeVar, Union
+from typing_extensions import ParamSpec
 
 logger: logging.Logger = logging.getLogger("uvicorn.info")
 
@@ -43,6 +46,26 @@ class Game(db.Model):  # pyre-ignore[11]
     data: db.Column = db.Column(db.PickleType, nullable=False)
 
 
+class User(db.Model):
+    """Databse used to persist user accounts."""
+
+    username: db.Column = db.Column(db.String, primary_key=True)
+
+    # This is a hashed version using the given salt.
+    password_hash: db.Column = db.Column(db.String)
+    salt: db.Column = db.Column(db.String)
+
+    def set_password(self, password: str) -> None:
+        self.salt = os.urandom(16)
+        self.password_hash = hashlib.sha256(
+            password.encode() + self.salt.encode()
+        ).hexdigest()
+
+    def check_password(self, password: str) -> bool:
+        new_hash = hashlib.sha256(password.encode() + self.salt.encode()).hexdigest()
+        return new_hash == self.password_hash
+
+
 # Creates the database and tables as specified by all db.Model classes.
 async def setup() -> None:
     async with app.app_context():
@@ -52,7 +75,7 @@ async def setup() -> None:
 
 try:
     asyncio.get_running_loop().create_task(setup())
-except RuntimeError:  # 'RuntimeError: There is no current event loop...'
+except RuntimeError:  # "RuntimeError: There is no current event loop..."
     asyncio.run(setup())
 
 
@@ -61,6 +84,28 @@ sio = socketio.AsyncServer(  # pyre-ignore[5]
     cors_allowed_origins="*", async_mode="asgi"
 )
 
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
+def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+    @functools.wraps(func)
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        # pyre-ignore[16]
+        sid = (await request.json).get("socketId") if len(args) == 0 else args[0]
+        errorMsg = routes.ErrorMessage("Not logged in!")
+        if not sid or not isinstance(sid, str):
+            sio.emit("logout", errorMsg, to=sid)
+            return cast(T, errorMsg)
+        # This is a sio event handlers.
+        session = await sio.get_session(sid)
+        if not session.get("loggedIn"):
+            sio.emit("logout", routes.ErrorMessage("Not logged in!"), to=sid)
+            return cast(T, errorMsg)
+        return await func(*args, **kwargs)
+
+    return wrapper
+
 
 @app.route("/", methods=["GET"])  # pyre-ignore[56]
 async def hello_world() -> str:
@@ -68,12 +113,14 @@ async def hello_world() -> str:
 
 
 @app.route("/list", methods=["GET", "POST"])  # pyre-ignore[56]
+@login_required
 async def list() -> routes.ListGamesResponse:
     results = db.session.scalars(expression.select(Game)).all()
     return routes.list([(result.id, result.data) for result in results])
 
 
 @app.route("/start", methods=["POST"])  # pyre-ignore[56]
+@login_required
 async def start() -> Union[routes.Message, routes.StartResponse]:
     if not (players := (await request.json).get("playerNames")) or len(players) < 2:
         return routes.WarningMessage(message="Cannot start game. Need player names.")
@@ -93,6 +140,7 @@ async def start() -> Union[routes.Message, routes.StartResponse]:
 
 
 @app.route("/delete", methods=["POST"])  # pyre-ignore[56]
+@login_required
 async def delete() -> routes.Message:
     if not (gameIdStr := (await request.json).get("gameId")):
         return routes.ErrorMessage(message="Invalid request.")
@@ -109,6 +157,7 @@ async def delete() -> routes.Message:
 
 
 @app.route("/action", methods=["POST"])  # pyre-ignore[56]
+@login_required
 async def action() -> Union[routes.Message, routes.ActionResponse]:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -156,6 +205,7 @@ async def action() -> Union[routes.Message, routes.ActionResponse]:
 
 
 @sio.event  # pyre-ignore[56]
+@login_required
 async def act(sid: str, data: routes.ActionRequest) -> None:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         async with app.app_context():
@@ -189,10 +239,53 @@ async def act(sid: str, data: routes.ActionRequest) -> None:
     await sio.emit("update", response, to=data.get("gameId"), skip_sid=sid)
 
 
-# Clients can join and leave specific rooms to listen to the updates
-# as the game progresses.
 @sio.event  # pyre-ignore[56]
+async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
+    """SocketIO handlers for when a user attempts to login/register."""
+    if not (username := data.get("username")):
+        return
+    if not (password := data.get("password")):
+        return
+    async with app.app_context():
+        user = db.session.get(User, username)
+        # This is a registration request.
+        if not user:
+            user = User(username=username)  # pyre-ignore[28]
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            await sio.emit(
+                "login",
+                routes.SuccessMessage(
+                    message=f"{username} account created. Successfully logged in."
+                ),
+                to=sid,
+            )
+            return
+    if not user.check_password(password):
+        await sio.emit(
+            "login", routes.WarningMessage(message=f"{username} cannot login."), to=sid
+        )
+        return
+    async with sio.session(sid) as session:
+        session["loggedIn"] = True
+    await sio.emit(
+        "login", routes.SuccessMessage(message=f"{username} logged in."), to=sid
+    )
+
+
+@sio.event  # pyre-ignore[56]
+async def logout(sid: str) -> None:
+    """SocketIO handler where the currently connected client is requesting to log out."""
+    async with sio.session(sid) as session:
+        session["loggedIn"] = False
+    await sio.emit("logout", routes.SuccessMessage("Successfully logged out."), to=sid)
+
+
+@sio.event  # pyre-ignore[56]
+@login_required
 async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
+    """SocketIO handler for joining a specific room to listen to game updates."""
     if not (gameIdStr := data.get("gameId")):
         return
     if not (name := data.get("name")):
@@ -256,6 +349,7 @@ async def _leaveGame(sid: str, gameIdStr: str, name: Optional[str] = None) -> No
 
 
 @sio.event  # pyre-ignore[56]
+@login_required
 async def leave(sid: str, data: routes.JoinLeaveRequest) -> None:
     if gameIdStr := data.get("gameId"):
         await _leaveGame(sid, gameIdStr, data.get("name"))

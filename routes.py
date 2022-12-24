@@ -42,6 +42,11 @@ class ActionResponse(TypedDict):
     gameState: ra.SerializedRaGame
 
 
+class LoginOrRegisterRequest(TypedDict):
+    username: NotRequired[str]
+    password: NotRequired[str]
+
+
 class StartResponse(ActionResponse):
     gameId: uuid.UUID
 
