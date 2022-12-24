@@ -9,12 +9,13 @@ import React, {
 import {
   Button,
   Container,
-  Grid,
   IconButton,
   InputAdornment,
   TextField,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Unstable_Grid2';
+
 import { AccountCircle, Visibility, VisibilityOff } from '@mui/icons-material';
 
 import { socket } from '../common';
@@ -61,68 +62,72 @@ function Login({ onLoginSuccess, setAlert }: LoginProps): JSX.Element {
     };
   });
   return (
-    <Container disableGutters>
-      <Grid container rowSpacing={2} columns={{ xs: 4 }}>
-        <Grid xs={4} display="flex" justifyContent="center" alignItems="center">
-          <Typography variant="h4">
-            Login
-          </Typography>
+    <form>
+      <Container disableGutters>
+        <Grid container columns={{ xs: 4 }}>
+          <Grid xs={4} display="flex" justifyContent="center" alignItems="center">
+            <Typography variant="h4">
+              Login
+            </Typography>
+          </Grid>
+          <Grid xs={4} display="flex" justifyContent="center" alignItems="center">
+            <TextField
+              id="username"
+              label="Username"
+              size="medium"
+              margin="normal"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AccountCircle />
+                  </InputAdornment>
+                ),
+                autoComplete: 'username',
+              }}
+              value={user}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setUser(e.target.value)}
+            />
+          </Grid>
+          <Grid xs={4} display="flex" justifyContent="center" alignItems="center">
+            <TextField
+              id="password"
+              label="Password"
+              size="medium"
+              type={(showPassword) ? 'text' : 'password'}
+              margin="normal"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      onMouseDown={handleMouseDownPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+                autoComplete: 'new-password',
+              }}
+              value={password}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+            />
+          </Grid>
+          <Grid xs={4} display="flex" justifyContent="center" alignItems="center">
+            <Button
+              variant="contained"
+              size="large"
+              color="primary"
+              disabled={user.length === 0 || password.length === 0}
+              onClick={handleSubmit}
+            >
+              Login or Register
+            </Button>
+          </Grid>
         </Grid>
-        <Grid xs={4} display="flex" justifyContent="center" alignItems="center">
-          <TextField
-            id="username"
-            label="Username"
-            size="medium"
-            margin="normal"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <AccountCircle />
-                </InputAdornment>
-              ),
-            }}
-            value={user}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setUser(e.target.value)}
-          />
-        </Grid>
-        <Grid xs={4} display="flex" justifyContent="center" alignItems="center">
-          <TextField
-            id="password"
-            label="Password"
-            size="medium"
-            type={(showPassword) ? 'text' : 'password'}
-            margin="normal"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={handleClickShowPassword}
-                    onMouseDown={handleMouseDownPassword}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-            value={password}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-          />
-        </Grid>
-        <Grid xs={4} display="flex" justifyContent="center" alignItems="center">
-          <Button
-            variant="contained"
-            size="large"
-            color="primary"
-            disabled={user.length === 0 || password.length === 0}
-            onClick={handleSubmit}
-          >
-            Login or Register
-          </Button>
-        </Grid>
-      </Grid>
-    </Container>
+      </Container>
+    </form>
   );
 }
 
