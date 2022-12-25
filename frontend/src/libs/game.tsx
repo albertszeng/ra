@@ -219,6 +219,9 @@ async function listGames(): Promise<ListGamesResponse> {
   const requestOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      socketId: socket.id,
+    }),
   };
   const res = await fetch(`${apiUrl}/list`, requestOptions);
   return res.json() as Promise<ListGamesResponse>;
