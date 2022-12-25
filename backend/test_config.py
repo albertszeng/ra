@@ -13,7 +13,7 @@ class ConfigTest(unittest.TestCase):
     def test_formatting(self) -> None:
         self.assertEqual(
             str(config.get()),
-            "{'DEBUG': True, 'SECRET_KEY': 'debug', 'RESET_DATABASE': False}",
+            "{'DEBUG': True, 'RESET_DATABASE': False, 'SECRET_KEY': 'debug'}",
         )
 
     @patch.dict(os.environ, {})

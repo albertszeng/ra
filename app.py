@@ -7,7 +7,6 @@ import functools
 import hashlib
 import logging
 import os
-import pprint
 import uuid
 from typing import Awaitable, Callable, Optional, TypeVar, Union, cast
 
@@ -20,7 +19,7 @@ from quart import request
 from sqlalchemy.sql import expression
 from typing_extensions import ParamSpec
 
-from backend import config, routes
+from backend import config, routes, util
 
 logger: logging.Logger = logging.getLogger("uvicorn.info")
 
@@ -33,7 +32,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 logger.info("Connected to %s", os.environ["DATABASE_URL"])
 
 _C: config.Config = config.get()
-logger.info(f"Configuration: {pprint.pformat(_C)}")
+logger.info(f"Configuration: {_C}")
 
 # For Database support.
 db = flask_sqlalchemy.SQLAlchemy(app)
@@ -65,7 +64,8 @@ class User(db.Model):
         ).hexdigest()
 
     def check_password(self, password: str) -> bool:
-        new_hash = hashlib.sha256(password.encode() + self.salt.encode()).hexdigest()
+        salt = self.salt if isinstance(self.salt, bytes) else self.salt.encode()
+        new_hash = hashlib.sha256(password.encode() + salt).hexdigest()
         return new_hash == self.password_hash
 
 
@@ -73,6 +73,7 @@ class User(db.Model):
 async def setup() -> None:
     async with app.app_context():
         if _C.RESET_DATABASE:
+            logger.info("DROPPING TABLES")
             db.drop_all()
         db.create_all()
 
@@ -99,11 +100,11 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
         sid = (await request.json).get("socketId") if len(args) == 0 else args[0]
         errorMsg = routes.ErrorMessage("Not logged in!")
         if not sid or not isinstance(sid, str):
-            sio.emit("logout", errorMsg, room=sid)
+            await sio.emit("logout", errorMsg, room=sid)
             return cast(T, errorMsg)
         session = await sio.get_session(sid)
         if not session.get("loggedIn") or not session.get("username"):
-            sio.emit("logout", errorMsg, room=sid)
+            await sio.emit("logout", errorMsg, room=sid)
             return cast(T, errorMsg)
         # If wrapper gets called with nothing, it's a normal route.
         # Pass along the validated username.
@@ -120,7 +121,6 @@ async def hello_world() -> str:
 
 
 @app.route("/list", methods=["GET", "POST"])  # pyre-ignore[56]
-@login_required
 async def list(username: str) -> routes.ListGamesResponse:
     """Lists all games to which the user belongs."""
     results = db.session.scalars(expression.select(Game)).all()
@@ -131,6 +131,20 @@ async def list(username: str) -> routes.ListGamesResponse:
             if username in result.data.player_names
         ]
     )
+
+
+@login_required
+async def list_games(sid: str) -> None:
+    results = db.session.scalars(expression.select(Game)).all()
+    username = (await sio.get_session(sid)).get("username")
+    response = routes.list(
+        [
+            (result.id, result.data)
+            for result in results
+            if username in result.data.player_names
+        ]
+    )
+    sio.emit("list_games", response, room=sid)
 
 
 @app.route("/start", methods=["POST"])  # pyre-ignore[56]
@@ -257,8 +271,10 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
         data.get("password"),
         data.get("token"),
     )
-    # Attempt to login with provided token.
-    if oldToken and (response := routes.authenticate_token(oldToken, _C.SECRET_KEY)):
+
+    if util.use_token(data) and (
+        response := routes.authenticate_token(oldToken, _C.SECRET_KEY)
+    ):
         async with sio.session(sid) as session:
             session["loggedIn"] = True
             session["username"] = response["username"]
@@ -274,24 +290,17 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
     payload = {"username": username, "exp": routes.gen_exp()}
     token = jwt.encode(payload, _C.SECRET_KEY, algorithm="HS256")
 
+    successMessage = f"{username} is now logged in!"
     async with app.app_context():
         user = db.session.get(User, username)
-        # This is a registration request.
+        # Register the user first.
         if not user:
             user = User(username=username)  # pyre-ignore[28]
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
-            response = routes.LoginResponse(
-                token=token,
-                username=username,
-                message=f"{username} account created. Successfully logged in.",
-                level="success",
-            )
-            if _C.DEBUG:
-                logger.info(response)
-            await sio.emit("login", response, room=sid)
-            return
+            successMessage = f"New account created. {successMessage}"
+
     if not user.check_password(password):
         response = routes.WarningMessage(message=f"{username} cannot login.")
         if _C.DEBUG:
@@ -304,7 +313,7 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
     response = routes.LoginResponse(
         token=token,
         username=username,
-        message=f"{username} logged in.",
+        message=successMessage,
         level="success",
     )
     if _C.DEBUG:

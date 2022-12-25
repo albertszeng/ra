@@ -1,4 +1,5 @@
 import os
+import pprint
 from typing import Optional
 
 
@@ -15,7 +16,7 @@ class Config:
         assert self.SECRET_KEY
 
     def __str__(self) -> str:
-        return str(vars(self))
+        return pprint.pformat(vars(self))
 
 
 _CONFIG: Optional[Config] = None
