@@ -49,7 +49,7 @@ function Login({ onLoginSuccess, setAlert }: LoginProps): JSX.Element {
   }, [user, password, setAlert]);
 
   useEffect(() => {
-    socket.on('login', () => ({
+    socket.on('login', ({
       token, username, message, level,
     }: LoginResponse) => {
       if (token && username) {
@@ -60,7 +60,7 @@ function Login({ onLoginSuccess, setAlert }: LoginProps): JSX.Element {
     return () => {
       socket.off('login');
     };
-  });
+  }, [onLoginSuccess, setAlert]);
   return (
     <form>
       <Container disableGutters>
