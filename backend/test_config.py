@@ -9,6 +9,13 @@ class ConfigTest(unittest.TestCase):
     def setUp(self) -> None:
         config.delete()
 
+    @patch.dict(os.environ, {"DEBUG": "true"})
+    def test_formatting(self) -> None:
+        self.assertEqual(
+            str(config.get()),
+            "{'DEBUG': True, 'SECRET_KEY': 'debug', 'RESET_DATABASE': False}",
+        )
+
     @patch.dict(os.environ, {})
     def test_failure(self) -> None:
         with self.assertRaises(AssertionError):

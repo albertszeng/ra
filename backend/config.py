@@ -14,6 +14,9 @@ class Config:
 
         assert self.SECRET_KEY
 
+    def __str__(self) -> str:
+        return str(vars(self))
+
 
 _CONFIG: Optional[Config] = None
 
