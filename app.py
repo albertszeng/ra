@@ -301,12 +301,13 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
             db.session.commit()
             successMessage = f"New account created. {successMessage}"
 
-    if not user.check_password(password):
-        response = routes.WarningMessage(message=f"{username} cannot login.")
-        if _C.DEBUG:
-            logger.info(response)
-        await sio.emit("login", response, room=sid)
-        return
+        if not user.check_password(password):
+            response = routes.WarningMessage(message=f"{username} cannot login.")
+            if _C.DEBUG:
+                logger.info(response)
+            await sio.emit("login", response, room=sid)
+            return
+    # Successful login at this point.
     async with sio.session(sid) as session:
         session["loggedIn"] = True
         session["username"] = username
