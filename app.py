@@ -1,11 +1,13 @@
 import quart.flask_patch  # pyre-ignore[21]: Manually patched. # isort: skip
 
 import asyncio
+import base64
 import copy
 import functools
 import hashlib
 import logging
 import os
+import pprint
 import uuid
 from typing import Awaitable, Callable, Optional, TypeVar, Union, cast
 
@@ -18,7 +20,7 @@ from quart import request
 from sqlalchemy.sql import expression
 from typing_extensions import ParamSpec
 
-import routes
+from backend import config, routes
 
 logger: logging.Logger = logging.getLogger("uvicorn.info")
 
@@ -27,14 +29,11 @@ app = quart.Quart(__name__)  # pyre-ignore[5]
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", "sqlite:////tmp/game.db"
 )
-logger.info("Connected to %s", os.environ["DATABASE_URL"])
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-_DEBUG: bool = bool(os.environ.get("DEBUG", False))
-_DISABLE_AUTH: bool = bool(os.environ.get("DISABLE_AUTH", True))
-_SECRET_KEY: str = os.environ.get("SECRET_KEY", "debug" if _DEBUG else "")
-_RESET_DATABASE: bool = bool(os.environ.get("DROP_ALL", False))
-assert _SECRET_KEY
+logger.info("Connected to %s", os.environ["DATABASE_URL"])
 
+_C: config.Config = config.get()
+logger.info(f"Configuration: {pprint.pformat(_C)}")
 
 # For Database support.
 db = flask_sqlalchemy.SQLAlchemy(app)
@@ -60,18 +59,20 @@ class User(db.Model):
     salt: db.Column = db.Column(db.String)
 
     def set_password(self, password: str) -> None:
-        self.salt = os.urandom(16)
-        self.password_hash = hashlib.sha256(password.encode() + self.salt).hexdigest()
+        self.salt = base64.b64encode(os.urandom(16)).decode()
+        self.password_hash = hashlib.sha256(
+            password.encode() + self.salt.encode()
+        ).hexdigest()
 
     def check_password(self, password: str) -> bool:
-        new_hash = hashlib.sha256(password.encode() + self.salt).hexdigest()
+        new_hash = hashlib.sha256(password.encode() + self.salt.encode()).hexdigest()
         return new_hash == self.password_hash
 
 
 # Creates the database and tables as specified by all db.Model classes.
 async def setup() -> None:
     async with app.app_context():
-        if _RESET_DATABASE:
+        if _C.RESET_DATABASE:
             db.drop_all()
         db.create_all()
 
@@ -257,11 +258,11 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
         data.get("token"),
     )
     # Attempt to login with provided token.
-    if oldToken and (response := routes.authenticate_token(oldToken, _SECRET_KEY)):
+    if oldToken and (response := routes.authenticate_token(oldToken, _C.SECRET_KEY)):
         async with sio.session(sid) as session:
             session["loggedIn"] = True
             session["username"] = response["username"]
-        if _DEBUG:
+        if _C.DEBUG:
             logger.info(response)
         await sio.emit("login", response, room=sid)
         return
@@ -271,7 +272,7 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
 
     # Authenticate with data provided.
     payload = {"username": username, "exp": routes.gen_exp()}
-    token = jwt.encode(payload, _SECRET_KEY, algorithm="HS256")
+    token = jwt.encode(payload, _C.SECRET_KEY, algorithm="HS256")
 
     async with app.app_context():
         user = db.session.get(User, username)
@@ -287,13 +288,13 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
                 message=f"{username} account created. Successfully logged in.",
                 level="success",
             )
-            if _DEBUG:
+            if _C.DEBUG:
                 logger.info(response)
             await sio.emit("login", response, room=sid)
             return
     if not user.check_password(password):
         response = routes.WarningMessage(message=f"{username} cannot login.")
-        if _DEBUG:
+        if _C.DEBUG:
             logger.info(response)
         await sio.emit("login", response, room=sid)
         return
@@ -306,7 +307,7 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
         message=f"{username} logged in.",
         level="success",
     )
-    if _DEBUG:
+    if _C.DEBUG:
         logger.info(response)
     await sio.emit("login", response, room=sid)
 
@@ -342,7 +343,7 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
             if not occupied and player.lower() == name.lower()
         ]
         if not idxs:
-            if _DEBUG:
+            if _C.DEBUG:
                 logger.info("Client %s (%s) SPECTATING room: %s", sid, name, gameIdStr)
             await sio.emit("spectate", room=sid)
             sio.enter_room(sid, gameIdStr)
@@ -358,7 +359,7 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
         session["gameId"] = gameIdStr
         session["playerIdx"] = playerIdx
         session["playerName"] = name
-    if _DEBUG:
+    if _C.DEBUG:
         logger.info("Client %s (%s) JOINED room: %s", sid, name, gameIdStr)
     return
 
@@ -370,7 +371,7 @@ async def _leaveGame(sid: str, gameIdStr: str, name: Optional[str] = None) -> No
     if (playerIdx := session.get("playerIdx")) is None:
         async with sio.session(sid) as session:
             session["gameId"] = None
-        if _DEBUG:
+        if _C.DEBUG:
             logger.info("Client %s (%s) LEFT SPECTATING room: %s", sid, name, gameIdStr)
         return
 
@@ -387,7 +388,7 @@ async def _leaveGame(sid: str, gameIdStr: str, name: Optional[str] = None) -> No
         session["playerIdx"] = None
         session["playerName"] = None
 
-    if _DEBUG:
+    if _C.DEBUG:
         logger.info("Client %s (%s) LEFT room: %s", sid, name, gameIdStr)
 
 
@@ -400,7 +401,7 @@ async def leave(sid: str, data: routes.JoinLeaveRequest) -> None:
 # Client connections. TODO: Use for auth cookies and stuff.
 @sio.event  # pyre-ignore[56]
 async def connect(sid: str, environ, auth) -> None:  # pyre-ignore[2]
-    if _DEBUG:
+    if _C.DEBUG:
         logger.info("Client %s CONNECTED.", sid)
 
 
@@ -410,7 +411,7 @@ async def disconnect(sid: str) -> None:
     for room in sio.rooms(sid):
         if room != sid:
             await _leaveGame(sid, room, session.get("name"))
-    if _DEBUG:
+    if _C.DEBUG:
         logger.info("Client %s DISCONNECTED.", sid)
 
 

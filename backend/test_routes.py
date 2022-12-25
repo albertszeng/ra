@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import jwt
 
-import routes
+from backend import routes
 from game import ra
 
 
