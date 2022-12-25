@@ -5,9 +5,10 @@ import React, {
   useState,
 } from 'react';
 
-import { Brightness4, Brightness7, Menu } from '@mui/icons-material';
+import { Brightness4, Brightness7, Logout } from '@mui/icons-material';
 import {
   AppBar,
+  Button,
   CssBaseline,
   Container,
   IconButton,
@@ -67,6 +68,8 @@ function App() {
     }
     socket.on('logout', ({ message, level }: ApiResponse) => {
       setLoggedIn(false);
+      setPlayerName('');
+      localStorage.removeItem(TOKEN_KEY);
       if (message || level) {
         setAlertData({ show: true, message: message || 'Unknown error', level });
       }
@@ -86,15 +89,16 @@ function App() {
         <CssBaseline />
         <AppBar position="static">
           <Toolbar>
-            <IconButton
-              size="large"
-              edge="start"
-              color="inherit"
-              aria-label="menu"
-              sx={{ mr: 2 }}
-            >
-              <Menu />
-            </IconButton>
+            {(loggedIn) ? (
+              <Button
+                variant="text"
+                size="large"
+                startIcon={<Logout />}
+                onClick={() => socket.emit('logout')}
+              >
+                Logout
+              </Button>
+            ) : null}
             <Header />
             <IconButton onClick={colorMode.toggleColorMode} color="inherit">
               {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
