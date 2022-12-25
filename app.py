@@ -60,12 +60,10 @@ class User(db.Model):
 
     def set_password(self, password: str) -> None:
         self.salt = os.urandom(16)
-        self.password_hash = hashlib.sha256(
-            password.encode() + self.salt.encode()
-        ).hexdigest()
+        self.password_hash = hashlib.sha256(password.encode() + self.salt).hexdigest()
 
     def check_password(self, password: str) -> bool:
-        new_hash = hashlib.sha256(password.encode() + self.salt.encode()).hexdigest()
+        new_hash = hashlib.sha256(password.encode() + self.salt).hexdigest()
         return new_hash == self.password_hash
 
 
@@ -98,12 +96,12 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
         sid = (await request.json).get("socketId") if len(args) == 0 else args[0]
         errorMsg = routes.ErrorMessage("Not logged in!")
         if not sid or not isinstance(sid, str):
-            sio.emit("logout", errorMsg, to=sid)
+            sio.emit("logout", errorMsg, room=sid)
             return cast(T, errorMsg)
         # This is a sio event handlers.
         session = await sio.get_session(sid)
         if not session.get("loggedIn"):
-            sio.emit("logout", errorMsg, to=sid)
+            sio.emit("logout", errorMsg, room=sid)
             return cast(T, errorMsg)
         return await func(*args, **kwargs)
 
@@ -257,14 +255,16 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
     if oldToken and (response := routes.authenticate_token(oldToken, _SECRET_KEY)):
         async with sio.session(sid) as session:
             session["loggedIn"] = True
-        await sio.emit("login", response, to=sid)
+        if _DEBUG:
+            logger.info(response)
+        await sio.emit("login", response, room=sid)
         return
     # Must have set username and password.
     if not (username and password):
         return
 
     # Authenticate with data provided.
-    payload = {"username": username, "_exp": routes.gen_exp()}
+    payload = {"username": username, "exp": routes.gen_exp()}
     token = jwt.encode(payload, _SECRET_KEY, algorithm="HS256")
 
     async with app.app_context():
@@ -281,11 +281,15 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
                 message=f"{username} account created. Successfully logged in.",
                 level="success",
             )
-            await sio.emit("login", response, to=sid)
+            if _DEBUG:
+                logger.info(response)
+            await sio.emit("login", response, room=sid)
             return
     if not user.check_password(password):
         response = routes.WarningMessage(message=f"{username} cannot login.")
-        await sio.emit("login", response, to=sid)
+        if _DEBUG:
+            logger.info(response)
+        await sio.emit("login", response, room=sid)
         return
     async with sio.session(sid) as session:
         session["loggedIn"] = True
@@ -295,7 +299,9 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
         message=f"{username} logged in.",
         level="success",
     )
-    await sio.emit("login", response, to=sid)
+    if _DEBUG:
+        logger.info(response)
+    await sio.emit("login", response, room=sid)
 
 
 @sio.event  # pyre-ignore[56]
@@ -303,7 +309,9 @@ async def logout(sid: str) -> None:
     """SocketIO handler where the client is requesting to log out."""
     async with sio.session(sid) as session:
         session["loggedIn"] = False
-    await sio.emit("logout", routes.SuccessMessage("Successfully logged out."), to=sid)
+    await sio.emit(
+        "logout", routes.SuccessMessage("Successfully logged out."), room=sid
+    )
 
 
 @sio.event  # pyre-ignore[56]
@@ -329,7 +337,7 @@ async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
         if not idxs:
             if _DEBUG:
                 logger.info("Client %s (%s) SPECTATING room: %s", sid, name, gameIdStr)
-            await sio.emit("spectate", to=sid)
+            await sio.emit("spectate", room=sid)
             sio.enter_room(sid, gameIdStr)
             return
         # Take first available index. Duplicate names are based on join order.

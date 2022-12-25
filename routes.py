@@ -176,26 +176,23 @@ async def action(
 
 
 def gen_exp() -> float:
-    return (datetime.utcnow() + datetime_lib.timedelta(days=1)).timestamp()
+    return (datetime.utcnow() + datetime_lib.timedelta(days=2)).timestamp()
 
 
 def authenticate_token(token: str, secret: str) -> Optional[LoginResponse]:
     """Authenticates the provided token. On success, returns a LongReponse"""
     try:
         payload = jwt.decode(token, secret, algorithms=["HS256"])
-    except:
-        return
-    if not (exp := payload.get("_exp")) or datetime.utcnow() > datetime.fromtimestamp(
-        exp
-    ):
+    except:  # noqa: E722
         # Invalid or expired token.
         return
+
     # Token is valid - refresh deadline, and send along.
     username = payload.get("username")
     refreshedToken = jwt.encode(
         {
             "username": username,
-            "_exp": gen_exp(),
+            "exp": gen_exp(),
         },
         secret,
         algorithm="HS256",

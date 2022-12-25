@@ -155,9 +155,7 @@ Possible actions:
             {
                 "username": "user",
                 # Experied 1-hour ago.
-                "_exp": (
-                    datetime.utcnow() - datetime_lib.timedelta(hours=1)
-                ).timestamp(),
+                "exp": (datetime.utcnow() - datetime_lib.timedelta(days=1)).timestamp(),
             },
             "secret",
             algorithm="HS256",
@@ -176,14 +174,16 @@ Possible actions:
             "secret",
             algorithm="HS256",
         )
-        token = routes.authenticate_token(validToken, "secret").get("token")
+        response = routes.authenticate_token(validToken, "secret")
+        assert response is not None
+        token = response.get("token")
         self.assertIsNotNone(token)
         self.assertNotEqual(token, validToken)
         # Decode response and validate it's been refreshed correctly.
         payload = jwt.decode(token, "secret", algorithms=["HS256"])
         self.assertEqual(payload.get("username"), "user")
         self.assertGreater(
-            payload.get("_exp"),
+            payload.get("exp"),
             (datetime.utcnow() + datetime_lib.timedelta(hours=1)).timestamp(),
         )
 
