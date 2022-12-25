@@ -32,6 +32,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 _DEBUG: bool = bool(os.environ.get("DEBUG", False))
 _DISABLE_AUTH: bool = bool(os.environ.get("DISABLE_AUTH", True))
 _SECRET_KEY: str = os.environ.get("SECRET_KEY", "debug" if _DEBUG else "")
+_RESET_DATABASE: bool = bool(os.environ.get("DROP_ALL", False))
 assert _SECRET_KEY
 
 
@@ -70,7 +71,8 @@ class User(db.Model):
 # Creates the database and tables as specified by all db.Model classes.
 async def setup() -> None:
     async with app.app_context():
-        # db.drop_all()
+        if _RESET_DATABASE:
+            db.drop_all()
         db.create_all()
 
 
@@ -98,16 +100,16 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
         if not sid or not isinstance(sid, str):
             sio.emit("logout", errorMsg, room=sid)
             return cast(T, errorMsg)
-        # This is a sio event handlers.
         session = await sio.get_session(sid)
-        if not session.get("loggedIn"):
+        if not session.get("loggedIn") or not session.get("username"):
             sio.emit("logout", errorMsg, room=sid)
             return cast(T, errorMsg)
+        # If wrapper gets called with nothing, it's a normal route.
+        # Pass along the validated username.
+        if len(args) == 0:
+            return await func(session["username"], *args, **kwargs)
         return await func(*args, **kwargs)
 
-    # When in debug mode, don't enforce login requirements.
-    if _DISABLE_AUTH:
-        return func
     return wrapper
 
 
@@ -118,13 +120,19 @@ async def hello_world() -> str:
 
 @app.route("/list", methods=["GET", "POST"])  # pyre-ignore[56]
 @login_required
-async def list() -> routes.ListGamesResponse:
+async def list(username: str) -> routes.ListGamesResponse:
+    """Lists all games to which the user belongs."""
     results = db.session.scalars(expression.select(Game)).all()
-    return routes.list([(result.id, result.data) for result in results])
+    return routes.list(
+        [
+            (result.id, result.data)
+            for result in results
+            if username in result.data.player_names
+        ]
+    )
 
 
 @app.route("/start", methods=["POST"])  # pyre-ignore[56]
-@login_required
 async def start() -> Union[routes.Message, routes.StartResponse]:
     if not (players := (await request.json).get("playerNames")) or len(players) < 2:
         return routes.WarningMessage(message="Cannot start game. Need player names.")
@@ -144,7 +152,6 @@ async def start() -> Union[routes.Message, routes.StartResponse]:
 
 
 @app.route("/delete", methods=["POST"])  # pyre-ignore[56]
-@login_required
 async def delete() -> routes.Message:
     if not (gameIdStr := (await request.json).get("gameId")):
         return routes.ErrorMessage(message="Invalid request.")
@@ -161,7 +168,6 @@ async def delete() -> routes.Message:
 
 
 @app.route("/action", methods=["POST"])  # pyre-ignore[56]
-@login_required
 async def action() -> Union[routes.Message, routes.ActionResponse]:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -209,7 +215,6 @@ async def action() -> Union[routes.Message, routes.ActionResponse]:
 
 
 @sio.event  # pyre-ignore[56]
-@login_required
 async def act(sid: str, data: routes.ActionRequest) -> None:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         async with app.app_context():
@@ -255,6 +260,7 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
     if oldToken and (response := routes.authenticate_token(oldToken, _SECRET_KEY)):
         async with sio.session(sid) as session:
             session["loggedIn"] = True
+            session["username"] = response["username"]
         if _DEBUG:
             logger.info(response)
         await sio.emit("login", response, room=sid)
@@ -293,6 +299,7 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
         return
     async with sio.session(sid) as session:
         session["loggedIn"] = True
+        session["username"] = username
     response = routes.LoginResponse(
         token=token,
         username=username,
@@ -309,13 +316,13 @@ async def logout(sid: str) -> None:
     """SocketIO handler where the client is requesting to log out."""
     async with sio.session(sid) as session:
         session["loggedIn"] = False
+        session["username"] = None
     await sio.emit(
         "logout", routes.SuccessMessage("Successfully logged out."), room=sid
     )
 
 
 @sio.event  # pyre-ignore[56]
-@login_required
 async def join(sid: str, data: routes.JoinLeaveRequest) -> None:
     """SocketIO handler for joining a specific room to listen to game updates."""
     if not (gameIdStr := data.get("gameId")):
@@ -385,7 +392,6 @@ async def _leaveGame(sid: str, gameIdStr: str, name: Optional[str] = None) -> No
 
 
 @sio.event  # pyre-ignore[56]
-@login_required
 async def leave(sid: str, data: routes.JoinLeaveRequest) -> None:
     if gameIdStr := data.get("gameId"):
         await _leaveGame(sid, gameIdStr, data.get("name"))
