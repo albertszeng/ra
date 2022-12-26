@@ -116,7 +116,7 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
     async def logger_fn(*args: P.args, **kwargs) -> T:
         if _C.DEBUG:
             logger.info("Inputs on login: %s, %s", args, kwargs)
-        ret = login_fn(**args, **kwargs)
+        ret = login_fn(*args, **kwargs)
         if _C.DEBUG:
             logger.info("Outputs: %s", ret)
 
