@@ -146,23 +146,25 @@ async def list_games(sid: str) -> routes.ListGamesResponse:
     return response
 
 
+@sio.event  # pyre-ignore[56]
+async def start_game(sid: str, data: routes.StartRequest) -> None:
+    pass
+
+
 @app.route("/start", methods=["POST"])  # pyre-ignore[56]
 async def start() -> Union[routes.Message, routes.StartResponse]:
-    if not (players := (await request.json).get("playerNames")) or len(players) < 2:
-        return routes.WarningMessage(message="Cannot start game. Need player names.")
+    data = await request.json
 
-    gameId = uuid.uuid4()
-    response = routes.start(gameId, players)
-    if isinstance(response, dict):
-        return response
-    game, startResponse = response
+    async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+        # Add game to database.
+        dbGame = Game(id=gameId.hex, data=game)  # pyre-ignore[28]
+        db.session.add(dbGame)
+        db.session.commit()
 
-    # Add game to database.
-    dbGame = Game(id=gameId.hex, data=game)  # pyre-ignore[28]
-    db.session.add(dbGame)
-    db.session.commit()
-
-    return startResponse
+    req = routes.StartRequest(
+        playerNames=data.get("playerNames"), numPlayers=data.get("numPlayers")
+    )
+    return await routes.start(req, commitGame=commitGame)
 
 
 @app.route("/delete", methods=["POST"])  # pyre-ignore[56]

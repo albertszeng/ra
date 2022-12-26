@@ -4,7 +4,7 @@ import random
 import unittest
 import uuid
 from datetime import datetime
-from typing import Optional, cast
+from typing import Any, Dict, Optional, cast
 from unittest import mock
 from unittest.mock import patch
 
@@ -114,28 +114,6 @@ Possible actions:
             ),
         )
 
-    def test_start_no_players(self) -> None:
-        with self.assertRaises(ValueError):
-            routes.start(uuid.uuid4(), [])
-        with self.assertRaises(ValueError):
-            routes.start(uuid.uuid4(), ["One"])
-
-    def test_start(self) -> None:
-        self.maxDiff = None
-        gameId = uuid.uuid4()
-        with mock.patch("builtins.open", mock.mock_open()) as m:
-            game, response = routes.start(gameId, ["Player 1", "Player 2"])
-            m.assert_called_once_with(f"move_histories/{gameId}.txt", "w+")
-
-        self.assertEqual(
-            response,
-            routes.StartResponse(
-                gameId=gameId,
-                gameState=game.serialize(),
-                gameAsStr=routes.get_game_repr(game),
-            ),
-        )
-
     def test_message_types(self) -> None:
         self.assertEqual(routes.ErrorMessage("Unused")["level"], "error")
         self.assertEqual(routes.WarningMessage("Unused")["level"], "warning")
@@ -187,6 +165,49 @@ Possible actions:
         self.assertGreater(
             payload.get("exp"),
             (datetime.utcnow() + datetime_lib.timedelta(hours=1)).timestamp(),
+        )
+
+
+class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
+    async def test_start_no_players(self) -> None:
+        async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+            return
+
+        with self.assertRaises(ValueError):
+            await routes.start(
+                routes.StartRequest(playerNames=[]), commitGame=commitGame
+            )
+        with self.assertRaises(ValueError):
+            await routes.start(
+                routes.StartRequest(playerNames=["One"]),
+                commitGame=commitGame,
+            )
+
+    async def test_start(self) -> None:
+        self.maxDiff = None
+        storage: Dict[str, Any] = {}
+
+        async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+            storage["gameId"] = gameId
+            storage["game"] = game
+
+        response = await routes.start(
+            routes.StartRequest(
+                numPlayers=2,
+                playerNames=["Player 1", "Player 2"],
+            ),
+            commitGame=commitGame,
+        )
+        storedGameId, storedGame = storage.get("gameId"), storage.get("game")
+        self.assertIsNotNone(storedGameId)
+        self.assertIsNotNone(storedGame)
+        self.assertEqual(
+            response,
+            routes.StartResponse(
+                gameId=storedGameId,
+                gameState=storedGame.serialize(),
+                gameAsStr=routes.get_game_repr(storedGame),
+            ),
         )
 
 
