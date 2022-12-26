@@ -16,8 +16,9 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 
-import { listGames, deleteGame } from '../libs/game';
-import type { AlertData, ListGame } from '../libs/game';
+import { socket } from '../common';
+import { deleteGame } from '../libs/game';
+import type { AlertData, ListGame, ListGamesResponse } from '../libs/game';
 
 type PlayerFormProps = {
   handleNewGame: (players: string[], user: string) => void;
@@ -56,12 +57,13 @@ function PlayerForm({
   const [gameList, setGameList] = useState<ListGame[]>([]);
 
   useEffect(() => {
-    const fetchGames = async () => {
-      const { games } = await listGames();
+    socket.on('list_games', ({ games } : ListGamesResponse) => {
       setGameList(games);
+    });
+    socket.emit('list_games');
+    return () => {
+      socket.off('list_games');
     };
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const _ = fetchGames();
   }, []);
 
   const handleChange = useCallback((
@@ -93,9 +95,7 @@ function PlayerForm({
       if (message || level) {
         setAlert({ show: true, message: message || 'Empty response.', level });
       }
-      const { games } = await listGames();
       setGameOrPlayers('');
-      setGameList(games);
     };
     if (!isGameId(gameOrPlayers)) {
       setAlert({ show: true, message: 'Invalid game id.', level: 'warning' });

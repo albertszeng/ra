@@ -215,17 +215,6 @@ type ListGamesResponse = {
   total: number;
   games: ListGame[];
 };
-async function listGames(): Promise<ListGamesResponse> {
-  const requestOptions = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      socketId: socket.id,
-    }),
-  };
-  const res = await fetch(`${apiUrl}/list`, requestOptions);
-  return res.json() as Promise<ListGamesResponse>;
-}
 
 function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
@@ -255,7 +244,6 @@ export {
   deleteGame,
   getTileAction,
   handleCommand,
-  listGames,
   notEmpty,
   startGame,
   socket,
