@@ -95,7 +95,7 @@ P = ParamSpec("P")
 
 def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
     @functools.wraps(func)
-    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+    async def login_fn(*args: P.args, **kwargs: P.kwargs) -> T:
         # pyre-ignore[16]
         sid = (await request.json).get("socketId") if len(args) == 0 else args[0]
         errorMsg = routes.ErrorMessage("Not logged in!")
@@ -112,7 +112,15 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
             return await func(session["username"], *args, **kwargs)
         return await func(*args, **kwargs)
 
-    return wrapper
+    @functools.wraps(login_fn)
+    async def logger_fn(*args: P.args, **kwargs) -> T:
+        if _C.DEBUG:
+            logger.info("Inputs on login: %s, %s", args, kwargs)
+        ret = login_fn(**args, **kwargs)
+        if _C.DEBUG:
+            logger.info("Outputs: %s", ret)
+
+    return logger_fn
 
 
 @app.route("/", methods=["GET"])  # pyre-ignore[56]
@@ -121,22 +129,18 @@ async def hello_world() -> str:
 
 
 @app.route("/list", methods=["GET", "POST"])  # pyre-ignore[56]
-async def list(username: str) -> routes.ListGamesResponse:
+async def list() -> routes.ListGamesResponse:
     """Lists all games to which the user belongs."""
     results = db.session.scalars(expression.select(Game)).all()
-    return routes.list(
-        [
-            (result.id, result.data)
-            for result in results
-            if username in result.data.player_names
-        ]
-    )
+    return routes.list([(result.id, result.data) for result in results])
 
 
+@sio.event
 @login_required
 async def list_games(sid: str) -> None:
-    results = db.session.scalars(expression.select(Game)).all()
-    username = (await sio.get_session(sid)).get("username")
+    async with app.app_context():
+        results = db.session.scalars(expression.select(Game)).all()
+    username = (await sio.get_session(sid))["username"]
     response = routes.list(
         [
             (result.id, result.data)
@@ -144,7 +148,7 @@ async def list_games(sid: str) -> None:
             if username in result.data.player_names
         ]
     )
-    sio.emit("list_games", response, room=sid)
+    await sio.emit("list_games", response, room=sid)
 
 
 @app.route("/start", methods=["POST"])  # pyre-ignore[56]
@@ -278,8 +282,6 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
         async with sio.session(sid) as session:
             session["loggedIn"] = True
             session["username"] = response["username"]
-        if _C.DEBUG:
-            logger.info(response)
         await sio.emit("login", response, room=sid)
         return
     # Must have set username and password.
@@ -303,8 +305,6 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
 
         if not user.check_password(password):
             response = routes.WarningMessage(message=f"{username} cannot login.")
-            if _C.DEBUG:
-                logger.info(response)
             await sio.emit("login", response, room=sid)
             return
     # Successful login at this point.
@@ -317,8 +317,6 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
         message=successMessage,
         level="success",
     )
-    if _C.DEBUG:
-        logger.info(response)
     await sio.emit("login", response, room=sid)
 
 
