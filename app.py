@@ -116,7 +116,7 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
     async def logger_fn(*args: P.args, **kwargs) -> T:
         if _C.DEBUG:
             logger.info("Inputs on login: %s, %s", args, kwargs)
-        ret = login_fn(*args, **kwargs)
+        ret = await login_fn(*args, **kwargs)
         if _C.DEBUG:
             logger.info("Outputs: %s", ret)
 
@@ -137,7 +137,7 @@ async def list() -> routes.ListGamesResponse:
 
 @sio.event
 @login_required
-async def list_games(sid: str) -> None:
+async def list_games(sid: str) -> routes.ListGamesResponse:
     async with app.app_context():
         results = db.session.scalars(expression.select(Game)).all()
     username = (await sio.get_session(sid))["username"]
@@ -149,6 +149,7 @@ async def list_games(sid: str) -> None:
         ]
     )
     await sio.emit("list_games", response, room=sid)
+    return response
 
 
 @app.route("/start", methods=["POST"])  # pyre-ignore[56]
