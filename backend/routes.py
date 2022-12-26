@@ -111,7 +111,7 @@ class StartRequest(TypedDict):
 
 
 class StartResponse(ActionResponse):
-    gameId: uuid.UUID
+    gameId: str
 
 
 class JoinLeaveRequest(TypedDict):
@@ -125,7 +125,7 @@ class ActionRequest(TypedDict):
 
 
 class GameInfo(TypedDict):
-    id: uuid.UUID
+    id: str
     players: List[str]
 
 
@@ -148,7 +148,7 @@ def list(dbGames: Sequence[Tuple[str, ra.RaGame]]) -> ListGamesResponse:
     return ListGamesResponse(
         total=len(dbGames),
         games=[
-            GameInfo(id=uuid.UUID(gameIdStr), players=game.player_names)
+            GameInfo(id=gameIdStr, players=game.player_names)
             for gameIdStr, game in dbGames
         ],
     )
@@ -157,7 +157,7 @@ def list(dbGames: Sequence[Tuple[str, ra.RaGame]]) -> ListGamesResponse:
 async def start(
     request: StartRequest,
     commitGame: Callable[[uuid.UUID, RaGame], Awaitable[None]],
-) -> Union[Message, StartResponse]:
+) -> StartResponse:
     """Starts a RaGame.
 
     Args:
@@ -169,11 +169,9 @@ async def start(
     """
     gameId = uuid.uuid4()
     game = RaGame(player_names=request.get("playerNames", []))
-    if not game.is_active():
-        return ErrorMessage(f"Failed to start game. Internal error.")
     await commitGame(gameId, game)
     return StartResponse(
-        gameId=gameId, gameState=game.serialize(), gameAsStr=get_game_repr(game)
+        gameId=gameId.hex, gameState=game.serialize(), gameAsStr=get_game_repr(game)
     )
 
 

@@ -106,10 +106,7 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
         if not session.get("loggedIn") or not session.get("username"):
             await sio.emit("logout", errorMsg, room=sid)
             return cast(T, errorMsg)
-        # If wrapper gets called with nothing, it's a normal route.
-        # Pass along the validated username.
-        if len(args) == 0:
-            return await func(session["username"], *args, **kwargs)
+        kwargs["username"] = session["username"]  # pyre-ignore[16]
         return await func(*args, **kwargs)
 
     @functools.wraps(login_fn)
@@ -131,10 +128,9 @@ async def hello_world() -> str:
 
 @sio.event  # pyre-ignore[56]
 @login_required
-async def list_games(sid: str) -> routes.ListGamesResponse:
+async def list_games(sid: str, username: str) -> routes.ListGamesResponse:
     async with app.app_context():
         results = db.session.scalars(expression.select(Game)).all()
-    username = (await sio.get_session(sid))["username"]
     response = routes.list(
         [
             (result.id, result.data)
@@ -147,8 +143,17 @@ async def list_games(sid: str) -> routes.ListGamesResponse:
 
 
 @sio.event  # pyre-ignore[56]
-async def start_game(sid: str, data: routes.StartRequest) -> None:
-    pass
+async def start_game(sid: str, data: routes.StartRequest) -> routes.StartResponse:
+    async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+        async with app.app_context():
+            # Add game to database.
+            dbGame = Game(id=gameId.hex, data=game)  # pyre-ignore[28]
+            db.session.add(dbGame)
+            db.session.commit()
+
+    response = await routes.start(data, commitGame=commitGame)
+    sio.emit("update", response, room=response["gameId"])
+    return response
 
 
 @app.route("/start", methods=["POST"])  # pyre-ignore[56]

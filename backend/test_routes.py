@@ -77,7 +77,7 @@ Possible actions:
                 total=1,
                 games=[
                     routes.GameInfo(
-                        id=uuid.UUID("12345678123456781234567812345678"),
+                        id="12345678123456781234567812345678",
                         players=["Name1", "Name2"],
                     )
                 ],
@@ -103,11 +103,11 @@ Possible actions:
                 total=2,
                 games=[
                     routes.GameInfo(
-                        id=uuid.UUID("12345678123456781234567812345678"),
+                        id="12345678123456781234567812345678",
                         players=["Game10", "Game11"],
                     ),
                     routes.GameInfo(
-                        id=uuid.UUID("23456781234567812345678123456781"),
+                        id="23456781234567812345678123456781",
                         players=["Game20", "Game21"],
                     ),
                 ],
@@ -204,7 +204,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             response,
             routes.StartResponse(
-                gameId=storedGameId,
+                gameId=storedGameId.hex,
                 gameState=storedGame.serialize(),
                 gameAsStr=routes.get_game_repr(storedGame),
             ),
