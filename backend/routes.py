@@ -179,8 +179,10 @@ def gen_exp() -> float:
     return (datetime.utcnow() + datetime_lib.timedelta(days=2)).timestamp()
 
 
-def authenticate_token(token: str, secret: str) -> Optional[LoginResponse]:
+def authenticate_token(token: Optional[str], secret: str) -> Optional[LoginResponse]:
     """Authenticates the provided token. On success, returns a LongReponse"""
+    if not token:
+        return
     try:
         payload = jwt.decode(token, secret, algorithms=["HS256"])
     except:  # noqa: E722

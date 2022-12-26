@@ -146,6 +146,8 @@ Possible actions:
         self.assertIsNotNone(routes.gen_exp())
 
     def test_authenticate_invalid_or_expired_token(self) -> None:
+        self.assertIsNone(routes.authenticate_token(None, "secret"))
+
         invalidToken = jwt.encode(
             {"username": "user", "_exp": 100}, "bad", algorithm="HS256"
         )

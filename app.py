@@ -113,12 +113,13 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
         return await func(*args, **kwargs)
 
     @functools.wraps(login_fn)
-    async def logger_fn(*args: P.args, **kwargs) -> T:
+    async def logger_fn(*args: P.args, **kwargs: P.kwargs) -> T:
         if _C.DEBUG:
             logger.info("Inputs on login: %s, %s", args, kwargs)
         ret = await login_fn(*args, **kwargs)
         if _C.DEBUG:
             logger.info("Outputs: %s", ret)
+        return ret
 
     return logger_fn
 
@@ -128,14 +129,7 @@ async def hello_world() -> str:
     return "<p>Hello, World!</p>"
 
 
-@app.route("/list", methods=["GET", "POST"])  # pyre-ignore[56]
-async def list() -> routes.ListGamesResponse:
-    """Lists all games to which the user belongs."""
-    results = db.session.scalars(expression.select(Game)).all()
-    return routes.list([(result.id, result.data) for result in results])
-
-
-@sio.event
+@sio.event  # pyre-ignore[56]
 @login_required
 async def list_games(sid: str) -> routes.ListGamesResponse:
     async with app.app_context():
