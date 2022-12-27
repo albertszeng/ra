@@ -500,7 +500,7 @@ def execute_action_internal(  # noqa: C901
 
 
 class RaGame:
-    """Core logis for a game of Ra"""
+    """Core logic for a game of Ra. Essentially just a class that allows the game to be played."""
 
     num_players: int
     outfile: Optional[str]
@@ -648,6 +648,9 @@ class RaGame:
         legal_actions: Iterable[int],
         tile_to_draw: Optional[int] = None,
     ) -> None:
+        """
+        Execute an action for the current game state.
+        """
         t = execute_action_internal(
             self.game_state, action, legal_actions, tile_to_draw
         )
