@@ -67,7 +67,7 @@ Possible actions:
         self.assertEqual(routes.list([]), routes.ListGamesResponse(total=0, games=[]))
 
     def test_list_single(self) -> None:
-        testId = "12345678123456781234567812345678"
+        testId = uuid.uuid4()
         testGame = routes.RaGame(
             randomize_play_order=False, player_names=["Name1", "Name2"]
         )
@@ -77,7 +77,7 @@ Possible actions:
                 total=1,
                 games=[
                     routes.GameInfo(
-                        id="12345678123456781234567812345678",
+                        id=str(testId),
                         players=["Name1", "Name2"],
                     )
                 ],
@@ -86,8 +86,8 @@ Possible actions:
 
     def test_list_many(self) -> None:
         testIds = [
-            "12345678123456781234567812345678",
-            "23456781234567812345678123456781",
+            uuid.uuid4(),
+            uuid.uuid4(),
         ]
         testGames = [
             routes.RaGame(
@@ -103,11 +103,11 @@ Possible actions:
                 total=2,
                 games=[
                     routes.GameInfo(
-                        id="12345678123456781234567812345678",
+                        id=str(testIds[0]),
                         players=["Game10", "Game11"],
                     ),
                     routes.GameInfo(
-                        id="23456781234567812345678123456781",
+                        id=str(testIds[1]),
                         players=["Game20", "Game21"],
                     ),
                 ],
@@ -208,7 +208,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             response,
             routes.StartResponse(
-                gameId=storedGameId.hex,
+                gameId=str(storedGameId),
                 gameState=storedGame.serialize(),
                 gameAsStr=routes.get_game_repr(storedGame),
                 username="user",

@@ -132,7 +132,7 @@ async def list_games(username: str, sid: str) -> routes.ListGamesResponse:
         results = db.session.scalars(expression.select(Game)).all()
     response = routes.list(
         [
-            (result.id, result.data)
+            (uuid.UUID(result.id), result.data)
             for result in results
             if username in result.data.player_names
         ]
@@ -154,7 +154,7 @@ async def start_game(
             db.session.commit()
 
     response = await routes.start(data, username, commitGame=commitGame)
-    await sio.emit("start_game", response, room=[response["gameId"], sid])
+    await sio.emit("start_game", response, room=sid)
     return response
 
 
@@ -176,7 +176,9 @@ async def delete() -> routes.Message:
 
 @sio.event  # pyre-ignore[56]
 @login_required
-async def act(username: str, sid: str, data: routes.ActionRequest) -> None:
+async def act(
+    username: str, sid: str, data: routes.ActionRequest
+) -> Union[routes.Message, routes.ActionResponse, routes.StartResponse]:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -198,18 +200,20 @@ async def act(username: str, sid: str, data: routes.ActionRequest) -> None:
         and (game := await fetchGame(uuid.UUID(gameIdStr)))
     ):
         sio.enter_room(sid, gameIdStr)
-        response = routes.ActionResponse(
+        response = routes.StartResponse(
             gameState=game.serialize(),
             gameAsStr=routes.get_game_repr(game),
             action=command.upper(),
             username=username,
+            gameId=str(uuid.UUID(gameIdStr)),
         )
     else:
         session = await sio.get_session(sid)
         response = await routes.action(
             data, session.get("playerIdx"), username, fetchGame, saveGame
         )
-    await sio.emit("update", response, to=data.get("gameId"), skip_sid=sid)
+    await sio.emit("update", response, to=data.get("gameId"))
+    return response
 
 
 @sio.event  # pyre-ignore[56]

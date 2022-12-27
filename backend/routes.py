@@ -149,13 +149,13 @@ def get_game_repr(game: ra.RaGame) -> str:
     return f"{val}\n\n{prompt}"
 
 
-def list(dbGames: Sequence[Tuple[str, ra.RaGame]]) -> ListGamesResponse:
+def list(dbGames: Sequence[Tuple[uuid.UUID, ra.RaGame]]) -> ListGamesResponse:
     """Generates a response from all available games in the database."""
     return ListGamesResponse(
         total=len(dbGames),
         games=[
-            GameInfo(id=gameIdStr, players=game.player_names)
-            for gameIdStr, game in dbGames
+            GameInfo(id=str(gameId), players=game.player_names)
+            for gameId, game in dbGames
         ],
     )
 
@@ -178,7 +178,7 @@ async def start(
     game = RaGame(player_names=request.get("playerNames", []))
     await commitGame(gameId, game)
     return StartResponse(
-        gameId=gameId.hex,
+        gameId=str(gameId),
         gameState=game.serialize(),
         gameAsStr=get_game_repr(game),
         username=username,
