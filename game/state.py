@@ -647,6 +647,9 @@ class GameState:
     def get_current_player(self) -> int:
         return self.current_player
 
+    def get_player_names(self) -> Iterable[str]:
+        return self.player_names[:]
+
     def get_current_player_name(self) -> str:
         return self.player_names[self.current_player]
 

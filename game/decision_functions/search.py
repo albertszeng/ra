@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Mapping, Tuple
+from typing import Dict, List, Mapping, Tuple
 
 from game import info as gi
 from game import ra
@@ -11,7 +11,8 @@ def search(game_state: gs.GameState) -> int:
     """
     Given the current game state, return an action to take.
     """
-    return 0
+    best_move, best_resulting_valuation = search_internal(game_state, False)
+    return best_move
 
 
 def search_internal(
@@ -28,14 +29,50 @@ def search_internal(
         legal_actions is not None and len(legal_actions) > 0
     ), "Cannot perform search_internal because no legal actions"
 
-    # Simulate each legal action and find their resulting valuations
+    current_player_name = game_state.get_current_player_name()
+    # maps action to its resulting valuations
     action_results: Dict[int, Dict[str, float]] = {}
+
+    # Simulate each legal action and find their resulting valuations
     for action in legal_actions:
-        game_state_copy = copy.deepcopy(game_state)
         if action == gi.DRAW:
-            # TODO(albertz): do expectimax
-            return (0, {})
+            # maps tile index to its resulting valuations
+            draw_action_results: Dict[int, Dict[str, float]]
+
+            tile_bag = game_state.get_tile_bag_contents()
+            tile_bag_size = game_state.get_num_tiles_left()
+            # simulate draws of each tile type, and save the resulting valuations
+            for tile_type in gi.TILE_INFO:
+                curr_tile_index = tile_type["index"]
+                curr_tile_count = tile_bag[curr_tile_index]
+                if curr_tile_count > 0:
+                    game_state_copy = copy.deepcopy(game_state)
+                    ra.execute_action_internal(
+                        game_state_copy, action, legal_actions, curr_tile_index
+                    )
+                    draw_action_results[curr_tile_index] = value_state(
+                        game_state_copy, auction_has_occurred
+                    )
+
+            # for each player, calculate what their expected valuation is
+            expected_player_valuations: Dict[str, float] = {
+                name: 0.0 for name in game_state.get_player_names()
+            }
+            for tile_idx, resulting_valuations in draw_action_results.items():
+                assert len(resulting_valuations) == len(
+                    list(game_state.get_player_names())
+                ), f"{len(resulting_valuations)} players have valuations, but there are {len(game_state.get_player_names())} players in the game"
+                for player_name, valuation in resulting_valuations.items():
+                    assert (
+                        player_name in expected_player_valuations
+                    ), f"player {player_name} has a valuation but is not in the game"
+                    expected_player_valuations[player_name] += (
+                        valuation * tile_bag[tile_idx] / tile_bag_size
+                    )
+
+            action_results[action] = expected_player_valuations
         else:
+            game_state_copy = copy.deepcopy(game_state)
             ra.execute_action_internal(game_state_copy, action, legal_actions)
             action_results[action] = value_state(
                 game_state_copy, auction_has_occurred or action == gi.AUCTION
@@ -46,7 +83,6 @@ def search_internal(
     ), f"There are {len(action_results.keys())} action results but {len(legal_actions)} legal actions"
 
     # Pick the action that leads to the best resulting valuation for the current player
-    current_player_name = game_state.get_current_player_name()
     best_action = None
     best_resulting_valuation = None
     best_state_score = float("-inf")
