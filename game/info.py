@@ -34,6 +34,30 @@ MAX_AUCTION_TILES: int = 8
 # number of tiles to discard per disaster
 NUM_DISCARDS_PER_DISASTER: int = 2
 
+# Indexes of each tile type in the tile bag's list
+INDEX_OF_GOD: int = 0
+INDEX_OF_GOLD: int = 1
+INDEX_OF_PHAR: int = 2
+INDEX_OF_NILE: int = 3
+INDEX_OF_FLOOD: int = 4
+INDEX_OF_ASTR: int = 5
+INDEX_OF_AGR: int = 6
+INDEX_OF_WRI: int = 7
+INDEX_OF_REL: int = 8
+INDEX_OF_ART: int = 9
+INDEX_OF_FORT: int = 10
+INDEX_OF_OBEL: int = 11
+INDEX_OF_PAL: int = 12
+INDEX_OF_PYR: int = 13
+INDEX_OF_TEM: int = 14
+INDEX_OF_STAT: int = 15
+INDEX_OF_STE: int = 16
+INDEX_OF_SPH: int = 17
+INDEX_OF_DIS_PHAR: int = 18
+INDEX_OF_DIS_NILE: int = 19
+INDEX_OF_DIS_CIV: int = 20
+INDEX_OF_DIS_MON: int = 21
+INDEX_OF_RA: int = 22
 
 # Definitions of each tile type
 
@@ -53,24 +77,46 @@ class TileTypeInfo(TypedDict):
     toKeep: bool
     # whether it's a collectible, disaster, etc.
     tileType: TileType
+    # the index of the tile in the tile bag's list
+    index: int
 
 
 GOD = TileTypeInfo(
-    name="Golden God", startingNum=8, toKeep=False, tileType=TileType.COLLECTIBLE
+    name="Golden God",
+    startingNum=8,
+    toKeep=False,
+    tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_GOD,
 )
 GOLD = TileTypeInfo(
-    name="Gold", startingNum=5, toKeep=False, tileType=TileType.COLLECTIBLE
+    name="Gold",
+    startingNum=5,
+    toKeep=False,
+    tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_GOLD,
 )
 
 PHAR = TileTypeInfo(
-    name="Pharaoh", startingNum=25, toKeep=True, tileType=TileType.COLLECTIBLE
+    name="Pharaoh",
+    startingNum=25,
+    toKeep=True,
+    tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_PHAR,
 )
 
 NILE = TileTypeInfo(
-    name="Nile", startingNum=25, toKeep=True, tileType=TileType.COLLECTIBLE
+    name="Nile",
+    startingNum=25,
+    toKeep=True,
+    tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_NILE,
 )
 FLOOD = TileTypeInfo(
-    name="Flood", startingNum=12, toKeep=False, tileType=TileType.COLLECTIBLE
+    name="Flood",
+    startingNum=12,
+    toKeep=False,
+    tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_FLOOD,
 )
 
 CIV_ASTR = TileTypeInfo(
@@ -78,30 +124,35 @@ CIV_ASTR = TileTypeInfo(
     startingNum=5,
     toKeep=False,
     tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_ASTR,
 )
 CIV_AGR = TileTypeInfo(
     name="Civilization -- Agriculture",
     startingNum=5,
     toKeep=False,
     tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_AGR,
 )
 CIV_WRI = TileTypeInfo(
     name="Civilization -- Writing",
     startingNum=5,
     toKeep=False,
     tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_WRI,
 )
 CIV_REL = TileTypeInfo(
     name="Civilization -- Religion",
     startingNum=5,
     toKeep=False,
     tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_REL,
 )
 CIV_ART = TileTypeInfo(
     name="Civilization -- Art",
     startingNum=5,
     toKeep=False,
     tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_ART,
 )
 
 MON_FORT = TileTypeInfo(
@@ -109,55 +160,90 @@ MON_FORT = TileTypeInfo(
     startingNum=5,
     toKeep=True,
     tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_FORT,
 )
 MON_OBEL = TileTypeInfo(
     name="Monument -- Obelisk",
     startingNum=5,
     toKeep=True,
     tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_OBEL,
 )
 MON_PAL = TileTypeInfo(
-    name="Monument -- Palace", startingNum=5, toKeep=True, tileType=TileType.COLLECTIBLE
+    name="Monument -- Palace",
+    startingNum=5,
+    toKeep=True,
+    tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_PAL,
 )
 MON_PYR = TileTypeInfo(
     name="Monument -- Pyramid",
     startingNum=5,
     toKeep=True,
     tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_PYR,
 )
 MON_TEM = TileTypeInfo(
-    name="Monument -- Temple", startingNum=5, toKeep=True, tileType=TileType.COLLECTIBLE
+    name="Monument -- Temple",
+    startingNum=5,
+    toKeep=True,
+    tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_TEM,
 )
 MON_STAT = TileTypeInfo(
-    name="Monument -- Statue", startingNum=5, toKeep=True, tileType=TileType.COLLECTIBLE
+    name="Monument -- Statue",
+    startingNum=5,
+    toKeep=True,
+    tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_STAT,
 )
 MON_STE = TileTypeInfo(
     name="Monument -- Step Pyramid",
     startingNum=5,
     toKeep=True,
     tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_STE,
 )
 MON_SPH = TileTypeInfo(
-    name="Monument -- Sphinx", startingNum=5, toKeep=True, tileType=TileType.COLLECTIBLE
+    name="Monument -- Sphinx",
+    startingNum=5,
+    toKeep=True,
+    tileType=TileType.COLLECTIBLE,
+    index=INDEX_OF_SPH,
 )
 
 DIS_PHAR = TileTypeInfo(
-    name="Disaster -- Funeral", startingNum=2, toKeep=False, tileType=TileType.DISASTER
+    name="Disaster -- Funeral",
+    startingNum=2,
+    toKeep=False,
+    tileType=TileType.DISASTER,
+    index=INDEX_OF_DIS_PHAR,
 )
 DIS_NILE = TileTypeInfo(
-    name="Disaster -- Drought", startingNum=2, toKeep=False, tileType=TileType.DISASTER
+    name="Disaster -- Drought",
+    startingNum=2,
+    toKeep=False,
+    tileType=TileType.DISASTER,
+    index=INDEX_OF_DIS_NILE,
 )
 DIS_CIV = TileTypeInfo(
-    name="Disaster -- War", startingNum=4, toKeep=False, tileType=TileType.DISASTER
+    name="Disaster -- War",
+    startingNum=4,
+    toKeep=False,
+    tileType=TileType.DISASTER,
+    index=INDEX_OF_DIS_CIV,
 )
 DIS_MON = TileTypeInfo(
     name="Disaster -- Earthquake",
     startingNum=2,
     toKeep=False,
     tileType=TileType.DISASTER,
+    index=INDEX_OF_DIS_MON,
 )
 
-RA = TileTypeInfo(name="Ra", startingNum=30, toKeep=False, tileType=TileType.RA)
+RA = TileTypeInfo(
+    name="Ra", startingNum=30, toKeep=False, tileType=TileType.RA, index=INDEX_OF_RA
+)
 
 
 # a list of all tile types
@@ -205,30 +291,6 @@ NUM_COLLECTIBLE_TILE_TYPES: int = 0  # the number of tiles players can collect
 for tile in TILE_INFO:
     if tile["tileType"] == TileType.COLLECTIBLE:
         NUM_COLLECTIBLE_TILE_TYPES += 1
-
-INDEX_OF_GOD: int = 0
-INDEX_OF_GOLD: int = 1
-INDEX_OF_PHAR: int = 2
-INDEX_OF_NILE: int = 3
-INDEX_OF_FLOOD: int = 4
-INDEX_OF_ASTR: int = 5
-INDEX_OF_AGR: int = 6
-INDEX_OF_WRI: int = 7
-INDEX_OF_REL: int = 8
-INDEX_OF_ART: int = 9
-INDEX_OF_FORT: int = 10
-INDEX_OF_OBEL: int = 11
-INDEX_OF_PAL: int = 12
-INDEX_OF_PYR: int = 13
-INDEX_OF_TEM: int = 14
-INDEX_OF_STAT: int = 15
-INDEX_OF_STE: int = 16
-INDEX_OF_SPH: int = 17
-INDEX_OF_DIS_PHAR: int = 18
-INDEX_OF_DIS_NILE: int = 19
-INDEX_OF_DIS_CIV: int = 20
-INDEX_OF_DIS_MON: int = 21
-INDEX_OF_RA: int = 22
 
 NUM_CIVS: int = 5
 STARTING_INDEX_OF_CIVS: int = 5
