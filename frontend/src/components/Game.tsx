@@ -33,11 +33,9 @@ type GameProps = {
   // Sets an alert at the highest level.
   setAlert: (alert: AlertData) => void;
   playerName: string;
-  // This is temporarily here for bc. Will remove eventually.
-  setPlayerName: (playerName: string) => void;
 };
 
-function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
+function Game({ playerName, setAlert }: GameProps): JSX.Element {
   const GAME_STATE_KEY = 'LOCAL_GAME_STATE';
   const [game, setGame] = useState<GameState>(DefaultGame);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -67,7 +65,7 @@ function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
     socket.emit('act', request);
   }, [gameId]);
   const handleSelectCardFromGrid = useCallback((idx: number, { name: tileName }: Tile) => {
-    const [shouldSwap] = swapInfo;
+    const [shouldSwap/* swapIdx */] = swapInfo;
     if (!shouldSwap) {
       setAlert({ show: true, message: `Click your Golden God to atttempt a swap for ${tileName}.`, level: 'info' });
       setSwapInfo([shouldSwap, idx]);
@@ -75,10 +73,6 @@ function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
     }
     const request: ActionRequest = { gameId, command: `G${idx + 1}` };
     socket.emit('act', request);
-    /*
-    setSwapInfo([false, -1]); // Reset swap info.
-    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-    */
   }, [gameId, swapInfo, setAlert]);
   const handlePlayerSelectTile = useCallback((player: Player, tile: Tile) => {
     let action = getTileAction(tile);
@@ -96,21 +90,15 @@ function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
     }
     const request: ActionRequest = { gameId, command: action };
     socket.emit('act', request);
-    /*
-    setSwapInfo([false, -1]); // Reset swap info.
-    setAlert({ show: true, message: `Performed action: ${action}`, level: 'info' });
-    */
   }, [gameId, swapInfo, setAlert]);
 
   const resetGame = useCallback(() => {
     setIsPlaying(false);
     setGameId('');
-    // TODO: remove.
-    setPlayerName('');
     window.localStorage.setItem(GAME_STATE_KEY, '{}');
     // Let the server know we've left the game.
     socket.emit('leave', { gameId, name: playerName });
-  }, [gameId, playerName, setPlayerName]);
+  }, [gameId, playerName]);
 
   useEffect(() => {
     // When the gameId changes, store in local storage.
@@ -145,7 +133,9 @@ function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
       // Let the server know we've joined.
       socket.emit('join', { gameId: id, name: playerName });
     });
-    socket.on('update', ({ level, message, gameState }: ApiResponse) => {
+    socket.on('update', ({
+      level, message, gameState, action, username,
+    }: ApiResponse) => {
       const now = Date.now();
       if (now >= timestampMs + AIUIDelayMs) {
         setTimestampMs(now);
@@ -153,7 +143,9 @@ function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
           setAlert({ show: true, message: message || 'Unknown error.', level });
           return;
         }
+        setSwapInfo([false, -1]); // Reset swap info.
         setGame(gameState);
+        setAlert({ show: true, message: `${username} performed action: ${action}`, level: 'info' });
       } else {
         // Increase timestamp so next action happens at at least this delay.
         setTimestampMs((prev) => prev + AIUIDelayMs);
@@ -163,7 +155,9 @@ function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
             setAlert({ show: true, message: message || 'Unknown error.', level });
             return;
           }
+          setSwapInfo([false, -1]); // Reset swap info.
           setGame(gameState);
+          setAlert({ show: true, message: `${username} performed action: ${action}`, level: 'info' });
         }, (timestampMs + AIUIDelayMs) - now);
       }
     });

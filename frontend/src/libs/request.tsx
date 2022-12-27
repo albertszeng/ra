@@ -8,6 +8,10 @@ type ActionRequest = {
 type ActionResponse = {
   gameAsStr: string;
   gameState: Game;
+  // The action performed.
+  action: string;
+  // Ther user (possibly an AI) that performed it.
+  username: string;
 };
 
 type StartRequest = {

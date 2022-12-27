@@ -112,7 +112,6 @@ function App() {
                 ? (
                   <Game
                     playerName={playerName}
-                    setPlayerName={setPlayerName}
                     setAlert={setAlertData}
                   />
                 )
