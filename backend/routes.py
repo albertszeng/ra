@@ -88,6 +88,8 @@ def SuccessMessage(message: str) -> Message:
 class ActionResponse(TypedDict):
     gameAsStr: str
     gameState: ra.SerializedRaGame
+    action: str
+    username: str
 
 
 class LoginOrRegisterRequest(TypedDict):
@@ -124,6 +126,10 @@ class ActionRequest(TypedDict):
     command: NotRequired[str]
 
 
+class DeleteRequest(TypedDict):
+    gameId: NotRequired[str]
+
+
 class GameInfo(TypedDict):
     id: str
     players: List[str]
@@ -156,6 +162,7 @@ def list(dbGames: Sequence[Tuple[str, ra.RaGame]]) -> ListGamesResponse:
 
 async def start(
     request: StartRequest,
+    username: str,
     commitGame: Callable[[uuid.UUID, RaGame], Awaitable[None]],
 ) -> StartResponse:
     """Starts a RaGame.
@@ -171,13 +178,18 @@ async def start(
     game = RaGame(player_names=request.get("playerNames", []))
     await commitGame(gameId, game)
     return StartResponse(
-        gameId=gameId.hex, gameState=game.serialize(), gameAsStr=get_game_repr(game)
+        gameId=gameId.hex,
+        gameState=game.serialize(),
+        gameAsStr=get_game_repr(game),
+        username=username,
+        action="Start game.",
     )
 
 
 async def action(
     request: ActionRequest,
     playerIdx: Optional[int],
+    username: str,
     fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaGame]]],
     saveGame: Callable[[uuid.UUID, RaGame], Awaitable[bool]],
 ) -> Union[Message, ActionResponse]:
@@ -186,6 +198,7 @@ async def action(
     Args:
         request: The request information required to validate and make the action.
         playerIdx: The index of the player trying to make the action.
+        username: The name of the user attempting to take the action.
         fetchGame: A funcion that generates a game for the provided game UUID.
         saveGame: A function that given a game, persist it in storage under the
             provided UUID.
@@ -205,17 +218,22 @@ async def action(
     if not (game := await fetchGame(gameId)):
         return WarningMessage(message=f"No active game with id: {gameId}")
 
-    parsedAction = ra.parse_action(action)
+    if game.game_state.is_game_ended():
+        return ActionResponse(
+            gameState=game.serialize(),
+            gameAsStr=get_game_repr(game),
+            action="Load finished game.",
+            username=username,
+        )
 
+    parsedAction = ra.parse_action(action)
     if parsedAction < 0:
         return WarningMessage(message="Unrecognized action.")
 
-    if game.game_state.is_game_ended():
-        return ActionResponse(gameState=game.serialize(), gameAsStr=get_game_repr(game))
-    currIdx = game.game_state.current_player
-
     if playerIdx is None:
         return InfoMessage(message="Currently in spectator mode. Join an open game.")
+
+    currIdx = game.game_state.current_player
     if playerIdx != currIdx:
         return WarningMessage(
             message=f"{game.player_names[playerIdx]} cannot make action. \
@@ -236,7 +254,12 @@ async def action(
     if not (await saveGame(gameId, game)):
         return ErrorMessage(f"Failed to update game: {gameId}. Repeat action.")
 
-    return ActionResponse(gameState=game.serialize(), gameAsStr=get_game_repr(game))
+    return ActionResponse(
+        gameState=game.serialize(),
+        gameAsStr=get_game_repr(game),
+        username=username,
+        action=info.action_description(parsedAction),
+    )
 
 
 def gen_exp() -> float:

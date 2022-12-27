@@ -11,7 +11,7 @@ from unittest.mock import patch
 import jwt
 
 from backend import routes
-from game import ra
+from game import info, ra
 
 
 class RoutesTest(unittest.TestCase):
@@ -175,11 +175,14 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(ValueError):
             await routes.start(
-                routes.StartRequest(playerNames=[]), commitGame=commitGame
+                routes.StartRequest(playerNames=[]),
+                username="user",
+                commitGame=commitGame,
             )
         with self.assertRaises(ValueError):
             await routes.start(
                 routes.StartRequest(playerNames=["One"]),
+                username="user",
                 commitGame=commitGame,
             )
 
@@ -196,6 +199,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
                 numPlayers=2,
                 playerNames=["Player 1", "Player 2"],
             ),
+            username="user",
             commitGame=commitGame,
         )
         storedGameId, storedGame = storage.get("gameId"), storage.get("game")
@@ -207,6 +211,8 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
                 gameId=storedGameId.hex,
                 gameState=storedGame.serialize(),
                 gameAsStr=routes.get_game_repr(storedGame),
+                username="user",
+                action="Start game.",
             ),
         )
 
@@ -224,6 +230,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(),
                 playerIdx=None,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -243,6 +250,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=uuid.uuid4().hex),
                 playerIdx=None,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -262,6 +270,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=uuid.uuid4().hex, command="draw"),
                 playerIdx=None,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -288,6 +297,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="INVALD"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -315,11 +325,15 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
             routes.ActionResponse(
-                gameState=game.serialize(), gameAsStr=routes.get_game_repr(game)
+                gameState=game.serialize(),
+                gameAsStr=routes.get_game_repr(game),
+                username="user",
+                action="Load finished game.",
             ),
         )
 
@@ -342,6 +356,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=None,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -368,6 +383,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=1,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -398,6 +414,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -424,6 +441,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="god1"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -451,6 +469,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -481,6 +500,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -497,5 +517,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             routes.ActionResponse(
                 gameState=savedGame.serialize(),
                 gameAsStr=routes.get_game_repr(savedGame),
+                username="user",
+                action=info.DRAW_DESC,
             ),
         )

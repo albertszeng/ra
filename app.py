@@ -106,8 +106,7 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
         if not session.get("loggedIn") or not session.get("username"):
             await sio.emit("logout", errorMsg, room=sid)
             return cast(T, errorMsg)
-        kwargs["username"] = session["username"]  # pyre-ignore[16]
-        return await func(*args, **kwargs)
+        return await func(session["username"], *args, **kwargs)
 
     @functools.wraps(login_fn)
     async def logger_fn(*args: P.args, **kwargs: P.kwargs) -> T:
@@ -128,7 +127,7 @@ async def hello_world() -> str:
 
 @sio.event  # pyre-ignore[56]
 @login_required
-async def list_games(sid: str, username: str) -> routes.ListGamesResponse:
+async def list_games(username: str, sid: str) -> routes.ListGamesResponse:
     async with app.app_context():
         results = db.session.scalars(expression.select(Game)).all()
     response = routes.list(
@@ -143,7 +142,10 @@ async def list_games(sid: str, username: str) -> routes.ListGamesResponse:
 
 
 @sio.event  # pyre-ignore[56]
-async def start_game(sid: str, data: routes.StartRequest) -> routes.StartResponse:
+@login_required
+async def start_game(
+    username: str, sid: str, data: routes.StartRequest
+) -> routes.StartResponse:
     async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
         async with app.app_context():
             # Add game to database.
@@ -151,25 +153,9 @@ async def start_game(sid: str, data: routes.StartRequest) -> routes.StartRespons
             db.session.add(dbGame)
             db.session.commit()
 
-    response = await routes.start(data, commitGame=commitGame)
-    sio.emit("update", response, room=response["gameId"])
+    response = await routes.start(data, username, commitGame=commitGame)
+    await sio.emit("start_game", response, room=[response["gameId"], sid])
     return response
-
-
-@app.route("/start", methods=["POST"])  # pyre-ignore[56]
-async def start() -> Union[routes.Message, routes.StartResponse]:
-    data = await request.json
-
-    async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
-        # Add game to database.
-        dbGame = Game(id=gameId.hex, data=game)  # pyre-ignore[28]
-        db.session.add(dbGame)
-        db.session.commit()
-
-    req = routes.StartRequest(
-        playerNames=data.get("playerNames"), numPlayers=data.get("numPlayers")
-    )
-    return await routes.start(req, commitGame=commitGame)
 
 
 @app.route("/delete", methods=["POST"])  # pyre-ignore[56]
@@ -188,55 +174,9 @@ async def delete() -> routes.Message:
     return routes.SuccessMessage(message=f"Deleted game: {gameId}")
 
 
-@app.route("/action", methods=["POST"])  # pyre-ignore[56]
-async def action() -> Union[routes.Message, routes.ActionResponse]:
-    async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
-        if not (dbGame := db.session.get(Game, gameId.hex)):
-            return None
-        return dbGame.data
-
-    async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
-        if not (dbGame := db.session.get(Game, gameId.hex)):
-            return False
-        dbGame.data = copy.deepcopy(game)
-        db.session.commit()
-        return True
-
-    json = await request.json
-    gameIdStr, command, sid = (
-        json.get("gameId"),
-        json.get("command"),
-        json.get("socketId"),
-    )
-    if (
-        command
-        and command.upper() == "LOAD"
-        and (game := await fetchGame(uuid.UUID(gameIdStr)))
-    ):
-        if sid:
-            sio.enter_room(sid, gameIdStr)
-        return routes.ActionResponse(
-            gameState=game.serialize(), gameAsStr=routes.get_game_repr(game)
-        )
-    if not sid:
-        return routes.ErrorMessage(message="Cannot determine player state. Refresh?")
-
-    command = routes.ActionRequest(gameId=gameIdStr, command=command)
-    session = await sio.get_session(sid)
-    response = await routes.action(
-        command, session.get("playerIdx"), fetchGame, saveGame
-    )
-
-    # Update all connected clients with the updated game except client that
-    # sent the update.
-    await sio.emit("update", response, to=gameIdStr, skip_sid=sid)
-
-    # Update the initiator of the event.
-    return response
-
-
 @sio.event  # pyre-ignore[56]
-async def act(sid: str, data: routes.ActionRequest) -> None:
+@login_required
+async def act(username: str, sid: str, data: routes.ActionRequest) -> None:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -259,12 +199,15 @@ async def act(sid: str, data: routes.ActionRequest) -> None:
     ):
         sio.enter_room(sid, gameIdStr)
         response = routes.ActionResponse(
-            gameState=game.serialize(), gameAsStr=routes.get_game_repr(game)
+            gameState=game.serialize(),
+            gameAsStr=routes.get_game_repr(game),
+            action=command.upper(),
+            username=username,
         )
     else:
         session = await sio.get_session(sid)
         response = await routes.action(
-            data, session.get("playerIdx"), fetchGame, saveGame
+            data, session.get("playerIdx"), username, fetchGame, saveGame
         )
     await sio.emit("update", response, to=data.get("gameId"), skip_sid=sid)
 
@@ -323,14 +266,14 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
 
 
 @sio.event  # pyre-ignore[56]
-async def logout(sid: str) -> None:
+async def logout(sid: str) -> routes.Message:
     """SocketIO handler where the client is requesting to log out."""
     async with sio.session(sid) as session:
         session["loggedIn"] = False
         session["username"] = None
-    await sio.emit(
-        "logout", routes.SuccessMessage("Successfully logged out."), room=sid
-    )
+    response = routes.SuccessMessage("Successfully logged out.")
+    await sio.emit("logout", response, room=sid)
+    return response
 
 
 @sio.event  # pyre-ignore[56]
