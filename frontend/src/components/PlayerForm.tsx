@@ -17,8 +17,13 @@ import {
 import Grid from '@mui/material/Unstable_Grid2';
 
 import { socket } from '../common';
-import { deleteGame } from '../libs/game';
-import type { AlertData, ListGame, ListGamesResponse } from '../libs/game';
+import type { AlertData } from '../libs/game';
+import type {
+  DeleteRequest,
+  MessageResponse,
+  ListGame,
+  ListGamesResponse,
+} from '../libs/request';
 
 type PlayerFormProps = {
   handleNewGame: (players: string[], user: string) => void;
@@ -65,6 +70,17 @@ function PlayerForm({
       socket.off('list_games');
     };
   }, []);
+  useEffect(() => {
+    socket.on('delete', ({ message, level }: MessageResponse) => {
+      setAlert({ show: true, message, level });
+      if (level === 'success') {
+        setGameOrPlayers('');
+      }
+    });
+    return () => {
+      socket.off('delete');
+    };
+  }, [setAlert]);
 
   const handleChange = useCallback((
     e: SyntheticEvent<Element, Event>,
@@ -90,19 +106,12 @@ function PlayerForm({
     handleLoadGame(gameOrPlayers, user);
   }, [gameOrPlayers, handleLoadGame, handleNewGame, setAlert, user]);
   const handleDelete = useCallback(() => {
-    const remoteDelete = async () => {
-      const { message, level } = await deleteGame(gameOrPlayers);
-      if (message || level) {
-        setAlert({ show: true, message: message || 'Empty response.', level });
-      }
-      setGameOrPlayers('');
-    };
     if (!isGameId(gameOrPlayers)) {
       setAlert({ show: true, message: 'Invalid game id.', level: 'warning' });
       return;
     }
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const _ = remoteDelete();
+    const request: DeleteRequest = { gameId: gameOrPlayers };
+    socket.emit('delete', request);
   }, [gameOrPlayers, setAlert]);
   const getUserOptions = useCallback(() => {
     if (isPlayerNames(gameOrPlayers)) {

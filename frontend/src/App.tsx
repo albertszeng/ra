@@ -25,7 +25,8 @@ import Game from './components/Game';
 import Header from './components/Header';
 import Login from './components/Login';
 
-import type { AlertData, ApiResponse, LoginSuccess } from './libs/game';
+import type { AlertData } from './libs/game';
+import type { LoginSuccess, MessageResponse } from './libs/request';
 
 const MODE_KEY = 'preferredTheme';
 const TOKEN_KEY = 'token';
@@ -66,13 +67,11 @@ function App() {
     if (token) {
       socket.emit('login', { token });
     }
-    socket.on('logout', ({ message, level }: ApiResponse) => {
+    socket.on('logout', ({ message, level }: MessageResponse) => {
       setLoggedIn(false);
       setPlayerName('');
       localStorage.removeItem(TOKEN_KEY);
-      if (message || level) {
-        setAlertData({ show: true, message: message || 'Unknown error', level });
-      }
+      setAlertData({ show: true, message, level });
     });
     return () => {
       socket.off('logout');

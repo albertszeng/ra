@@ -11,20 +11,23 @@ import EndInfo from './EndInfo';
 import PlayersInfo from './PlayersInfo';
 import PlayerForm from './PlayerForm';
 
+import { socket } from '../common';
 import {
   DefaultGame,
   getTileAction,
-  handleCommand,
-  startGame,
-  socket,
 } from '../libs/game';
 import type {
   AlertData,
-  ApiResponse,
   Game as GameState,
   Player,
   Tile,
 } from '../libs/game';
+import type {
+  ApiResponse,
+  ActionRequest,
+  StartRequest,
+  StartResponse,
+} from '../libs/request';
 
 type GameProps = {
   // Sets an alert at the highest level.
@@ -42,95 +45,42 @@ function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
   // When true and set to a valid index, swap occurs.
   const [swapInfo, setSwapInfo] = useState<[boolean, number]>([false, -1]);
 
-  const handleNewGame = useCallback(async (players: string[], user: string) => {
-    const {
-      message,
-      level,
-      gameId: remoteGameId,
-      gameState,
-    } = await startGame(players, user);
-    if (message || level || !remoteGameId || !gameState) {
-      setAlert({ show: true, message: message || 'Unknown error.', level });
-      return;
-    }
-    setPlayerName(user);
-    setIsPlaying(true);
-    setGameId(remoteGameId);
-    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [setAlert, setPlayerName]);
-  const handleLoadGame = useCallback(async (requestedId: string, user: string) => {
-    const { level, message, gameState } = await handleCommand(requestedId, user, 'LOAD');
-    if (message || level || !gameState) {
-      setAlert({ show: true, message: message || 'Unknown error.', level });
-      return;
-    }
-    // Also let the server know we've joined again.
-    socket.emit('join', { gameId: requestedId, name: user });
-    setPlayerName(user);
-    setIsPlaying(true);
-    setGameId(requestedId);
-    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [setAlert, setPlayerName]);
-  const handleDraw = useCallback(async () => {
-    if (!gameId) {
-      setAlert({ show: true, message: 'No active game.', level: 'warning' });
-      return;
-    }
-    const { level, message, gameState } = await handleCommand(gameId, playerName, 'DRAW');
-    if (level || message || !gameState) {
-      setAlert({ show: true, message: message || 'Unknown error.', level });
-      return;
-    }
-    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId, playerName, setAlert]);
-  const handleAuction = useCallback(async () => {
-    if (!gameId) {
-      setAlert({ show: true, message: 'No active game.', level: 'warning' });
-      return;
-    }
-    const { level, message, gameState } = await handleCommand(gameId, playerName, 'AUCTION');
-    if (message || !gameState) {
-      setAlert({ show: true, message: message || 'Unknown error.', level });
-      return;
-    }
-    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId, playerName, setAlert]);
-  const handleBidAction = useCallback(async (idx: number) => {
-    if (!gameId) {
-      return;
-    }
+  const handleNewGame = useCallback((players: string[]) => {
+    const request: StartRequest = { playerNames: players, numPlayers: players.length };
+    socket.emit('start_game', request);
+  }, []);
+  const handleLoadGame = useCallback((requestedId: string) => {
+    const request: ActionRequest = { gameId: requestedId, command: 'LOAD' };
+    socket.emit('act', request);
+  }, []);
+  const handleDraw = useCallback(() => {
+    const request: ActionRequest = { gameId, command: 'DRAW' };
+    socket.emit('act', request);
+  }, [gameId]);
+  const handleAuction = useCallback(() => {
+    const request: ActionRequest = { gameId, command: 'AUCTION' };
+    socket.emit('act', request);
+  }, [gameId]);
+  const handleBidAction = useCallback((idx: number) => {
     // 1-indexed. 0 corresponds to passing in which case idx === -1.
-    const { level, message, gameState } = await handleCommand(gameId, playerName, `B${idx + 1}`);
-    if (message || !gameState) {
-      setAlert({ show: true, message: message || 'Unknown error.', level });
-      return;
-    }
-    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId, playerName, setAlert]);
-  const handleSelectCardFromGrid = useCallback(async (idx: number, { name: tileName }: Tile) => {
-    if (!gameId) {
-      return;
-    }
+    const request: ActionRequest = { gameId, command: `B${idx + 1}` };
+    socket.emit('act', request);
+  }, [gameId]);
+  const handleSelectCardFromGrid = useCallback((idx: number, { name: tileName }: Tile) => {
     const [shouldSwap] = swapInfo;
     if (!shouldSwap) {
       setAlert({ show: true, message: `Click your Golden God to atttempt a swap for ${tileName}.`, level: 'info' });
       setSwapInfo([shouldSwap, idx]);
       return;
     }
-    // Server command is 1-indexed, so we increment here.
-    const { level, message, gameState } = await handleCommand(gameId, playerName, `G${idx + 1}`);
-    if (message || !gameState) {
-      setAlert({ show: true, message: message || 'Unknown error.', level });
-      return;
-    }
+    const request: ActionRequest = { gameId, command: `G${idx + 1}` };
+    socket.emit('act', request);
+    /*
     setSwapInfo([false, -1]); // Reset swap info.
     setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId, swapInfo, playerName, setAlert]);
-  const handlePlayerSelectTile = useCallback(async (player: Player, tile: Tile) => {
-    if (!gameId) {
-      setAlert({ show: true, message: 'No active game.', level: 'info' });
-      return;
-    }
+    */
+  }, [gameId, swapInfo, setAlert]);
+  const handlePlayerSelectTile = useCallback((player: Player, tile: Tile) => {
     let action = getTileAction(tile);
     if (!action) {
       setAlert({ show: true, message: `${tile.name} is not play-able.`, level: 'warning' });
@@ -144,16 +94,13 @@ function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
       }
       action = `G${swapIdx + 1}`;
     }
-
-    const { level, message, gameState } = await handleCommand(gameId, playerName, action);
-    if (message || !gameState) {
-      setAlert({ show: true, message: message || 'Unknown error.', level });
-      return;
-    }
+    const request: ActionRequest = { gameId, command: action };
+    socket.emit('act', request);
+    /*
     setSwapInfo([false, -1]); // Reset swap info.
     setAlert({ show: true, message: `Performed action: ${action}`, level: 'info' });
-    setGame((prevGame: GameState) => ({ ...prevGame, ...gameState }));
-  }, [gameId, swapInfo, playerName, setAlert]);
+    */
+  }, [gameId, swapInfo, setAlert]);
 
   const resetGame = useCallback(() => {
     setIsPlaying(false);
@@ -177,9 +124,7 @@ function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
       window.localStorage.getItem(GAME_STATE_KEY) || '{}',
     ) as { gameId?: string, name?: string };
     if (restoredGameId && restoredName) {
-      // Attempt to join the game again.
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const _ = handleLoadGame(restoredGameId, restoredName);
+      handleLoadGame(restoredGameId);
     }
   }, [handleLoadGame]);
   const [timestampMs, setTimestampMs] = useState(Date.now());
@@ -192,6 +137,13 @@ function Game({ playerName, setAlert, setPlayerName }: GameProps): JSX.Element {
     });
     socket.on('disconnect', () => {
       resetGame();
+    });
+    socket.on('start_game', ({ gameId: id, gameState: state } : StartResponse) => {
+      setIsPlaying(true);
+      setGameId(id);
+      setGame((prevGame: GameState) => ({ ...prevGame, ...state }));
+      // Let the server know we've joined.
+      socket.emit('join', { gameId: id, name: playerName });
     });
     socket.on('update', ({ level, message, gameState }: ApiResponse) => {
       const now = Date.now();

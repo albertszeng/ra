@@ -19,7 +19,8 @@ import Grid from '@mui/material/Unstable_Grid2';
 import { AccountCircle, Visibility, VisibilityOff } from '@mui/icons-material';
 
 import { socket } from '../common';
-import type { AlertData, LoginResponse, LoginSuccess } from '../libs/game';
+import type { AlertData } from '../libs/game';
+import type { LoginResponse, LoginSuccess } from '../libs/request';
 
 type LoginProps = {
   // Called on successful login.
