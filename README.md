@@ -68,7 +68,7 @@ pipenv run pyre
 We also use black for formatting. If you installed the development dependecies, you can run:
 
 ```sh
-pienv run black .
+pipenv run black .
 ```
 
 Additionally, we recommend that you enable a `pre-commit` hook. The configuration is included in the repo. You can run:
@@ -116,4 +116,4 @@ See `frontend/README.md`.
 
 ## Specifications
 
-Runs on Python3.9. Probably works on any Python3 version, but not Python2. 
+Runs on Python3.9. Probably works on any Python3 version, but not Python2.
