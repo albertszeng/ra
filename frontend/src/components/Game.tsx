@@ -108,15 +108,15 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
   useEffect(() => {
     // When the gameId changes, store in local storage.
     if (gameId) {
-      window.localStorage.setItem(GAME_STATE_KEY, JSON.stringify({ gameId, playerName }));
+      window.localStorage.setItem(GAME_STATE_KEY, JSON.stringify({ gameId }));
     }
-  }, [gameId, playerName]);
+  }, [gameId]);
   useEffect(() => {
     // On refresh of component, get latest game state if we had a gameId.
-    const { gameId: restoredGameId, name: restoredName } = JSON.parse(
+    const { gameId: restoredGameId } = JSON.parse(
       window.localStorage.getItem(GAME_STATE_KEY) || '{}',
-    ) as { gameId?: string, name?: string };
-    if (restoredGameId && restoredName) {
+    ) as { gameId?: string };
+    if (restoredGameId) {
       handleLoadGame(restoredGameId);
     }
   }, [handleLoadGame]);
@@ -139,7 +139,7 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
       socket.emit('join', { gameId: id, name: playerName });
     });
     socket.on('update', ({
-      level, message, gameState, action, username,
+      level, message, gameState, action, username, gameId: remoteGameId,
     }: ApiResponse) => {
       const now = Date.now();
       if (now >= timestampMs + AIUIDelayMs) {
@@ -148,6 +148,10 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
           setAlert({ show: true, message: message || 'Unknown error.', level });
           return;
         }
+        if (remoteGameId) {
+          setGameId(remoteGameId);
+        }
+        setIsPlaying(true);
         setSwapInfo([false, -1]); // Reset swap info.
         setGame(gameState);
         setAlert({ show: true, message: `${username} performed action: ${action}`, level: 'info' });
@@ -160,6 +164,10 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
             setAlert({ show: true, message: message || 'Unknown error.', level });
             return;
           }
+          if (remoteGameId) {
+            setGameId(remoteGameId);
+          }
+          setIsPlaying(true);
           setSwapInfo([false, -1]); // Reset swap info.
           setGame(gameState);
           setAlert({ show: true, message: `${username} performed action: ${action}`, level: 'info' });
