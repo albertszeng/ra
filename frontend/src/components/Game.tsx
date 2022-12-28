@@ -137,7 +137,11 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
     socket.on('disconnect', () => {
       resetGame();
     });
+    socket.on('logout', () => {
+      resetGame();
+    });
     return () => {
+      socket.off('logout');
       socket.off('disconnect');
     };
   }, [resetGame]);
