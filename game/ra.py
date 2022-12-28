@@ -656,6 +656,7 @@ class RaGame:
         )
         if action == gi.DRAW:
             self.logged_moves.append((gi.DRAW_OPTIONS[0], t))
+            return t
         else:
             self.logged_moves.append(action)
 
