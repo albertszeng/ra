@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, List, Mapping, Tuple
+from typing import Dict, Tuple
 
 from game import info as gi
 from game import ra
@@ -19,8 +19,8 @@ def search_internal(
     game_state: gs.GameState, auction_has_occurred: bool
 ) -> Tuple[int, Dict[str, float]]:
     """
-    Find action to take based on expectimax. Returns the best action and the resulting valuation of
-    each player's state.
+    Find action to take based on expectimax. Returns the best action and the
+    resulting valuation of each player's state.
 
     Continues until at least 1 auction has occurred and the auction tiles are empty.
     """
@@ -37,7 +37,7 @@ def search_internal(
     for action in legal_actions:
         if action == gi.DRAW:
             # maps tile index to its resulting valuations
-            draw_action_results: Dict[int, Dict[str, float]]
+            draw_action_results: Dict[int, Dict[str, float]] = {}
 
             tile_bag = game_state.get_tile_bag_contents()
             tile_bag_size = game_state.get_num_tiles_left()
@@ -61,7 +61,8 @@ def search_internal(
             for tile_idx, resulting_valuations in draw_action_results.items():
                 assert len(resulting_valuations) == len(
                     list(game_state.get_player_names())
-                ), f"{len(resulting_valuations)} players have valuations, but there are {len(game_state.get_player_names())} players in the game"
+                ), f"{len(resulting_valuations)} players have valuations, but \
+                    there are {len(game_state.get_player_names())} players in the game"
                 for player_name, valuation in resulting_valuations.items():
                     assert (
                         player_name in expected_player_valuations
@@ -80,7 +81,8 @@ def search_internal(
 
     assert len(action_results.keys()) == len(
         legal_actions
-    ), f"There are {len(action_results.keys())} action results but {len(legal_actions)} legal actions"
+    ), f"There are {len(action_results.keys())} action results but \
+        {len(legal_actions)} legal actions"
 
     # Pick the action that leads to the best resulting valuation for the current player
     best_action = None
@@ -105,10 +107,12 @@ def value_state(
     game_state: gs.GameState, auction_has_occurred: bool
 ) -> Dict[str, float]:
     """
-    Return the score of the current state for each player as a dictionary of [player_name, score].
-    Search stops when at least 1 auction has occurred and the auction tiles are empty.
-    If search does not stop, then continue propagation, and the value of the current state is the
-    maximum across all possible actions the current player can take.
+    Return the score of the current state for each player as a dictionary of
+    [player_name, score]. Search stops when at least 1 auction has occurred and
+    the auction tiles are empty.
+    If search does not stop, then continue propagation, and the value of the
+    current state is the maximum across all possible actions the current player
+    can take.
     """
     auction_tiles_are_empty = len(game_state.get_auction_tiles()) > 0
     if auction_has_occurred and auction_tiles_are_empty:
@@ -124,10 +128,11 @@ def calculate_state_score_for_player(
     player_name: str, player_state_valuations: Dict[str, float]
 ) -> float:
     """
-    Given the valuations of each player's state, calculate a "state score" for a given player. This score
-    represents how well the player is doing.
+    Given the valuations of each player's state, calculate a "state score" for
+     a given player. This score represents how well the player is doing.
 
-    Currently, this is calculated to be how far ahead the player is, or how far behind #1 the player is.
+    Currently, this is calculated to be how far ahead the player is, or how far
+    behind #1 the player is.
     """
     player_valuation = player_state_valuations[player_name]
     max_other_player_valuation = max(

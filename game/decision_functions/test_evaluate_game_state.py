@@ -1,9 +1,7 @@
-import random
 import unittest
 
 from game import info as gi
 from game import ra
-from game import state as gs
 from game.decision_functions import evaluate_game_state as e
 
 
