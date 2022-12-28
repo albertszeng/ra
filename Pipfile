@@ -20,6 +20,7 @@ parameterized = "*"
 black = "*"
 pre-commit = "*"
 isort = "*"
+autoflake = "*"
 
 [requires]
 python_version = "3.9"

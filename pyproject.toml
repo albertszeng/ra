@@ -1,2 +1,11 @@
 [tool.isort]
 profile = "black"
+
+[tool.autoflake]
+check = true
+remove-all-unused-imports = true
+recursive = true
+remove-duplicate-keys = true
+remove-unused-variables = true
+ignore-pass-statements = true
+in-place = true
