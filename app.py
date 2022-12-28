@@ -181,7 +181,9 @@ async def delete(username: str, sid: str, data: routes.DeleteRequest) -> routes.
     response = await routes.delete(
         gameIdStr, username, fetchGame=fetchGame, persistDelete=persistDelete
     )
-    await sio.emit("update", response, room=gameIdStr)
+    # Update game room as well as sid.
+    await sio.emit("update", response, to=gameIdStr)
+    await sio.emit("delete", response, to=sid)
     return response
 
 

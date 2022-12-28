@@ -74,6 +74,7 @@ function PlayerForm({
       setAlert({ show: true, message, level });
       if (level === 'success') {
         setGameOrPlayers('');
+        socket.emit('list_games');
       }
     });
     return () => {
