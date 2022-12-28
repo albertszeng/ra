@@ -18,9 +18,10 @@ type StartRequest = {
   numPlayers: number;
   playerNames: string[];
 };
-type StartResponse = ActionResponse & {
+type JoinLeaveRequest = {
   gameId: string;
 };
+type StartResponse = ActionResponse & JoinLeaveRequest;
 
 type MessageResponse = {
   level: WarningLevel;
@@ -63,6 +64,7 @@ export type {
   ActionRequest,
   ApiResponse,
   DeleteRequest,
+  JoinLeaveRequest,
   ListGame,
   ListGamesResponse,
   LoginOrRegisterRequest,

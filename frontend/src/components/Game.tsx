@@ -26,6 +26,7 @@ import type {
   ApiResponse,
   ActionRequest,
   DeleteRequest,
+  JoinLeaveRequest,
   StartRequest,
   StartResponse,
 } from '../libs/request';
@@ -102,8 +103,8 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
     setGameId('');
     window.localStorage.setItem(GAME_STATE_KEY, '{}');
     // Let the server know we've left the game.
-    socket.emit('leave', { gameId, name: playerName });
-  }, [gameId, playerName]);
+    socket.emit('leave', { gameId } as JoinLeaveRequest);
+  }, [gameId]);
 
   useEffect(() => {
     // When the gameId changes, store in local storage.
@@ -125,19 +126,34 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
   useEffect(() => {
     socket.on('connect', () => {
       if (gameId) {
-        socket.emit('join', { gameId, name: playerName });
+        socket.emit('join', { gameId } as JoinLeaveRequest);
       }
     });
+    return () => {
+      socket.off('connect');
+    };
+  }, [gameId]);
+  useEffect(() => {
     socket.on('disconnect', () => {
       resetGame();
     });
+    return () => {
+      socket.off('disconnect');
+    };
+  }, [resetGame]);
+  useEffect(() => {
     socket.on('start_game', ({ gameId: id, gameState: state } : StartResponse) => {
       setIsPlaying(true);
       setGameId(id);
       setGame((prevGame: GameState) => ({ ...prevGame, ...state }));
       // Let the server know we've joined.
-      socket.emit('join', { gameId: id, name: playerName });
+      socket.emit('join', { gameId: id } as JoinLeaveRequest);
     });
+    return () => {
+      socket.off('start_game');
+    };
+  }, []);
+  useEffect(() => {
     socket.on('update', ({
       level, message, gameState, action, username, gameId: remoteGameId,
     }: ApiResponse) => {
@@ -174,6 +190,11 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
         }, (timestampMs + AIUIDelayMs) - now);
       }
     });
+    return () => {
+      socket.off('update');
+    };
+  }, [setAlert, timestampMs]);
+  useEffect(() => {
     socket.on('spectate', () => {
       setAlert({
         show: true,
@@ -184,11 +205,8 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
     });
     return () => {
       socket.off('spectate');
-      socket.off('update');
-      socket.off('disconnect');
-      socket.off('connect');
     };
-  }, [gameId, playerName, resetGame, timestampMs, setAlert]);
+  }, [setAlert]);
 
   const { auctionTileValues, unrealizedPoints, gameState } = game;
   const {
