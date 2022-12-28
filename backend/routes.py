@@ -186,6 +186,27 @@ async def start(
     )
 
 
+async def delete(
+    gameIdStr: str,
+    username: str,
+    fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaGame]]],
+    persistDelete: Callable[[uuid.UUID], Awaitable[bool]],
+) -> Message:
+    try:
+        gameId = uuid.UUID(gameIdStr)
+    except ValueError as err:
+        return ErrorMessage(message=str(err))
+    if not (game := await fetchGame(gameId)):
+        return WarningMessage(message=f"No game with id {gameId} found.")
+    if username not in game.player_names:
+        return WarningMessage(
+            message=f"Cannot delete game: {gameId} since {username} is not a player."
+        )
+    if not await persistDelete(gameId):
+        return WarningMessage(message=f"No game with id {gameId} found.")
+    return SuccessMessage(message=f"Deleted game: {gameId}")
+
+
 async def action(
     request: ActionRequest,
     playerIdx: Optional[int],

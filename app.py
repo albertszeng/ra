@@ -158,20 +158,31 @@ async def start_game(
     return response
 
 
-@app.route("/delete", methods=["POST"])  # pyre-ignore[56]
-async def delete() -> routes.Message:
-    if not (gameIdStr := (await request.json).get("gameId")):
-        return routes.ErrorMessage(message="Invalid request.")
-    try:
-        gameId = uuid.UUID(gameIdStr)
-    except ValueError as err:
-        return routes.ErrorMessage(message=str(err))
-    if not (dbGame := db.session.get(Game, gameId.hex)):
-        return routes.WarningMessage(message=f"No game with id {gameId} found.")
+@sio.event  # pyre-ignore[56]
+@login_required
+async def delete(username: str, sid: str, data: routes.DeleteRequest) -> routes.Message:
+    async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+        async with app.app_context():
+            if not (dbGame := db.session.get(Game, gameId.hex)):
+                return None
+            return dbGame.data
 
-    db.session.delete(dbGame)
-    db.session.commit()
-    return routes.SuccessMessage(message=f"Deleted game: {gameId}")
+    async def persistDelete(gameId: uuid.UUID) -> bool:
+        async with app.app_context():
+            if not (dbGame := db.session.get(Game, gameId.hex)):
+                return False
+            db.session.delete(dbGame)
+            db.session.commit()
+        return True
+
+    if not (gameIdStr := data.get("gameId")):
+        return routes.ErrorMessage(message="Must provide a gameId with request.")
+
+    response = await routes.delete(
+        gameIdStr, username, fetchGame=fetchGame, persistDelete=persistDelete
+    )
+    await sio.emit("update", response, room=gameIdStr)
+    return response
 
 
 @sio.event  # pyre-ignore[56]
@@ -193,10 +204,11 @@ async def act(
             db.session.commit()
         return True
 
+    if not (gameIdStr := data.get("gameId")):
+        return routes.ErrorMessage(message="Must provide a gameId with request.")
     if (
         (command := data.get("command"))
         and command.upper() == "LOAD"
-        and (gameIdStr := data.get("gameId"))
         and (game := await fetchGame(uuid.UUID(gameIdStr)))
     ):
         sio.enter_room(sid, gameIdStr)
@@ -212,7 +224,7 @@ async def act(
         response = await routes.action(
             data, session.get("playerIdx"), username, fetchGame, saveGame
         )
-    await sio.emit("update", response, to=data.get("gameId"))
+    await sio.emit("update", response, room=gameIdStr)
     return response
 
 

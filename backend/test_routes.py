@@ -168,6 +168,54 @@ Possible actions:
         )
 
 
+class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
+    async def test_delete_invalid(self) -> None:
+        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+            return routes.RaGame(player_names=["test1", "test2"])
+
+        async def persistDelete(gameId: uuid.UUID) -> bool:
+            return True
+
+        async def failFetch(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+            return None
+
+        async def failPersist(gameId: uuid.UUID) -> bool:
+            return False
+
+        validGameId = str(uuid.uuid4())
+        resp = await routes.delete("invalid", "test1", fetchGame, persistDelete)
+        self.assertEqual(resp["level"], "error")
+
+        resp = await routes.delete(
+            validGameId, "test1", fetchGame=failFetch, persistDelete=persistDelete
+        )
+        self.assertEqual(resp["level"], "warning")
+
+        resp = await routes.delete(validGameId, "invalid", fetchGame, persistDelete)
+        self.assertEqual(resp["level"], "warning")
+
+        resp = await routes.delete(
+            validGameId, "test1", fetchGame, persistDelete=failPersist
+        )
+        self.assertEqual(resp["level"], "warning")
+
+    async def test_delete(self) -> None:
+        storage: dict[str, routes.RaGame] = {}
+
+        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+            storage[str(gameId)] = routes.RaGame(player_names=["test1", "test2"])
+            return storage[str(gameId)]
+
+        async def persistDelete(gameId: uuid.UUID) -> bool:
+            del storage[str(gameId)]
+            return True
+
+        gameId = uuid.uuid4()
+        resp = await routes.delete(str(gameId), "test1", fetchGame, persistDelete)
+        self.assertEqual(resp["level"], "success")
+        self.assertEqual(storage, {})
+
+
 class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
     async def test_start_no_players(self) -> None:
         async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
