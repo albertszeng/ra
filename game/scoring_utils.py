@@ -150,12 +150,19 @@ def calculate_value_of_auction_tiles(
     Calculate how many points the current auction tiles would give each
     player. Return a mapping of player_name -> points gained.
     """
+    # TODO(albertz): Properly value disaster tiles
+    relevant_auction_tiles = [
+        tile
+        for tile in auction_tiles
+        if gi.TILE_INFO[tile]["tileType"] == gi.TileType.COLLECTIBLE
+    ]
+
     # per player, calculate points gained if they had the auction tiles
     sim_p_states = deepcopy(p_states)
     sim_p_gained = {p_state.get_player_name(): 0 for p_state in p_states}
     for p_state in sim_p_states:
         cur_p_name = p_state.get_player_name()
-        p_state.add_tiles(auction_tiles)
+        p_state.add_tiles(relevant_auction_tiles)
         current_simulation_p_states = [
             base_p_state
             for base_p_state in p_states

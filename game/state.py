@@ -302,6 +302,9 @@ class GameState:
                 f"Invalid game state. Cannot have {num_players} \
                 players"
             )
+        assert len(player_names) == len(
+            set(player_names)
+        ), "Cannot have duplicate player names"
 
         # constant game state variables
         self.total_rounds = gi.NUM_ROUNDS
@@ -646,6 +649,9 @@ class GameState:
 
     def get_current_player(self) -> int:
         return self.current_player
+
+    def get_player_names(self) -> Iterable[str]:
+        return self.player_names[:]
 
     def get_current_player_name(self) -> str:
         return self.player_names[self.current_player]
