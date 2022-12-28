@@ -108,7 +108,7 @@ function App() {
           <Grid container spacing={2}>
             <Grid xs />
             <Grid xs={12}>
-              {(loggedIn || !process.env.REACT_APP_ENABLE_LOGIN)
+              {(loggedIn)
                 ? (
                   <Game
                     playerName={playerName}
