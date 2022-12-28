@@ -170,7 +170,7 @@ def get_possible_actions(game_state: gs.GameState) -> Optional[List[int]]:  # no
 def execute_action_internal(  # noqa: C901
     game_state: gs.GameState,
     action: int,
-    legal_actions: Iterable[int],
+    legal_actions: Optional[Iterable[int]] = None,
     tile_to_draw: Optional[int] = None,
 ) -> Optional[int]:
     """
@@ -402,6 +402,12 @@ def execute_action_internal(  # noqa: C901
         if not game_state.disasters_must_be_resolved():
             game_state.set_current_player(game_state.get_auction_start_player())
             game_state.advance_current_player()
+
+    if legal_actions is None:
+        legal_actions = get_possible_actions(game_state)
+        assert (
+            legal_actions is not None
+        ), "cannot execute action because no legal actions"
 
     if action not in legal_actions:
         raise Exception(
@@ -645,9 +651,9 @@ class RaGame:
     def execute_action(
         self,
         action: int,
-        legal_actions: Iterable[int],
+        legal_actions: Optional[Iterable[int]] = None,
         tile_to_draw: Optional[int] = None,
-    ) -> None:
+    ) -> Optional[int]:
         """
         Execute an action for the current game state.
         """
