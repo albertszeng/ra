@@ -118,7 +118,12 @@ class StartResponse(ActionResponse):
 
 class JoinLeaveRequest(TypedDict):
     gameId: NotRequired[str]
-    name: NotRequired[str]
+
+
+class JoinSessionSuccess(TypedDict):
+    gameId: str
+    playerName: str
+    playerIdx: NotRequired[int]
 
 
 class ActionRequest(TypedDict):
@@ -183,6 +188,41 @@ async def start(
         gameAsStr=get_game_repr(game),
         username=username,
         action="Start game.",
+    )
+
+
+async def join(
+    username: str,
+    request: JoinLeaveRequest,
+    fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaGame]]],
+    saveGame: Callable[[uuid.UUID, RaGame], Awaitable[bool]],
+) -> Union[JoinSessionSuccess, Message]:
+    """"""
+    if not (gameIdStr := request.get("gameId")):
+        return WarningMessage("Must provide gameId to join game.")
+    try:
+        gameId = uuid.UUID(gameIdStr)
+    except ValueError as e:
+        return ErrorMessage(f"Unparseable gameId: {e}")
+    if not (game := await fetchGame(gameId)):
+        return WarningMessage(f"Cannot join non-existant game: {gameId}.")
+    idxs = [
+        i
+        for i, (occupied, player) in enumerate(
+            zip(game.player_in_game, game.player_names)
+        )
+        if not occupied and player.lower() == username.lower()
+    ]
+    if not idxs:
+        return JoinSessionSuccess(gameId=gameIdStr, playerName=username)
+
+    # Take first available index. Must be unique because usernames are unique.
+    playerIdx = idxs[0]
+    game.player_in_game[playerIdx] = True
+    if not saveGame(gameId, game):
+        return ErrorMessage(f"{username} failed to join gameId: {gameId}.")
+    return JoinSessionSuccess(
+        gameId=gameIdStr, playerName=username, playerIdx=playerIdx
     )
 
 
