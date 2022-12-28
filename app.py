@@ -101,7 +101,7 @@ async def _join_room(
         data["playerName"],
         data.get("playerIdx"),
     )
-    if not playerIdx:
+    if playerIdx is None:
         if _C.DEBUG:
             logger.info(
                 "Client %s (%s) SPECTATING room: %s", sid, playerName, gameIdStr
@@ -166,10 +166,10 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
     @functools.wraps(login_fn)
     async def logger_fn(*args: P.args, **kwargs: P.kwargs) -> T:
         if _C.DEBUG:
-            logger.info("Inputs on login: %s, %s", args, kwargs)
+            logger.info("%s: Inputs on login: %s, %s", func.__name__, args, kwargs)
         ret = await login_fn(*args, **kwargs)
         if _C.DEBUG:
-            logger.info("Outputs: %s", ret)
+            logger.info("%s: Outputs: %s", func.__name__, ret)
         return ret
 
     return logger_fn
@@ -276,6 +276,7 @@ async def act(
             assert _game is not None
             return _game
 
+        # breakpoint()
         resp = await routes.join(
             username,
             request=routes.JoinLeaveRequest(gameId=gameIdStr),

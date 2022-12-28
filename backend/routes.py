@@ -219,7 +219,7 @@ async def join(
     # Take first available index. Must be unique because usernames are unique.
     playerIdx = idxs[0]
     game.player_in_game[playerIdx] = True
-    if not saveGame(gameId, game):
+    if not await saveGame(gameId, game):
         return ErrorMessage(f"{username} failed to join gameId: {gameId}.")
     return JoinSessionSuccess(
         gameId=gameIdStr, playerName=username, playerIdx=playerIdx
