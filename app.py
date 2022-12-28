@@ -389,7 +389,7 @@ async def logout(sid: str) -> routes.Message:
     """SocketIO handler where the client is requesting to log out."""
     for room in sio.rooms(sid):
         if room != sid:
-            await _leave_room(sid, room, await sio.get_session(sid).get("username"))
+            await _leave_room(sid, room, (await sio.get_session(sid)).get("username"))
     async with sio.session(sid) as session:
         session["loggedIn"] = False
         session["username"] = None

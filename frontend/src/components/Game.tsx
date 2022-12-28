@@ -124,24 +124,10 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
   const [timestampMs, setTimestampMs] = useState(Date.now());
   const AIUIDelayMs = 2000;
   useEffect(() => {
-    socket.on('connect', () => {
-      if (gameId) {
-        socket.emit('join', { gameId } as JoinLeaveRequest);
-      }
-    });
-    return () => {
-      socket.off('connect');
-    };
-  }, [gameId]);
-  useEffect(() => {
     socket.on('disconnect', () => {
       resetGame();
     });
-    socket.on('logout', () => {
-      resetGame();
-    });
     return () => {
-      socket.off('logout');
       socket.off('disconnect');
     };
   }, [resetGame]);
