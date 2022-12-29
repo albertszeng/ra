@@ -78,7 +78,7 @@ class EvaluateGameStateTest(unittest.TestCase):
             e.value_one_players_usable_sun(usable_sun_1, 3, 2), 16.0
         )
         self.assert_close_enough(
-            e.value_one_players_usable_sun(usable_sun_1, 3, 0), 20.0
+            e.value_one_players_usable_sun(usable_sun_1, 3, 0), 16.0
         )
 
         usable_sun_3 = []
@@ -88,39 +88,32 @@ class EvaluateGameStateTest(unittest.TestCase):
 
         usable_sun_4 = [7]
         self.assert_close_enough(
-            e.value_one_players_usable_sun(usable_sun_4, 4, 0), 6 * 1.25
+            e.value_one_players_usable_sun(usable_sun_4, 4, 0), 6.0
         )
         self.assert_close_enough(
             e.value_one_players_usable_sun(usable_sun_4, 4, 8), 2.0
         )
 
-    # def test_value_of_usable_sun(self) -> None:
-    #     game_state = gs.GameState(["P1", "P2"])
+    def test_value_of_usable_sun(self) -> None:
+        game_state = gs.GameState(["P1", "P2"])
 
-    #     usable_suns_valuations_1 = e.value_of_usable_sun(game_state)
-    #     self.assertEqual(usable_suns_valuations_1["P1"], 0.0)  # No unusable sun
-    #     self.assertEqual(usable_suns_valuations_1["P2"], 0.0)  # No unusable sun
+        usable_suns_valuations_1 = e.value_of_usable_sun(game_state)
+        self.assert_close_enough(usable_suns_valuations_1["P1"], 25.0)  # [2,5,6,9]
+        self.assert_close_enough(usable_suns_valuations_1["P2"], 25.0)  # [3,4,7,8]
 
-    #     ra.execute_action_internal(game_state, gi.AUCTION)  # P1
-    #     ra.execute_action_internal(game_state, gi.BID_1)  # P2 bids 3, gets 1
-    #     ra.execute_action_internal(game_state, gi.BID_NOTHING)  # P1
-    #     usable_suns_valuations_2 = e.value_of_usable_sun(game_state)
-    #     self.assertEqual(usable_suns_valuations_2["P1"], 0.0)  # No unusable sun
-    #     self.assertEqual(usable_suns_valuations_2["P2"], -2.0)  # [1]
+        ra.execute_action_internal(game_state, gi.AUCTION)  # P1
+        ra.execute_action_internal(game_state, gi.BID_1)  # P2 bids 3
+        ra.execute_action_internal(game_state, gi.BID_NOTHING)  # P1
+        usable_suns_valuations_2 = e.value_of_usable_sun(game_state)
+        self.assert_close_enough(usable_suns_valuations_2["P1"], 25.0)  # [2,5,6,9]
+        self.assert_close_enough(usable_suns_valuations_2["P2"], 20.0)  # [4,7,8]
 
-    #     ra.execute_action_internal(game_state, gi.AUCTION)  # P2
-    #     ra.execute_action_internal(game_state, gi.BID_NOTHING)  # P1
-    #     ra.execute_action_internal(game_state, gi.BID_3)  # P2 bids 8, gets 3
-    #     usable_suns_valuations_3 = e.value_of_usable_sun(game_state)
-    #     self.assertEqual(usable_suns_valuations_3["P1"], 0.0)  # No unusable sun
-    #     self.assertEqual(usable_suns_valuations_3["P2"], -3.0)  # [1, 3]
-
-    #     ra.execute_action_internal(game_state, gi.AUCTION)  # P1
-    #     ra.execute_action_internal(game_state, gi.BID_1)  # P2 bids 4, gets 8
-    #     ra.execute_action_internal(game_state, gi.BID_NOTHING)  # P1
-    #     usable_suns_valuations_4 = e.value_of_usable_sun(game_state)
-    #     self.assertEqual(usable_suns_valuations_4["P1"], 0.0)  # No unusable sun
-    #     self.assertEqual(usable_suns_valuations_4["P2"], -1.5)  # [1, 3]
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_RA)  # P2
+        ra.execute_action_internal(game_state, gi.BID_NOTHING)  # P1
+        ra.execute_action_internal(game_state, gi.BID_3)  # P2 bids 8
+        usable_suns_valuations_3 = e.value_of_usable_sun(game_state)
+        self.assert_close_enough(usable_suns_valuations_3["P1"], 20.83)  # [2,5,6,9]
+        self.assert_close_enough(usable_suns_valuations_3["P2"], 12.5)  # [4,7]
 
     def assert_close_enough(self, n: float, m: float, epsilon: float = 0.1) -> None:
         """

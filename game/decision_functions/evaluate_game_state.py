@@ -107,7 +107,7 @@ def evaluate_game_state_no_auction_tiles(game_state: gs.GameState) -> Dict[str, 
     }
 
 
-def value_usable_sun(game_state: gs.GameState) -> Dict[str, float]:
+def value_of_usable_sun(game_state: gs.GameState) -> Dict[str, float]:
     """
     Returns the valuation of each player's remaining sun.
     """
@@ -130,6 +130,10 @@ def value_one_players_usable_sun(
     TODO(albertz): this needs to be much more complex, factoring in both how many
     opponent suns are left, and also what those opposing suns are.
 
+    TODO(albertz): alternatively, instead of having a mutliplicative sun_value_modifier,
+    it can be a flat modifier based on how many sun tiles have been drawn compared to
+    how many sun you have.
+
     TODO(albertz): rethink if we need to value usable sun differently if it's the final round,
     or whether it's already taken into account if we add unrealized points.
     """
@@ -143,10 +147,10 @@ def value_one_players_usable_sun(
     ra_progress: float = (num_ras_per_round - num_ras_so_far) / num_ras_per_round
     sun_progress: float = num_usable_sun / num_starting_sun
 
-    # Cap sun_value_multiplier at 1.25
+    # Cap sun_value_multiplier at 1.0
     # TODO(albertz): This cap may need to exist, but should be less brute force. In some
     # edge cases, eg. no one else has sun, this multiplier can be up to 2x.
-    sun_value_multiplier = min(ra_progress / sun_progress, 1.25)
+    sun_value_multiplier = min(ra_progress / sun_progress, 1.0)
 
     sun_modifiers = SUN_MODIFIER_MAPPING[num_players]
     return sum(
