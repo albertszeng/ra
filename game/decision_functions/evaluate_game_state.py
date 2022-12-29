@@ -1,7 +1,10 @@
 from typing import Dict, List, Mapping
 
+from game import info as gi
 from game import scoring_utils as scoring
 from game import state as gs
+
+STARTING_BASE_VALUE_OF_SUN = 6
 
 SUN_MODIFIERS_2P: Mapping[int, float] = {
     1: -2.0,
@@ -108,9 +111,50 @@ def value_usable_sun(game_state: gs.GameState) -> Dict[str, float]:
     """
     Returns the valuation of each player's remaining sun.
     """
-    # TODO(albertz): rethink if we need to value usable sun differently if it's the final round
+    usable_sun_valuations: Dict[str, float] = {}
+    for player_state in game_state.player_states:
+        usable_sun_valuations[
+            player_state.get_player_name()
+        ] = value_one_players_usable_sun(
+            player_state.get_usable_sun(),
+            game_state.get_num_players(),
+            game_state.get_current_num_ras(),
+        )
+    return usable_sun_valuations
 
-    return {"a": 0.0}
+
+def value_one_players_usable_sun(
+    usable_sun: List[int], num_players: int, num_ras_so_far: int
+) -> float:
+    """
+    TODO(albertz): this needs to be much more complex, factoring in both how many
+    opponent suns are left, and also what those opposing suns are.
+
+    TODO(albertz): rethink if we need to value usable sun differently if it's the final round,
+    or whether it's already taken into account if we add unrealized points.
+    """
+    num_usable_sun = len(usable_sun)
+    if num_usable_sun == 0:
+        return 0.0
+    num_starting_sun = len(gi.STARTING_SUN[num_players][0])
+    num_ras_per_round = gi.NUM_RAS_PER_ROUND[num_players]
+
+    # Decrease/Increase value of suns based on progress compared to ra tiles being drawn
+    ra_progress: float = (num_ras_per_round - num_ras_so_far) / num_ras_per_round
+    sun_progress: float = num_usable_sun / num_starting_sun
+
+    # Cap sun_value_multiplier at 1.25
+    # TODO(albertz): This cap may need to exist, but should be less brute force. In some
+    # edge cases, eg. no one else has sun, this multiplier can be up to 2x.
+    sun_value_multiplier = min(ra_progress / sun_progress, 1.25)
+
+    sun_modifiers = SUN_MODIFIER_MAPPING[num_players]
+    return sum(
+        [
+            (STARTING_BASE_VALUE_OF_SUN + sun_modifiers[sun]) * sun_value_multiplier
+            for sun in usable_sun
+        ]
+    )
 
 
 def value_of_unusable_sun(game_state: gs.GameState) -> Dict[str, float]:

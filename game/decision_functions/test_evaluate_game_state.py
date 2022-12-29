@@ -67,6 +67,70 @@ class EvaluateGameStateTest(unittest.TestCase):
         self.assertEqual(unusable_suns_valuations_4["P1"], 0.0)  # No unusable sun
         self.assertEqual(unusable_suns_valuations_4["P2"], -1.5)  # [1, 3]
 
+    def test_value_one_players_usable_sun(self) -> None:
+        usable_sun_0 = [2, 5, 8, 13]
+        self.assert_close_enough(
+            e.value_one_players_usable_sun(usable_sun_0, 3, 0), 24.0
+        )
+
+        usable_sun_1 = [2, 5, 8]
+        self.assert_close_enough(
+            e.value_one_players_usable_sun(usable_sun_1, 3, 2), 16.0
+        )
+        self.assert_close_enough(
+            e.value_one_players_usable_sun(usable_sun_1, 3, 0), 20.0
+        )
+
+        usable_sun_3 = []
+        self.assert_close_enough(
+            e.value_one_players_usable_sun(usable_sun_3, 3, 0), 0.0
+        )
+
+        usable_sun_4 = [7]
+        self.assert_close_enough(
+            e.value_one_players_usable_sun(usable_sun_4, 4, 0), 6 * 1.25
+        )
+        self.assert_close_enough(
+            e.value_one_players_usable_sun(usable_sun_4, 4, 8), 2.0
+        )
+
+    # def test_value_of_usable_sun(self) -> None:
+    #     game_state = gs.GameState(["P1", "P2"])
+
+    #     usable_suns_valuations_1 = e.value_of_usable_sun(game_state)
+    #     self.assertEqual(usable_suns_valuations_1["P1"], 0.0)  # No unusable sun
+    #     self.assertEqual(usable_suns_valuations_1["P2"], 0.0)  # No unusable sun
+
+    #     ra.execute_action_internal(game_state, gi.AUCTION)  # P1
+    #     ra.execute_action_internal(game_state, gi.BID_1)  # P2 bids 3, gets 1
+    #     ra.execute_action_internal(game_state, gi.BID_NOTHING)  # P1
+    #     usable_suns_valuations_2 = e.value_of_usable_sun(game_state)
+    #     self.assertEqual(usable_suns_valuations_2["P1"], 0.0)  # No unusable sun
+    #     self.assertEqual(usable_suns_valuations_2["P2"], -2.0)  # [1]
+
+    #     ra.execute_action_internal(game_state, gi.AUCTION)  # P2
+    #     ra.execute_action_internal(game_state, gi.BID_NOTHING)  # P1
+    #     ra.execute_action_internal(game_state, gi.BID_3)  # P2 bids 8, gets 3
+    #     usable_suns_valuations_3 = e.value_of_usable_sun(game_state)
+    #     self.assertEqual(usable_suns_valuations_3["P1"], 0.0)  # No unusable sun
+    #     self.assertEqual(usable_suns_valuations_3["P2"], -3.0)  # [1, 3]
+
+    #     ra.execute_action_internal(game_state, gi.AUCTION)  # P1
+    #     ra.execute_action_internal(game_state, gi.BID_1)  # P2 bids 4, gets 8
+    #     ra.execute_action_internal(game_state, gi.BID_NOTHING)  # P1
+    #     usable_suns_valuations_4 = e.value_of_usable_sun(game_state)
+    #     self.assertEqual(usable_suns_valuations_4["P1"], 0.0)  # No unusable sun
+    #     self.assertEqual(usable_suns_valuations_4["P2"], -1.5)  # [1, 3]
+
+    def assert_close_enough(self, n: float, m: float, epsilon: float = 0.1) -> None:
+        """
+        Asserts that n and m are within epsilon of each other.
+        """
+        self.assertTrue(
+            abs(n - m) < epsilon,
+            f"values {n} and {m} are not within {epsilon} of each other",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
