@@ -206,7 +206,7 @@ async def list_games(username: str, sid: str) -> routes.ListGamesResponse:
 @login_required
 async def start_game(
     username: str, sid: str, data: routes.StartRequest
-) -> routes.StartResponse:
+) -> routes.Message:
     async def commitGame(
         gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
     ) -> None:
@@ -278,6 +278,8 @@ async def act(
         and command.upper() == "LOAD"
         and (game := await fetchGame(uuid.UUID(gameIdStr)))
     ):
+        if not game.initialized():
+            return routes.WarningMessage(f"Cannot load incomplete game: {gameIdStr}.")
 
         async def fetchLocal(
             gameId: uuid.UUID, _game: routes.RaGame = game

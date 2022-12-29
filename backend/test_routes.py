@@ -217,24 +217,25 @@ class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
 
 
 class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
-    async def test_start_no_players(self) -> None:
+    async def test_start_too_few_players(self) -> None:
         async def commitGame(
             gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
         ) -> None:
             return
 
-        with self.assertRaises(ValueError):
-            await routes.start(
-                routes.StartRequest(playerNames=[]),
-                username="user",
-                commitGame=commitGame,
-            )
-        with self.assertRaises(ValueError):
-            await routes.start(
-                routes.StartRequest(playerNames=["One"]),
-                username="user",
-                commitGame=commitGame,
-            )
+        resp = await routes.start(
+            routes.StartRequest(numPlayers=0),
+            username="user",
+            commitGame=commitGame,
+        )
+        self.assertEqual(resp["level"], "warning")
+
+        resp = await routes.start(
+            routes.StartRequest(numPlayers=1),
+            username="user",
+            commitGame=commitGame,
+        )
+        self.assertEqual(resp["level"], "warning")
 
     async def test_start(self) -> None:
         self.maxDiff = None
@@ -250,7 +251,6 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         response = await routes.start(
             routes.StartRequest(
                 numPlayers=2,
-                playerNames=["Player 1", "Player 2"],
             ),
             username="user",
             commitGame=commitGame,
@@ -263,16 +263,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(storedGameId)
         self.assertIsNotNone(storedGame)
         self.assertEqual(storedVisibility, routes.Visibility.PUBLIC)
-        self.assertEqual(
-            response,
-            routes.StartResponse(
-                gameId=str(storedGameId),
-                gameState=storedGame.serialize(),
-                gameAsStr=routes.get_game_repr(storedGame),
-                username="user",
-                action="Start game.",
-            ),
-        )
+        self.assertEqual(response["level"], "success")
 
 
 class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):

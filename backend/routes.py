@@ -51,7 +51,7 @@ class RaGame(ra.RaGame, mutable.Mutable):
         return True
 
     def add_player(self, username: str) -> bool:
-        if self.is_active():
+        if self.initialized():
             return False
 
         if username in self._player_names:
@@ -61,8 +61,8 @@ class RaGame(ra.RaGame, mutable.Mutable):
             return self._init_game()
         return True
 
-    def is_active(self) -> bool:
-        """Returns true if the game is active and ongoing."""
+    def initialized(self) -> bool:
+        """Returns true if the game has been initialized."""
         return self._initialized
 
     def __getstate__(self) -> Dict[str, str]:
@@ -120,8 +120,6 @@ class LoginResponse(Message):
 
 class StartRequest(TypedDict):
     numPlayers: NotRequired[int]
-    # TODO: Remove. This is for backwards compatibility.
-    playerNames: NotRequired[List[str]]
     visibility: NotRequired[Visibility]
 
 
@@ -177,7 +175,7 @@ async def start(
     request: StartRequest,
     username: str,
     commitGame: Callable[[uuid.UUID, RaGame, Visibility], Awaitable[None]],
-) -> StartResponse:
+) -> Message:
     """Starts a RaGame.
 
     Args:
@@ -187,16 +185,18 @@ async def start(
     Returns:
         Response to client.
     """
+    if (
+        not (numPlayers := request.get("numPlayers"))
+        or numPlayers < info.MIN_NUM_PLAYERS
+    ):
+        return WarningMessage(f"Cannot start a game with {numPlayers} players.")
+
     gameId = uuid.uuid4()
-    game = RaGame(player_names=request.get("playerNames", []))
+    game = RaGame(num_players=numPlayers)
+    if not game.add_player(username):
+        return ErrorMessage("Failed to start game. Internal error.")
     await commitGame(gameId, game, request.get("visibility") or Visibility.PUBLIC)
-    return StartResponse(
-        gameId=str(gameId),
-        gameState=game.serialize(),
-        gameAsStr=get_game_repr(game),
-        username=username,
-        action="Start game.",
-    )
+    return SuccessMessage(f"{username} created game: {gameId}.")
 
 
 async def join(
