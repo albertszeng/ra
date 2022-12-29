@@ -14,24 +14,12 @@ class EvaluateGameStateTest(unittest.TestCase):
         evaluation = e.evaluate_game_state_no_auction_tiles(game.game_state)
         self.assertTrue(evaluation["P1"] == evaluation["P2"])
 
-        legal_actions = ra.get_possible_actions(game.game_state)
-        assert legal_actions is not None, "Game has not ended."
-        game.execute_action(gi.DRAW, legal_actions, gi.INDEX_OF_GOLD)  # P1
-        legal_actions = ra.get_possible_actions(game.game_state)
-        assert legal_actions is not None, "Game has not ended."
-        game.execute_action(gi.DRAW, legal_actions, gi.INDEX_OF_GOLD)  # P2
-        legal_actions = ra.get_possible_actions(game.game_state)
-        assert legal_actions is not None, "Game has not ended."
-        game.execute_action(gi.DRAW, legal_actions, gi.INDEX_OF_GOLD)  # P1
-        legal_actions = ra.get_possible_actions(game.game_state)
-        assert legal_actions is not None, "Game has not ended."
-        game.execute_action(gi.AUCTION, legal_actions)  # P2
-        legal_actions = ra.get_possible_actions(game.game_state)
-        assert legal_actions is not None, "Game has not ended."
-        game.execute_action(gi.BID_4, legal_actions)  # P1  # bid highest
-        legal_actions = ra.get_possible_actions(game.game_state)
-        assert legal_actions is not None, "Game has not ended."
-        game.execute_action(gi.BID_NOTHING, legal_actions)  # P2  # bid nothing
+        game.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P1
+        game.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P2
+        game.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P1
+        game.execute_action(gi.AUCTION)  # P2
+        game.execute_action(gi.BID_4)  # P1  # bid highest
+        game.execute_action(gi.BID_NOTHING)  # P2  # bid nothing
 
         evaluation2 = e.evaluate_game_state_no_auction_tiles(game.game_state)
         self.assertTrue(evaluation2["P1"] > evaluation2["P2"])
