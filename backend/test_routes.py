@@ -218,7 +218,9 @@ class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
 
 class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
     async def test_start_no_players(self) -> None:
-        async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+        async def commitGame(
+            gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
+        ) -> None:
             return
 
         with self.assertRaises(ValueError):
@@ -238,9 +240,12 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         self.maxDiff = None
         storage: Dict[str, Any] = {}
 
-        async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+        async def commitGame(
+            gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
+        ) -> None:
             storage["gameId"] = gameId
             storage["game"] = game
+            storage["visibility"] = visibility
 
         response = await routes.start(
             routes.StartRequest(
@@ -250,9 +255,14 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
             username="user",
             commitGame=commitGame,
         )
-        storedGameId, storedGame = storage.get("gameId"), storage.get("game")
+        storedGameId, storedGame, storedVisibility = (
+            storage.get("gameId"),
+            storage.get("game"),
+            storage.get("visibility"),
+        )
         self.assertIsNotNone(storedGameId)
         self.assertIsNotNone(storedGame)
+        self.assertEqual(storedVisibility, routes.Visibility.PUBLIC)
         self.assertEqual(
             response,
             routes.StartResponse(

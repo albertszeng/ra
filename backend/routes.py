@@ -1,4 +1,5 @@
 import datetime as datetime_lib
+import enum
 import uuid
 from datetime import datetime
 from typing import (
@@ -18,6 +19,12 @@ from sqlalchemy.ext import mutable
 from typing_extensions import NotRequired, TypedDict
 
 from game import info, ra
+
+
+@enum.unique
+class Visibility(enum.Enum):
+    PUBLIC = 1
+    PRIVATE = 2
 
 
 class RaGame(ra.RaGame, mutable.Mutable):
@@ -85,6 +92,11 @@ def SuccessMessage(message: str) -> Message:
     return Message(level="success", message=message)
 
 
+class ActionRequest(TypedDict):
+    gameId: NotRequired[str]
+    command: NotRequired[str]
+
+
 class ActionResponse(TypedDict):
     gameAsStr: str
     gameState: ra.SerializedRaGame
@@ -110,6 +122,7 @@ class StartRequest(TypedDict):
     numPlayers: NotRequired[int]
     # TODO: Remove. This is for backwards compatibility.
     playerNames: NotRequired[List[str]]
+    visibility: NotRequired[Visibility]
 
 
 class StartResponse(ActionResponse):
@@ -124,11 +137,6 @@ class JoinSessionSuccess(TypedDict):
     gameId: str
     playerName: str
     playerIdx: NotRequired[int]
-
-
-class ActionRequest(TypedDict):
-    gameId: NotRequired[str]
-    command: NotRequired[str]
 
 
 class DeleteRequest(TypedDict):
@@ -168,7 +176,7 @@ def list(dbGames: Sequence[Tuple[uuid.UUID, ra.RaGame]]) -> ListGamesResponse:
 async def start(
     request: StartRequest,
     username: str,
-    commitGame: Callable[[uuid.UUID, RaGame], Awaitable[None]],
+    commitGame: Callable[[uuid.UUID, RaGame, Visibility], Awaitable[None]],
 ) -> StartResponse:
     """Starts a RaGame.
 
@@ -181,7 +189,7 @@ async def start(
     """
     gameId = uuid.uuid4()
     game = RaGame(player_names=request.get("playerNames", []))
-    await commitGame(gameId, game)
+    await commitGame(gameId, game, request.get("visibility") or Visibility.PUBLIC)
     return StartResponse(
         gameId=str(gameId),
         gameState=game.serialize(),

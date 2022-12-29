@@ -44,6 +44,11 @@ class Game(db.Model):  # pyre-ignore[11]
     # We use the uuid.hex property, which is 32-char string.
     # pyre-ignore[11]
     id: db.Column = db.Column(db.String(32), primary_key=True)
+
+    # Visibility for the game. Public games are listed to everyone.
+    # Private games must be joined with the gameId.
+    visibility: db.Column = db.Column(db.Enum(routes.Visibility), nullable=False)
+
     # This is a pickle-d version of the game so we can restore state.
     data: db.Column = db.Column(db.PickleType, nullable=False)
 
@@ -202,10 +207,14 @@ async def list_games(username: str, sid: str) -> routes.ListGamesResponse:
 async def start_game(
     username: str, sid: str, data: routes.StartRequest
 ) -> routes.StartResponse:
-    async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+    async def commitGame(
+        gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
+    ) -> None:
         async with app.app_context():
             # Add game to database.
-            dbGame = Game(id=gameId.hex, data=game)  # pyre-ignore[28]
+            dbGame = Game(  # pyre-ignore[28]
+                id=gameId.hex, data=game, visibility=visibility
+            )
             db.session.add(dbGame)
             db.session.commit()
 
