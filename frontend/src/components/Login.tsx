@@ -48,20 +48,20 @@ function Login({ onLoginSuccess, setAlert }: LoginProps): JSX.Element {
     }
     socket.emit('login', { username: user, password });
   }, [user, password, setAlert]);
-
-  useEffect(() => {
-    socket.on('login', ({
-      token, username, message, level,
-    }: LoginResponse) => {
-      if (token && username) {
-        onLoginSuccess({ token, username });
-      }
-      setAlert({ show: true, message: message || 'Unknown', level });
-    });
-    return () => {
-      socket.off('login');
-    };
+  const onLogin = useCallback(({
+    token, username, message, level,
+  }: LoginResponse) => {
+    if (token && username) {
+      onLoginSuccess({ token, username });
+    }
+    setAlert({ show: true, message: message || 'Unknown', level });
   }, [onLoginSuccess, setAlert]);
+  useEffect(() => {
+    socket.on('login', onLogin);
+    return () => {
+      socket.off('login', onLogin);
+    };
+  }, [onLogin]);
   return (
     <form>
       <Container disableGutters>

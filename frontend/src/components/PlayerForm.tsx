@@ -59,28 +59,29 @@ function PlayerForm({
   const [gameOrPlayers, setGameOrPlayers] = useState<string>('');
   const [formValid, setFormValid] = useState(false);
   const [gameList, setGameList] = useState<ListGame[]>([]);
-
+  const onListGames = useCallback(({ games } : ListGamesResponse) => {
+    setGameList(games);
+  }, []);
+  const onDelete = useCallback(({ message, level }: MessageResponse) => {
+    setAlert({ show: true, message, level });
+    if (level === 'success') {
+      setGameOrPlayers('');
+      socket.emit('list_games');
+    }
+  }, [setAlert]);
   useEffect(() => {
-    socket.on('list_games', ({ games } : ListGamesResponse) => {
-      setGameList(games);
-    });
+    socket.on('list_games', onListGames);
     socket.emit('list_games');
     return () => {
-      socket.off('list_games');
+      socket.off('list_games', onListGames);
     };
-  }, []);
+  }, [setAlert, onListGames]);
   useEffect(() => {
-    socket.on('delete', ({ message, level }: MessageResponse) => {
-      setAlert({ show: true, message, level });
-      if (level === 'success') {
-        setGameOrPlayers('');
-        socket.emit('list_games');
-      }
-    });
+    socket.on('delete', onDelete);
     return () => {
-      socket.off('delete');
+      socket.off('delete', onDelete);
     };
-  }, [setAlert]);
+  }, [onDelete]);
 
   const handleChange = useCallback((
     e: SyntheticEvent<Element, Event>,

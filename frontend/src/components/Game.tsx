@@ -98,14 +98,6 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
     socket.emit('act', request);
   }, [gameId, swapInfo, setAlert]);
 
-  const resetGame = useCallback(() => {
-    setIsPlaying(false);
-    setGameId('');
-    window.localStorage.setItem(GAME_STATE_KEY, '{}');
-    // Let the server know we've left the game.
-    socket.emit('leave', { gameId } as JoinLeaveRequest);
-  }, [gameId]);
-
   useEffect(() => {
     // When the gameId changes, store in local storage.
     if (gameId) {
@@ -123,80 +115,95 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
   }, [handleLoadGame]);
   const [timestampMs, setTimestampMs] = useState(Date.now());
   const AIUIDelayMs = 2000;
-  useEffect(() => {
-    socket.on('disconnect', () => {
-      resetGame();
-    });
-    return () => {
-      socket.off('disconnect');
-    };
-  }, [resetGame]);
-  useEffect(() => {
-    socket.on('start_game', ({ gameId: id, gameState: state } : StartResponse) => {
-      setIsPlaying(true);
-      setGameId(id);
-      setGame((prevGame: GameState) => ({ ...prevGame, ...state }));
-      // Let the server know we've joined.
-      socket.emit('join', { gameId: id } as JoinLeaveRequest);
-    });
-    return () => {
-      socket.off('start_game');
-    };
+
+  const onReset = useCallback(() => {
+    setIsPlaying(false);
+    setGameId('');
+    window.localStorage.setItem(GAME_STATE_KEY, '{}');
+    // Let the server know we've left the game.
+    socket.emit('leave', { gameId } as JoinLeaveRequest);
+  }, [gameId]);
+  const onConnect = useCallback(() => {
+    if (gameId) {
+      // Join game if one is available.
+      socket.emit('join', { gameId } as JoinLeaveRequest);
+    }
+  }, [gameId]);
+  const onStartGame = useCallback(() => ({ gameId: id, gameState: state } : StartResponse) => {
+    setIsPlaying(true);
+    setGameId(id);
+    setGame((prevGame: GameState) => ({ ...prevGame, ...state }));
+    // Let the server know we've joined.
+    socket.emit('join', { gameId: id } as JoinLeaveRequest);
   }, []);
-  useEffect(() => {
-    socket.on('update', ({
-      level, message, gameState, action, username, gameId: remoteGameId,
-    }: ApiResponse) => {
-      const now = Date.now();
-      if (now >= timestampMs + AIUIDelayMs) {
-        setTimestampMs(now);
-        if (message || level || !gameState) {
-          setAlert({ show: true, message: message || 'Unknown error.', level });
-          return;
-        }
-        if (remoteGameId) {
-          setGameId(remoteGameId);
-        }
-        setIsPlaying(true);
-        setSwapInfo([false, -1]); // Reset swap info.
-        setGame(gameState);
-        setAlert({ show: true, message: `${username} performed action: ${action}`, level: 'info' });
-      } else {
-        // Increase timestamp so next action happens at at least this delay.
-        setTimestampMs((prev) => prev + AIUIDelayMs);
-        // Need to enqueue the action to execute later.
-        setTimeout(() => {
-          if (message || level || !gameState) {
-            setAlert({ show: true, message: message || 'Unknown error.', level });
-            return;
-          }
-          if (remoteGameId) {
-            setGameId(remoteGameId);
-          }
-          setIsPlaying(true);
-          setSwapInfo([false, -1]); // Reset swap info.
-          setGame(gameState);
-          setAlert({ show: true, message: `${username} performed action: ${action}`, level: 'info' });
-        }, (timestampMs + AIUIDelayMs) - now);
-      }
-    });
-    return () => {
-      socket.off('update');
-    };
-  }, [setAlert, timestampMs]);
-  useEffect(() => {
-    socket.on('spectate', () => {
-      setAlert({
-        show: true,
-        message: 'In Spectator Mode',
-        level: 'success',
-        permanent: true,
-      });
-    });
-    return () => {
-      socket.off('spectate');
-    };
+  const updateGame = useCallback(({
+    level, message, gameState, action, username, gameId: remoteGameId,
+  }: ApiResponse) => {
+    if (message || level || !gameState) {
+      setAlert({ show: true, message: message || 'Unknown error.', level });
+      return;
+    }
+    if (remoteGameId) {
+      setGameId(remoteGameId);
+    }
+    setIsPlaying(true);
+    setSwapInfo([false, -1]); // Reset swap info.
+    setGame(gameState);
+    setAlert({ show: true, message: `${username} performed action: ${action}`, level: 'info' });
   }, [setAlert]);
+  const onUpdateGame = useCallback((resp: ApiResponse) => {
+    const now = Date.now();
+    if (now >= timestampMs + AIUIDelayMs) {
+      setTimestampMs(now);
+      updateGame(resp);
+    } else {
+      // Increase timestamp so next action happens at at least this delay.
+      setTimestampMs((prev) => prev + AIUIDelayMs);
+      // Need to enqueue the action to execute later.
+      setTimeout(() => updateGame(resp), (timestampMs + AIUIDelayMs) - now);
+    }
+  }, [updateGame, timestampMs]);
+  const onSpectate = useCallback(() => {
+    setAlert({
+      show: true,
+      message: 'In Spectator Mode',
+      level: 'success',
+      permanent: true,
+    });
+  }, [setAlert]);
+
+  useEffect(() => {
+    socket.on('connect', onConnect);
+    return () => {
+      socket.off('connect', onConnect);
+    };
+  }, [onConnect]);
+  useEffect(() => {
+    socket.on('disconnect', onReset);
+    socket.on('logout', onReset);
+    return () => {
+      socket.off('logout', onReset);
+      socket.off('disconnect', onReset);
+    };
+  }, [onReset]);
+  useEffect(() => {
+    socket.on('start_game', onStartGame);
+    return () => {
+      socket.off('start_game', onStartGame);
+    };
+  }, [onStartGame]);
+  useEffect(() => {
+    socket.on('update', onUpdateGame);
+    return () => {
+      socket.off('update', onUpdateGame);
+    };
+  }, [onUpdateGame]);
+  useEffect(() => {
+    socket.on('spectate', onSpectate);
+    return () => {
+      socket.off('spectate', onSpectate);
+    };
+  }, [onSpectate]);
 
   const { auctionTileValues, unrealizedPoints, gameState } = game;
   const {
@@ -205,7 +212,7 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
   } = gameState;
   return (
     <Container disableGutters>
-      {gameEnded ? <EndInfo resetGame={resetGame} /> : <div /> }
+      {gameEnded ? <EndInfo resetGame={onReset} /> : <div /> }
       {(!gameEnded && isPlaying) ? (
         <Grid container spacing={{ xs: 2, md: 3 }}>
           <Grid xs={12}>
@@ -232,7 +239,7 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
                   onDraw: handleDraw,
                   onAuction: handleAuction,
                   disabled: gameEnded || !isPlaying,
-                  resetGame,
+                  resetGame: onReset,
                   pointsIfWin: null,
                 }}
               />

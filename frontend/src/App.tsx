@@ -62,21 +62,22 @@ function App() {
     }),
     [mode],
   );
+  const onLogout = useCallback(({ message, level }: MessageResponse) => {
+    setLoggedIn(false);
+    setPlayerName('');
+    localStorage.removeItem(TOKEN_KEY);
+    setAlertData({ show: true, message, level });
+  }, []);
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (token) {
       socket.emit('login', { token });
     }
-    socket.on('logout', ({ message, level }: MessageResponse) => {
-      setLoggedIn(false);
-      setPlayerName('');
-      localStorage.removeItem(TOKEN_KEY);
-      setAlertData({ show: true, message, level });
-    });
+    socket.on('logout', onLogout);
     return () => {
-      socket.off('logout');
+      socket.off('logout', onLogout);
     };
-  }, []);
+  }, [onLogout]);
   const onLoginSuccess = useCallback(({ username, token }: LoginSuccess) => {
     setLoggedIn(true);
     setPlayerName(username);
@@ -98,7 +99,7 @@ function App() {
                 Logout
               </Button>
             ) : null}
-            <Header />
+            <Header name={username}/>
             <IconButton onClick={colorMode.toggleColorMode} color="inherit">
               {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
