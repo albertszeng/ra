@@ -106,7 +106,7 @@ async def _join_room(
             logger.info(
                 "Client %s (%s) SPECTATING room: %s", sid, playerName, gameIdStr
             )
-        await sio.emit("spectate", room=sid)
+        await sio.emit("spectate", True, room=sid)
         sio.enter_room(sid, gameIdStr)
         return data
 
@@ -115,6 +115,7 @@ async def _join_room(
         session["gameId"] = gameIdStr
         session["playerIdx"] = playerIdx
         session["playerName"] = playerName
+    await sio.emit("spectate", False, room=sid)
     if _C.DEBUG:
         logger.info("Client %s (%s) JOINED room: %s", sid, playerName, gameIdStr)
     return data
@@ -276,7 +277,6 @@ async def act(
             assert _game is not None
             return _game
 
-        # breakpoint()
         resp = await routes.join(
             username,
             request=routes.JoinLeaveRequest(gameId=gameIdStr),
