@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List, Mapping
 
 from game import scoring_utils as scoring
 from game import state as gs
@@ -123,18 +123,16 @@ def value_of_unusable_sun(game_state: gs.GameState) -> Dict[str, float]:
         # account by the unrealized points
         return {name: 0.0 for name in game_state.get_player_names()}
 
-    sun_modifiers = SUN_MODIFIER_MAPPING[game_state.get_num_players()]
     unusable_sun_valuations: Dict[str, float] = {}
     for player_state in game_state.player_states:
-        player_name = player_state.get_player_name()
-        player_suns = player_state.get_unusable_sun()
-
-        unusable_sun_valuations[player_name] = sum(
-            [sun_modifiers[sun] for sun in player_suns]
+        unusable_sun_valuations[
+            player_state.get_player_name()
+        ] = value_one_players_unusable_sun(
+            player_state.get_unusable_sun(), game_state.get_num_players()
         )
-    return {"a": 0.0}
+    return unusable_sun_valuations
 
 
-def value_one_players_unusable_sun(unusable_sun: List[str], num_players) -> float:
+def value_one_players_unusable_sun(unusable_sun: List[int], num_players: int) -> float:
     sun_modifiers = SUN_MODIFIER_MAPPING[num_players]
     return sum([sun_modifiers[sun] for sun in unusable_sun])
