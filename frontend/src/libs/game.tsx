@@ -1,5 +1,3 @@
-import { WarningLevel } from '../common';
-
 const DefaultPlayer: Player = {
   collection: [],
   points: 0,
@@ -126,19 +124,11 @@ const DefaultGame: Game = {
   auctionTileValues: {},
 };
 
-type AlertData = {
-  show: boolean;
-  message: string;
-  level?: WarningLevel;
-  permanent?: boolean;
-};
-
 function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
 export type {
-  AlertData,
   Game,
   GameState,
   Player,

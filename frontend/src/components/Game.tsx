@@ -5,6 +5,7 @@ import {
   Container,
   Paper,
 } from '@mui/material';
+import { enqueueSnackbar } from 'notistack';
 
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
@@ -17,7 +18,6 @@ import {
   getTileAction,
 } from '../libs/game';
 import type {
-  AlertData,
   Game as GameState,
   Player,
   Tile,
@@ -32,12 +32,10 @@ import type {
 } from '../libs/request';
 
 type GameProps = {
-  // Sets an alert at the highest level.
-  setAlert: (alert: AlertData) => void;
   playerName: string;
 };
 
-function Game({ playerName, setAlert }: GameProps): JSX.Element {
+function Game({ playerName }: GameProps): JSX.Element {
   const GAME_STATE_KEY = 'LOCAL_GAME_STATE';
   const [game, setGame] = useState<GameState>(DefaultGame);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -73,30 +71,30 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
   const handleSelectCardFromGrid = useCallback((idx: number, { name: tileName }: Tile) => {
     const [shouldSwap/* swapIdx */] = swapInfo;
     if (!shouldSwap) {
-      setAlert({ show: true, message: `Click your Golden God to atttempt a swap for ${tileName}.`, level: 'info' });
+      enqueueSnackbar(`Click your Golden God to atttempt a swap for ${tileName}.`, { variant: 'info' });
       setSwapInfo([shouldSwap, idx]);
       return;
     }
     const request: ActionRequest = { gameId, command: `G${idx + 1}` };
     socket.emit('act', request);
-  }, [gameId, swapInfo, setAlert]);
+  }, [gameId, swapInfo]);
   const handlePlayerSelectTile = useCallback((player: Player, tile: Tile) => {
     let action = getTileAction(tile);
     if (!action) {
-      setAlert({ show: true, message: `${tile.name} is not play-able.`, level: 'warning' });
+      enqueueSnackbar(`${tile.name} is not play-able.`, { variant: 'warning' });
       return;
     }
     if (action === 'SWAP') {
       const [/* shouldSwap */, swapIdx] = swapInfo;
       if (swapIdx < 0) {
-        setAlert({ show: true, message: 'Click the card you wish to swap for your Golden God', level: 'info' });
+        enqueueSnackbar('Click the card you wish to swap for your Golden God', { variant: 'info' });
         return;
       }
       action = `G${swapIdx + 1}`;
     }
     const request: ActionRequest = { gameId, command: action };
     socket.emit('act', request);
-  }, [gameId, swapInfo, setAlert]);
+  }, [gameId, swapInfo]);
 
   useEffect(() => {
     // When the gameId changes, store in local storage.
@@ -129,7 +127,7 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
       socket.emit('join', { gameId } as JoinLeaveRequest);
     }
   }, [gameId]);
-  const onStartGame = useCallback(() => ({ gameId: id, gameState: state } : StartResponse) => {
+  const onStartGame = useCallback(({ gameId: id, gameState: state } : StartResponse) => {
     setIsPlaying(true);
     setGameId(id);
     setGame((prevGame: GameState) => ({ ...prevGame, ...state }));
@@ -140,7 +138,7 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
     level, message, gameState, action, username, gameId: remoteGameId,
   }: ApiResponse) => {
     if (message || level || !gameState) {
-      setAlert({ show: true, message: message || 'Unknown error.', level });
+      enqueueSnackbar(message || 'Unknown error.', { variant: level });
       return;
     }
     if (remoteGameId) {
@@ -149,8 +147,8 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
     setIsPlaying(true);
     setSwapInfo([false, -1]); // Reset swap info.
     setGame(gameState);
-    setAlert({ show: true, message: `${username} performed action: ${action}`, level: 'info' });
-  }, [setAlert]);
+    enqueueSnackbar(`${username} performed action: ${action}`, { variant: 'info' });
+  }, []);
   const onUpdateGame = useCallback((resp: ApiResponse) => {
     const now = Date.now();
     if (now >= timestampMs + AIUIDelayMs) {
@@ -163,14 +161,11 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
       setTimeout(() => updateGame(resp), (timestampMs + AIUIDelayMs) - now);
     }
   }, [updateGame, timestampMs]);
-  const onSpectate = useCallback(() => {
-    setAlert({
-      show: true,
-      message: 'In Spectator Mode',
-      level: 'success',
-      permanent: true,
-    });
-  }, [setAlert]);
+  const onSpectate = useCallback((isSpectating: boolean) => {
+    if (isSpectating) {
+      enqueueSnackbar('In Spectator Mode', { variant: 'success', persist: true });
+    }
+  }, []);
 
   useEffect(() => {
     socket.on('connect', onConnect);
@@ -180,10 +175,14 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
   }, [onConnect]);
   useEffect(() => {
     socket.on('disconnect', onReset);
+    return () => {
+      socket.off('disconnect', onReset);
+    };
+  }, [onReset]);
+  useEffect(() => {
     socket.on('logout', onReset);
     return () => {
       socket.off('logout', onReset);
-      socket.off('disconnect', onReset);
     };
   }, [onReset]);
   useEffect(() => {
@@ -251,7 +250,6 @@ function Game({ playerName, setAlert }: GameProps): JSX.Element {
           handleNewGame={handleNewGame}
           handleLoadGame={handleLoadGame}
           handleDeleteGame={handleDeleteGame}
-          setAlert={setAlert}
         />
       )}
     </Container>

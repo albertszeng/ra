@@ -24,7 +24,10 @@ function Header({ name }: HeaderProps) {
       </Grid>
       <Grid display="flex" justifyContent="center" alignItems="center" xs={7}>
         <Typography variant={(matchDownSm) ? 'h3' : 'h2'}>
-          <b>Ra{(name) ? ` - ${name}` : ''}</b>
+          <b>
+            Ra
+            {(name) ? ` - ${name}` : ''}
+          </b>
         </Typography>
       </Grid>
       <Grid display="flex" justifyContent="left" alignItems="left" xs={2}>

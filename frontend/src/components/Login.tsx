@@ -15,20 +15,18 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
-
 import { AccountCircle, Visibility, VisibilityOff } from '@mui/icons-material';
+import { enqueueSnackbar } from 'notistack';
 
 import { socket } from '../common';
-import type { AlertData } from '../libs/game';
 import type { LoginResponse, LoginSuccess } from '../libs/request';
 
 type LoginProps = {
   // Called on successful login.
   onLoginSuccess: (data: LoginSuccess) => void;
-  setAlert: (alert: AlertData) => void;
 };
 
-function Login({ onLoginSuccess, setAlert }: LoginProps): JSX.Element {
+function Login({ onLoginSuccess }: LoginProps): JSX.Element {
   const [user, setUser] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -39,23 +37,23 @@ function Login({ onLoginSuccess, setAlert }: LoginProps): JSX.Element {
 
   const handleSubmit = useCallback(() => {
     if (user.length < 3) {
-      setAlert({ show: true, message: 'Username too short. Must be at least 3 characters.', level: 'info' });
+      enqueueSnackbar('Username too short. Must be at least 3 characters.', { variant: 'info' });
       return;
     }
     if (password.length < 4) {
-      setAlert({ show: true, message: 'Password too short. Must be at least 4 characters.', level: 'info' });
+      enqueueSnackbar('Password too short. Must be at least 4 characters.', { variant: 'info' });
       return;
     }
     socket.emit('login', { username: user, password });
-  }, [user, password, setAlert]);
+  }, [user, password]);
   const onLogin = useCallback(({
     token, username, message, level,
   }: LoginResponse) => {
     if (token && username) {
       onLoginSuccess({ token, username });
     }
-    setAlert({ show: true, message: message || 'Unknown', level });
-  }, [onLoginSuccess, setAlert]);
+    enqueueSnackbar(message || 'Unknown', { variant: level });
+  }, [onLoginSuccess]);
   useEffect(() => {
     socket.on('login', onLogin);
     return () => {

@@ -2,6 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import TagManager from 'react-gtm-module';
 
+import { closeSnackbar, SnackbarProvider } from 'notistack';
+
+import { IconButton } from '@mui/material';
+import { Delete } from '@mui/icons-material';
+
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
@@ -16,7 +21,21 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <App />
+    <SnackbarProvider
+      preventDuplicate
+      autoHideDuration={5000}
+      maxSnack={3}
+      action={(snackbarId) => (
+        <IconButton
+          aria-label="delete"
+          onClick={() => closeSnackbar(snackbarId)}
+        >
+          <Delete />
+        </IconButton>
+      )}
+    >
+      <App />
+    </SnackbarProvider>
   </React.StrictMode>,
 );
 

@@ -17,15 +17,15 @@ import {
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Grid from '@mui/material/Unstable_Grid2';
+import { closeSnackbar, enqueueSnackbar } from 'notistack';
+import type { SnackbarKey } from 'notistack';
 
 import { socket, ColorModeContext } from './common';
 import './App.css';
-import AlertModal from './components/AlertModal';
 import Game from './components/Game';
 import Header from './components/Header';
 import Login from './components/Login';
 
-import type { AlertData } from './libs/game';
 import type { LoginSuccess, MessageResponse } from './libs/request';
 
 const MODE_KEY = 'preferredTheme';
@@ -39,9 +39,8 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   // Only valid when logged in.
   const [playerName, setPlayerName] = useState('');
-  const [alertData, setAlertData] = useState<AlertData>(
-    { show: false, message: '', level: 'info' },
-  );
+  // Gets set to a snackbar id when we lose connection.
+  const [connAlert, setConnAlert] = useState<SnackbarKey | null>(null);
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
@@ -66,8 +65,26 @@ function App() {
     setLoggedIn(false);
     setPlayerName('');
     localStorage.removeItem(TOKEN_KEY);
-    setAlertData({ show: true, message, level });
+    enqueueSnackbar(message, { variant: level });
   }, []);
+  const onDisconnect = useCallback(() => {
+    const id = enqueueSnackbar('Disconnected', { variant: 'error', persist: true });
+    setConnAlert(id);
+  }, []);
+  const onConnect = useCallback(() => {
+    if (connAlert) {
+      closeSnackbar(connAlert);
+      setConnAlert(null);
+    }
+  }, [connAlert]);
+  useEffect(() => {
+    socket.on('disconnect', onDisconnect);
+    socket.on('connect', onConnect);
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+    };
+  }, [onConnect, onDisconnect]);
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (token) {
@@ -99,7 +116,7 @@ function App() {
                 Logout
               </Button>
             ) : null}
-            <Header name={username}/>
+            <Header name={playerName} />
             <IconButton onClick={colorMode.toggleColorMode} color="inherit">
               {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
@@ -113,16 +130,11 @@ function App() {
                 ? (
                   <Game
                     playerName={playerName}
-                    setAlert={setAlertData}
                   />
                 )
-                : <Login setAlert={setAlertData} onLoginSuccess={onLoginSuccess} />}
+                : <Login onLoginSuccess={onLoginSuccess} />}
             </Grid>
           </Grid>
-          <AlertModal
-            alert={alertData}
-            setAlert={setAlertData}
-          />
         </Container>
       </ThemeProvider>
     </ColorModeContext.Provider>

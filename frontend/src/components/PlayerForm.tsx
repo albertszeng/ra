@@ -16,8 +16,9 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 
+import { enqueueSnackbar } from 'notistack';
+
 import { socket } from '../common';
-import type { AlertData } from '../libs/game';
 import type {
   MessageResponse,
   ListGame,
@@ -28,7 +29,6 @@ type PlayerFormProps = {
   handleNewGame: (players: string[]) => void;
   handleLoadGame: (gameId: string) => void;
   handleDeleteGame: (gameId: string) => void;
-  setAlert: (alert: AlertData) => void;
 };
 
 function isPlayerNames(input: string): boolean {
@@ -54,7 +54,7 @@ function isValid(input: string): boolean {
 }
 
 function PlayerForm({
-  handleNewGame, handleLoadGame, handleDeleteGame, setAlert,
+  handleNewGame, handleLoadGame, handleDeleteGame,
 }: PlayerFormProps): JSX.Element {
   const [gameOrPlayers, setGameOrPlayers] = useState<string>('');
   const [formValid, setFormValid] = useState(false);
@@ -63,19 +63,19 @@ function PlayerForm({
     setGameList(games);
   }, []);
   const onDelete = useCallback(({ message, level }: MessageResponse) => {
-    setAlert({ show: true, message, level });
+    enqueueSnackbar(message, { variant: level });
     if (level === 'success') {
       setGameOrPlayers('');
       socket.emit('list_games');
     }
-  }, [setAlert]);
+  }, []);
   useEffect(() => {
     socket.on('list_games', onListGames);
     socket.emit('list_games');
     return () => {
       socket.off('list_games', onListGames);
     };
-  }, [setAlert, onListGames]);
+  }, [onListGames]);
   useEffect(() => {
     socket.on('delete', onDelete);
     return () => {
@@ -104,11 +104,11 @@ function PlayerForm({
   }, [gameOrPlayers, handleLoadGame, handleNewGame]);
   const handleDelete = useCallback(() => {
     if (!isGameId(gameOrPlayers)) {
-      setAlert({ show: true, message: 'Invalid game id.', level: 'warning' });
+      enqueueSnackbar('Invalid game id.', { variant: 'warning' });
       return;
     }
     handleDeleteGame(gameOrPlayers);
-  }, [gameOrPlayers, setAlert, handleDeleteGame]);
+  }, [gameOrPlayers, handleDeleteGame]);
   const tooltipText = 'Enter comma-seperated list of players or the Game ID of an existing game.';
   return (
     <Paper elevation={1}>
