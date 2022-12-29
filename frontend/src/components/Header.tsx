@@ -10,7 +10,10 @@ import Grid from '@mui/material/Unstable_Grid2';
 import sword from '../images/sword_01.png';
 import shield from '../images/wooden_shield.png';
 
-function Header() {
+type HeaderProps = {
+  name: string;
+};
+function Header({ name }: HeaderProps) {
   const theme = useTheme();
   const matchDownSm = useMediaQuery(theme.breakpoints.down('md'));
   const iconSize = `${(matchDownSm) ? 40 : 70}px`;
@@ -21,7 +24,10 @@ function Header() {
       </Grid>
       <Grid display="flex" justifyContent="center" alignItems="center" xs={7}>
         <Typography variant={(matchDownSm) ? 'h3' : 'h2'}>
-          <b>Ra</b>
+          <b>
+            Ra
+            {(name) ? ` - ${name}` : ''}
+          </b>
         </Typography>
       </Grid>
       <Grid display="flex" justifyContent="left" alignItems="left" xs={2}>

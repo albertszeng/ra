@@ -506,7 +506,10 @@ def execute_action_internal(  # noqa: C901
 
 
 class RaGame:
-    """Core logic for a game of Ra. Essentially just a class that allows the game to be played."""
+    """
+    Core logic for a game of Ra. Essentially just a class that allows the  game
+    to be played.
+    """
 
     num_players: int
     outfile: Optional[str]

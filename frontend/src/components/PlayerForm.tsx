@@ -16,14 +16,19 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 
+import { enqueueSnackbar } from 'notistack';
+
 import { socket } from '../common';
-import { deleteGame } from '../libs/game';
-import type { AlertData, ListGame, ListGamesResponse } from '../libs/game';
+import type {
+  MessageResponse,
+  ListGame,
+  ListGamesResponse,
+} from '../libs/request';
 
 type PlayerFormProps = {
-  handleNewGame: (players: string[], user: string) => void;
-  handleLoadGame: (gameId: string, user: string) => void;
-  setAlert: (alert: AlertData) => void;
+  handleNewGame: (players: string[]) => void;
+  handleLoadGame: (gameId: string) => void;
+  handleDeleteGame: (gameId: string) => void;
 };
 
 function isPlayerNames(input: string): boolean {
@@ -49,22 +54,34 @@ function isValid(input: string): boolean {
 }
 
 function PlayerForm({
-  handleNewGame, handleLoadGame, setAlert,
+  handleNewGame, handleLoadGame, handleDeleteGame,
 }: PlayerFormProps): JSX.Element {
   const [gameOrPlayers, setGameOrPlayers] = useState<string>('');
-  const [user, setUser] = useState<string | null>(null);
   const [formValid, setFormValid] = useState(false);
   const [gameList, setGameList] = useState<ListGame[]>([]);
-
+  const onListGames = useCallback(({ games } : ListGamesResponse) => {
+    setGameList(games);
+  }, []);
+  const onDelete = useCallback(({ message, level }: MessageResponse) => {
+    enqueueSnackbar(message, { variant: level });
+    if (level === 'success') {
+      setGameOrPlayers('');
+      socket.emit('list_games');
+    }
+  }, []);
   useEffect(() => {
-    socket.on('list_games', ({ games } : ListGamesResponse) => {
-      setGameList(games);
-    });
+    socket.on('list_games', onListGames);
     socket.emit('list_games');
     return () => {
-      socket.off('list_games');
+      socket.off('list_games', onListGames);
     };
-  }, []);
+  }, [onListGames]);
+  useEffect(() => {
+    socket.on('delete', onDelete);
+    return () => {
+      socket.off('delete', onDelete);
+    };
+  }, [onDelete]);
 
   const handleChange = useCallback((
     e: SyntheticEvent<Element, Event>,
@@ -77,47 +94,21 @@ function PlayerForm({
     setGameOrPlayers(value);
   }, []);
   const handleSubmit = useCallback(() => {
-    if (!user) {
-      setAlert({ show: true, message: 'No user specified!', level: 'warning' });
-      return;
-    }
     if (gameOrPlayers.includes(',')) {
       // Players, start a new game.
-      handleNewGame(gameOrPlayers.split(','), user);
+      handleNewGame(gameOrPlayers.split(','));
       return;
     }
     // Game id, start load it.
-    handleLoadGame(gameOrPlayers, user);
-  }, [gameOrPlayers, handleLoadGame, handleNewGame, setAlert, user]);
+    handleLoadGame(gameOrPlayers);
+  }, [gameOrPlayers, handleLoadGame, handleNewGame]);
   const handleDelete = useCallback(() => {
-    const remoteDelete = async () => {
-      const { message, level } = await deleteGame(gameOrPlayers);
-      if (message || level) {
-        setAlert({ show: true, message: message || 'Empty response.', level });
-      }
-      setGameOrPlayers('');
-    };
     if (!isGameId(gameOrPlayers)) {
-      setAlert({ show: true, message: 'Invalid game id.', level: 'warning' });
+      enqueueSnackbar('Invalid game id.', { variant: 'warning' });
       return;
     }
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const _ = remoteDelete();
-  }, [gameOrPlayers, setAlert]);
-  const getUserOptions = useCallback(() => {
-    if (isPlayerNames(gameOrPlayers)) {
-      return gameOrPlayers.split(',').filter((el) => el);
-    }
-    if (isGameId(gameOrPlayers)) {
-      const game = gameList.filter(({ id }) => id === gameOrPlayers);
-      if (game.length === 0) {
-        // Did not find players. Don't auto-suggest.
-        return [];
-      }
-      return game[0].players;
-    }
-    return [];
-  }, [gameOrPlayers, gameList]);
+    handleDeleteGame(gameOrPlayers);
+  }, [gameOrPlayers, handleDeleteGame]);
   const tooltipText = 'Enter comma-seperated list of players or the Game ID of an existing game.';
   return (
     <Paper elevation={1}>
@@ -127,7 +118,7 @@ function PlayerForm({
             Start a Game of Ra!
           </Typography>
         </Grid>
-        <Grid xs={8} justifyContent="center" alignItems="center">
+        <Grid xs={12} justifyContent="center" alignItems="center">
           {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
           <Tooltip
             followCursor
@@ -162,22 +153,6 @@ function PlayerForm({
               )}
             />
           </Tooltip>
-        </Grid>
-        <Grid xs={4} justifyContent="center" alignItems="center">
-          <Autocomplete
-            id="user"
-            disabled={!isValid(gameOrPlayers)}
-            options={getUserOptions()}
-            value={user}
-            onInputChange={(e, value) => setUser(value)}
-            renderInput={(params) => (
-              <TextField
-                /* eslint-disable-next-line react/jsx-props-no-spreading */
-                {...params}
-                label="Player Name"
-              />
-            )}
-          />
         </Grid>
         <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
           <ButtonGroup

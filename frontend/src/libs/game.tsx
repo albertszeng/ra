@@ -1,5 +1,3 @@
-import { apiUrl, socket } from '../common';
-
 const DefaultPlayer: Player = {
   collection: [],
   points: 0,
@@ -126,125 +124,22 @@ const DefaultGame: Game = {
   auctionTileValues: {},
 };
 
-type WarningLevel = 'success' | 'info' | 'warning' | 'error';
-type ApiResponse = {
-  level?: WarningLevel;
-  message?: string;
-  gameId?: string;
-  gameAsStr?: string;
-  gameState?: Game;
-};
-type AlertData = {
-  show: boolean;
-  message: string;
-  level?: WarningLevel;
-  permanent?: boolean;
-};
-type LoginOrRegisterRequest = {
-  username: string;
-  password: string;
-};
-type TokenLoginRequest = {
-  token: string;
-};
-type LoginResponse = {
-  level: WarningLevel;
-  message: string;
-  token?: string;
-  username?: string;
-};
-type LoginSuccess = {
-  token: string;
-  username: string;
-};
-
-async function handleCommand(
-  gameId: string,
-  name: string,
-  command: string,
-): Promise<ApiResponse> {
-  const requestOptions = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gameId, command, socketId: socket.id }),
-  };
-  const res = await fetch(`${apiUrl}/action`, requestOptions);
-  const parsed = await res.json() as ApiResponse;
-  const { gameId: joinedGameId } = parsed;
-  if (joinedGameId) {
-    socket.emit('join', { gameId: joinedGameId, name });
-  }
-  return parsed;
-}
-
-async function startGame(players: string[], name: string | null): Promise<ApiResponse> {
-  const requestOptions = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      playerNames: players,
-    }),
-  };
-  const res = await fetch(`${apiUrl}/start`, requestOptions);
-  const parsed = await res.json() as ApiResponse;
-  const { gameId } = parsed;
-  if (gameId) {
-    // Let server know we've joined a game.
-    socket.emit('join', { gameId, name });
-  }
-  return parsed;
-}
-
-async function deleteGame(gameId: string): Promise<ApiResponse> {
-  const requestOptions = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      gameId,
-    }),
-  };
-  const res = await fetch(`${apiUrl}/delete`, requestOptions);
-  return res.json() as ApiResponse;
-}
-
-type ListGame = {
-  id: string;
-  players: string[];
-};
-type ListGamesResponse = {
-  total: number;
-  games: ListGame[];
-};
-
 function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
 export type {
-  AlertData,
-  ApiResponse,
   Game,
   GameState,
-  ListGame,
-  ListGamesResponse,
-  LoginOrRegisterRequest,
-  LoginResponse,
-  LoginSuccess,
   Player,
   PointMapping,
   Tile,
   TileAction,
-  TokenLoginRequest,
-  WarningLevel,
 };
 
 export {
   DefaultGame,
   DefaultPlayer,
-  deleteGame,
   getTileAction,
-  handleCommand,
   notEmpty,
-  startGame,
-  socket,
 };

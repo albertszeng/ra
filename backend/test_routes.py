@@ -4,14 +4,14 @@ import random
 import unittest
 import uuid
 from datetime import datetime
-from typing import Optional, cast
+from typing import Any, Dict, Optional, cast
 from unittest import mock
 from unittest.mock import patch
 
 import jwt
 
 from backend import routes
-from game import ra
+from game import info, ra
 
 
 class RoutesTest(unittest.TestCase):
@@ -67,7 +67,7 @@ Possible actions:
         self.assertEqual(routes.list([]), routes.ListGamesResponse(total=0, games=[]))
 
     def test_list_single(self) -> None:
-        testId = "12345678123456781234567812345678"
+        testId = uuid.uuid4()
         testGame = routes.RaGame(
             randomize_play_order=False, player_names=["Name1", "Name2"]
         )
@@ -77,7 +77,7 @@ Possible actions:
                 total=1,
                 games=[
                     routes.GameInfo(
-                        id=uuid.UUID("12345678123456781234567812345678"),
+                        id=str(testId),
                         players=["Name1", "Name2"],
                     )
                 ],
@@ -86,8 +86,8 @@ Possible actions:
 
     def test_list_many(self) -> None:
         testIds = [
-            "12345678123456781234567812345678",
-            "23456781234567812345678123456781",
+            uuid.uuid4(),
+            uuid.uuid4(),
         ]
         testGames = [
             routes.RaGame(
@@ -103,36 +103,14 @@ Possible actions:
                 total=2,
                 games=[
                     routes.GameInfo(
-                        id=uuid.UUID("12345678123456781234567812345678"),
+                        id=str(testIds[0]),
                         players=["Game10", "Game11"],
                     ),
                     routes.GameInfo(
-                        id=uuid.UUID("23456781234567812345678123456781"),
+                        id=str(testIds[1]),
                         players=["Game20", "Game21"],
                     ),
                 ],
-            ),
-        )
-
-    def test_start_no_players(self) -> None:
-        with self.assertRaises(ValueError):
-            routes.start(uuid.uuid4(), [])
-        with self.assertRaises(ValueError):
-            routes.start(uuid.uuid4(), ["One"])
-
-    def test_start(self) -> None:
-        self.maxDiff = None
-        gameId = uuid.uuid4()
-        with mock.patch("builtins.open", mock.mock_open()) as m:
-            game, response = routes.start(gameId, ["Player 1", "Player 2"])
-            m.assert_called_once_with(f"move_histories/{gameId}.txt", "w+")
-
-        self.assertEqual(
-            response,
-            routes.StartResponse(
-                gameId=gameId,
-                gameState=game.serialize(),
-                gameAsStr=routes.get_game_repr(game),
             ),
         )
 
@@ -190,6 +168,103 @@ Possible actions:
         )
 
 
+class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
+    async def test_delete_invalid(self) -> None:
+        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+            return routes.RaGame(player_names=["test1", "test2"])
+
+        async def persistDelete(gameId: uuid.UUID) -> bool:
+            return True
+
+        async def failFetch(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+            return None
+
+        async def failPersist(gameId: uuid.UUID) -> bool:
+            return False
+
+        validGameId = str(uuid.uuid4())
+        resp = await routes.delete("invalid", "test1", fetchGame, persistDelete)
+        self.assertEqual(resp["level"], "error")
+
+        resp = await routes.delete(
+            validGameId, "test1", fetchGame=failFetch, persistDelete=persistDelete
+        )
+        self.assertEqual(resp["level"], "warning")
+
+        resp = await routes.delete(validGameId, "invalid", fetchGame, persistDelete)
+        self.assertEqual(resp["level"], "warning")
+
+        resp = await routes.delete(
+            validGameId, "test1", fetchGame, persistDelete=failPersist
+        )
+        self.assertEqual(resp["level"], "warning")
+
+    async def test_delete(self) -> None:
+        storage: dict[str, routes.RaGame] = {}
+
+        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+            storage[str(gameId)] = routes.RaGame(player_names=["test1", "test2"])
+            return storage[str(gameId)]
+
+        async def persistDelete(gameId: uuid.UUID) -> bool:
+            del storage[str(gameId)]
+            return True
+
+        gameId = uuid.uuid4()
+        resp = await routes.delete(str(gameId), "test1", fetchGame, persistDelete)
+        self.assertEqual(resp["level"], "success")
+        self.assertEqual(storage, {})
+
+
+class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
+    async def test_start_no_players(self) -> None:
+        async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+            return
+
+        with self.assertRaises(ValueError):
+            await routes.start(
+                routes.StartRequest(playerNames=[]),
+                username="user",
+                commitGame=commitGame,
+            )
+        with self.assertRaises(ValueError):
+            await routes.start(
+                routes.StartRequest(playerNames=["One"]),
+                username="user",
+                commitGame=commitGame,
+            )
+
+    async def test_start(self) -> None:
+        self.maxDiff = None
+        storage: Dict[str, Any] = {}
+
+        async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+            storage["gameId"] = gameId
+            storage["game"] = game
+
+        response = await routes.start(
+            routes.StartRequest(
+                numPlayers=2,
+                playerNames=["Player 1", "Player 2"],
+            ),
+            username="user",
+            commitGame=commitGame,
+        )
+        storedGameId, storedGame = storage.get("gameId"), storage.get("game")
+        self.assertIsNotNone(storedGameId)
+        self.assertIsNotNone(storedGame)
+        self.assertEqual(
+            response,
+            routes.StartResponse(
+                gameId=str(storedGameId),
+                gameState=storedGame.serialize(),
+                gameAsStr=routes.get_game_repr(storedGame),
+                username="user",
+                action="Start game.",
+            ),
+        )
+
+
 class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
     async def test_action_no_game_id(self) -> None:
         async def fetchGame(gameId: uuid.UUID) -> None:
@@ -203,6 +278,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(),
                 playerIdx=None,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -222,6 +298,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=uuid.uuid4().hex),
                 playerIdx=None,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -241,6 +318,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=uuid.uuid4().hex, command="draw"),
                 playerIdx=None,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -267,6 +345,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="INVALD"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -294,11 +373,15 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
             routes.ActionResponse(
-                gameState=game.serialize(), gameAsStr=routes.get_game_repr(game)
+                gameState=game.serialize(),
+                gameAsStr=routes.get_game_repr(game),
+                username="user",
+                action="Load finished game.",
             ),
         )
 
@@ -321,6 +404,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=None,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -347,6 +431,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=1,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -377,6 +462,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -403,6 +489,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="god1"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -430,6 +517,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -460,6 +548,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=0,
+                username="user",
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
@@ -476,5 +565,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             routes.ActionResponse(
                 gameState=savedGame.serialize(),
                 gameAsStr=routes.get_game_repr(savedGame),
+                username="user",
+                action=info.DRAW_DESC,
             ),
         )
