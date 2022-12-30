@@ -53,8 +53,7 @@ class RaTest(unittest.TestCase):
         game = ra.RaGame(player_names=["P1", "P2"])
         game.init_game()
 
-        legal_actions = ra.get_possible_actions(game.game_state)
-        tile_drawn = game.execute_action(gi.DRAW, legal_actions, gi.INDEX_OF_RA)
+        tile_drawn = game.execute_action(gi.DRAW, None, gi.INDEX_OF_RA)
         self.assertEqual(tile_drawn, gi.INDEX_OF_RA)
         self.assertTrue(len(game.game_state.get_auction_tiles()) == 0)
         self.assertTrue(game.game_state.get_current_num_ras() == 1)
@@ -65,8 +64,7 @@ class RaTest(unittest.TestCase):
 
         game = ra.RaGame(player_names=["P1", "P2"])
         game.init_game()
-        legal_actions = ra.get_possible_actions(game.game_state)
-        tile_drawn = game.execute_action(gi.DRAW, legal_actions, gi.INDEX_OF_DIS_CIV)
+        tile_drawn = game.execute_action(gi.DRAW, None, gi.INDEX_OF_DIS_CIV)
         self.assertEqual(tile_drawn, gi.INDEX_OF_DIS_CIV)
         self.assertTrue(len(game.game_state.get_auction_tiles()) == 1)
         self.assertTrue(game.game_state.get_current_num_ras() == 0)
@@ -77,8 +75,7 @@ class RaTest(unittest.TestCase):
 
         game = ra.RaGame(player_names=["P1", "P2"])
         game.init_game()
-        legal_actions = ra.get_possible_actions(game.game_state)
-        tile_drawn = game.execute_action(gi.DRAW, legal_actions, gi.INDEX_OF_GOD)
+        tile_drawn = game.execute_action(gi.DRAW, None, gi.INDEX_OF_GOD)
         self.assertEqual(tile_drawn, gi.INDEX_OF_GOD)
         self.assertTrue(len(game.game_state.get_auction_tiles()) == 1)
         self.assertTrue(game.game_state.get_current_num_ras() == 0)
