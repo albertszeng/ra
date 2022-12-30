@@ -9,6 +9,9 @@ import {
   Button,
   ButtonGroup,
   IconButton,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
   List,
   ListItem,
   ListItemButton,
@@ -16,10 +19,18 @@ import {
   ListItemText,
   ListSubheader,
   Paper,
-  Slider,
+  Radio,
+  RadioGroup,
   Typography,
 } from '@mui/material';
-import { Delete, PersonAdd, VideogameAsset } from '@mui/icons-material';
+import {
+  AddModerator,
+  Delete,
+  Diversity3,
+  PersonAdd,
+  Public,
+  VideogameAsset,
+} from '@mui/icons-material';
 import Grid from '@mui/material/Unstable_Grid2';
 
 import { enqueueSnackbar } from 'notistack';
@@ -197,64 +208,90 @@ function GameList({ handleLoadGame }: GameListProps): JSX.Element {
   // const tooltipText = 'Enter comma-seperated list of players or the Game ID
   // of an existing game.';
   return (
-    <Paper elevation={1}>
-      <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
-        <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
-          <Typography variant="h4">
-            Start a Game of Ra!
-          </Typography>
-        </Grid>
-        <Grid xs={12} justifyContent="center" alignItems="center">
-          <List>
-            <ListSubheader>
-              {`Public (${publicGames.length})`}
-            </ListSubheader>
-            {publicGames.map(renderGame)}
-            <ListSubheader>
-              {`Private (${privateGames.length})`}
-            </ListSubheader>
-            {privateGames.map(renderGame)}
-          </List>
-        </Grid>
-        <Grid xs={6} justifyContent="center" alignItems="center">
-          <Slider
-            marks
-            aria-label="Number of Players"
-            valueLabelDisplay="auto"
-            step={1}
-            min={2}
-            max={5}
-            value={numPlayers}
-            getAriaValueText={(n: number) => `${n} Players`}
-            onChangeCommitted={(e, value: number | number[]) => {
-              if (!Array.isArray(value)) {
-                setNumPlayers(value);
-              }
-            }}
-          />
-        </Grid>
-        <Grid xs={6} justifyContent="center" alignItems="center">
-          <ButtonGroup
-            variant="contained"
-            size="large"
-            aria-label="game action buttons"
-          >
-            <Button
-              color="primary"
-              onClick={() => handleNewGame('PUBLIC')}
+    <>
+      <Paper variant="outlined" elevation={1}>
+        <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
+          <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
+            <Typography variant="h4">
+              Start a Game of Ra!
+            </Typography>
+          </Grid>
+          <Grid xs={12} justifyContent="center" alignItems="center">
+            <List
+              sx={{
+                width: '100%',
+                overflow: 'auto',
+                maxHeight: 680,
+              }}
             >
-              Start Public Game
-            </Button>
-            <Button
-              color="secondary"
-              onClick={() => handleNewGame('PRIVATE')}
-            >
-              Start Private Game
-            </Button>
-          </ButtonGroup>
+              <ListSubheader>
+                {`Public (${publicGames.length})`}
+              </ListSubheader>
+              {publicGames.map(renderGame)}
+              <ListSubheader>
+                {`Private (${privateGames.length})`}
+              </ListSubheader>
+              {privateGames.map(renderGame)}
+            </List>
+          </Grid>
         </Grid>
-      </Grid>
-    </Paper>
+      </Paper>
+      <Paper variant="outlined" elevation={1}>
+        <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
+          <Grid xs={6} display="flex" justifyContent="center" alignItems="center">
+            <FormControl>
+              <FormLabel id="player-label">Players</FormLabel>
+              <RadioGroup
+                row
+                aria-labelledby="player-label"
+                name="players-group"
+                value={numPlayers}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                  setNumPlayers(Number(event.target.value));
+                }}
+              >
+                {[2, 3, 4, 5].map((nPlayers: number) => (
+                  <FormControlLabel
+                    value={nPlayers}
+                    control={<Radio />}
+                    label={nPlayers}
+                  />
+                ))}
+              </RadioGroup>
+            </FormControl>
+          </Grid>
+          <Grid xs={6} display="flex" justifyContent="center" alignItems="center">
+            <ButtonGroup
+              variant="contained"
+              size="large"
+              aria-label="game action buttons"
+            >
+              <Button
+                color="primary"
+                onClick={() => handleNewGame('PUBLIC')}
+                startIcon={<Public />}
+              >
+                Public Game
+              </Button>
+              <Button
+                color="secondary"
+                onClick={() => handleNewGame('PRIVATE')}
+                startIcon={<AddModerator />}
+              >
+                Private Game
+              </Button>
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<Diversity3 />}
+              >
+                Join Game
+              </Button>
+            </ButtonGroup>
+          </Grid>
+        </Grid>
+      </Paper>
+    </>
   );
 }
 
