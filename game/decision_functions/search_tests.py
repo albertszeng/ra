@@ -9,7 +9,6 @@ import unittest
 from game import info as gi
 from game import ra
 from game import state as gs
-from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
 
 
@@ -66,10 +65,55 @@ class SearchTest(unittest.TestCase):
 
         ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_PHAR)  # P2
 
-        best_move, resulting_valuations = s.search_internal(game_state, False)
-        print("best_move:", best_move)
-        print("resulting_valuations:", resulting_valuations)
+        best_move = s.search(game_state)
         self.assertEqual(best_move, gi.AUCTION)
+
+    def test_search_internal_many_tiles(self) -> None:
+        game_state = gs.GameState(["P1", "P2"])
+        assert 2 in game_state.get_player_usable_sun(0)  # P1 has 2,5,6,9
+        assert 3 in game_state.get_player_usable_sun(1)  # P2 has 3,4,7,8
+
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_GOLD)  # P1
+
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_GOLD)  # P2
+
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_GOLD)  # P1
+
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_PHAR)  # P2
+
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_PHAR)  # P1
+
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_PHAR)  # P2
+
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_PHAR)  # P1
+
+        best_move = s.search(game_state)
+        self.assertEqual(best_move, gi.AUCTION)
+
+    def test_search_some_tiles(self) -> None:
+        game_state = gs.GameState(["P1", "P2"])
+        assert 2 in game_state.get_player_usable_sun(0)  # P1 has 2,5,6,9
+        assert 3 in game_state.get_player_usable_sun(1)  # P2 has 3,4,7,8
+
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_FORT)  # P1
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_PYR)  # P2
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_STE)  # P1
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_NILE)  # P2
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_NILE)  # P1
+        ra.execute_action_internal(game_state, gi.DRAW, None, gi.INDEX_OF_NILE)  # P2
+
+        best_move = s.search(game_state)
+        self.assertEqual(best_move, gi.DRAW)
+
+    # def test_search_internal_no_tiles(self) -> None:
+    #     game_state = gs.GameState(["P1", "P2"])
+    #     assert 2 in game_state.get_player_usable_sun(0)  # P1 has 2,5,6,9
+    #     assert 3 in game_state.get_player_usable_sun(1)  # P2 has 3,4,7,8
+
+    #     best_move, resulting_valuations = s.search_internal(game_state, False)
+    #     print("best_move:", best_move)
+    #     print("resulting_valuations:", resulting_valuations)
+    #     self.assertEqual(best_move, gi.DRAW)
 
 
 if __name__ == "__main__":

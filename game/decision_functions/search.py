@@ -1,4 +1,5 @@
 import copy
+import time
 from typing import Dict, Tuple
 
 from game import info as gi
@@ -11,7 +12,10 @@ def search(game_state: gs.GameState) -> int:
     """
     Given the current game state, return an action to take.
     """
+    print("Beginning search...")
+    start_time = time.time()
     best_move, best_resulting_valuation = search_internal(game_state, False)
+    print(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
     return best_move
 
 
@@ -51,7 +55,8 @@ def search_internal(
                         game_state_copy, action, legal_actions, curr_tile_index
                     )
                     draw_action_results[curr_tile_index] = value_state(
-                        game_state_copy, auction_has_occurred
+                        game_state_copy,
+                        auction_has_occurred or curr_tile_index == gi.INDEX_OF_RA,
                     )
 
             # for each player, calculate what their expected valuation is
@@ -72,6 +77,18 @@ def search_internal(
                     )
 
             action_results[action] = expected_player_valuations
+        # TODO(albertz): Allow golden god actions
+        elif action in [
+            gi.GOD_1,
+            gi.GOD_2,
+            gi.GOD_3,
+            gi.GOD_4,
+            gi.GOD_5,
+            gi.GOD_6,
+            gi.GOD_7,
+            gi.GOD_8,
+        ]:
+            pass
         else:
             game_state_copy = copy.deepcopy(game_state)
             ra.execute_action_internal(game_state_copy, action, legal_actions)
@@ -114,8 +131,16 @@ def value_state(
     current state is the maximum across all possible actions the current player
     can take.
     """
-    auction_tiles_are_empty = len(game_state.get_auction_tiles()) > 0
-    if auction_has_occurred and auction_tiles_are_empty:
+    auction_tiles_are_empty = len(game_state.get_auction_tiles()) == 0
+
+    if game_state.is_game_ended():
+        final_scores = {}
+        for player_state in game_state.player_states:
+            final_scores[
+                player_state.get_player_name()
+            ] = player_state.get_player_points()
+        return final_scores
+    elif auction_has_occurred and auction_tiles_are_empty:
         return e.evaluate_game_state_no_auction_tiles(game_state)
     else:
         _best_move, resulting_player_state_valuations = search_internal(
