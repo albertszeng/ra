@@ -355,10 +355,15 @@ def execute_action_internal(  # noqa: C901
         # clear auction suns and mark auction as over
         game_state.end_auction()
 
-        # if no disasters to be resolved, advance current player
-        if not game_state.disasters_must_be_resolved():
+        # if it's the final round and all playesr are passed
+        if game_state.is_final_round() and game_state.are_all_players_passed():
+            end_round(game_state)
+        # else if no disasters to be resolved, advance current player
+        elif not game_state.disasters_must_be_resolved():
             game_state.advance_current_player()
-        else:  # otherwise, set current player to auction winner to resolve
+        # else, that means there IS a disaster to be resolved, so set current
+        # player to auction winner to resolve
+        else:
             game_state.set_current_player(game_state.get_auction_winning_player())
 
     def execute_bid(n: int) -> None:
@@ -429,12 +434,12 @@ def execute_action_internal(  # noqa: C901
                 return tile
             else:
                 game_state.start_auction(True, game_state.get_current_player())
+                game_state.advance_current_player()
 
         # otherwise, add tile to auction tiles
         else:
             game_state.add_tile_to_auction_tiles(tile)
-
-        game_state.advance_current_player()
+            game_state.advance_current_player()
 
         return tile
 
