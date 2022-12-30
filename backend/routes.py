@@ -130,9 +130,12 @@ class ActionResponse(TypedDict):
     username: str
 
 
-class LoginOrRegisterRequest(TypedDict):
+class RegisterRequest(TypedDict):
     username: NotRequired[str]
     password: NotRequired[str]
+
+
+class LoginRequest(RegisterRequest):
     # The user can provide a token to restore a previous login.
     token: NotRequired[str]
 
