@@ -322,7 +322,7 @@ async def act(
 @login_required
 async def add_player(
     username: str, sid: str, data: routes.AddPlayerRequest
-) -> Union[routes.Message, routes.ListGamesResponse]:
+) -> Tuple[routes.Message, Optional[routes.ListGamesResponse]]:
     async def fetchGame(
         gameId: uuid.UUID,
     ) -> Optional[Tuple[routes.RaGame, routes.Visibility]]:
@@ -339,15 +339,14 @@ async def add_player(
             db.session.commit()
             return True
 
-    response = await routes.add_player(
+    msg, lst = await routes.add_player(
         username, data.gameId, fetchGame=fetchGame, saveGame=saveGame
     )
-    if "message" in response:
-        await sio.emit("update", response, to=sid)
-        return response
-    # TODO: respect visibility settings. Currently update is sent to all connected clients.
-    await sio.emit("list_games", response)
-    return response
+    await sio.emit("update", msg, to=sid)
+    if lst:
+        # TODO: respect visibility settings. Currently update is sent to all connected clients.
+        await sio.emit("list_games", lst)
+    return msg, lst
 
 
 @sio.event  # pyre-ignore[56]

@@ -51,6 +51,13 @@ type LoginSuccess = {
 
 type ListGame = {
   id: string;
+  players?: string[];
+  visibility?: Visibility;
+  numPlayers?: number;
+  deleted?: boolean;
+};
+type ValidatedListGame = {
+  id: string;
   players: string[];
   visibility: Visibility;
   numPlayers: number;
@@ -64,8 +71,13 @@ type DeleteRequest = {
   gameId: string;
 };
 
+type AddPlayerRequest = {
+  gameId: string;
+}
+
 export type {
   ActionRequest,
+  AddPlayerRequest,
   ApiResponse,
   DeleteRequest,
   JoinLeaveRequest,
@@ -78,6 +90,7 @@ export type {
   StartRequest,
   StartResponse,
   TokenLoginRequest,
+  ValidatedListGame,
   Visibility,
   WarningLevel,
 };

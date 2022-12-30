@@ -8,6 +8,7 @@ import {
   // Autocomplete,
   Button,
   ButtonGroup,
+  IconButton,
   List,
   ListItem,
   ListItemIcon,
@@ -15,29 +16,25 @@ import {
   ListSubheader,
   Paper,
   Slider,
-  // TextField,
-  // Tooltip,
   Typography,
 } from '@mui/material';
-import { VideogameAsset } from '@mui/icons-material';
+import { Delete, PersonAdd, VideogameAsset } from '@mui/icons-material';
 import Grid from '@mui/material/Unstable_Grid2';
 
-// import { enqueueSnackbar } from 'notistack';
+import { enqueueSnackbar } from 'notistack';
 
 import { socket } from '../common';
 import { notEmpty } from '../libs/game';
 import type {
-  // MessageResponse,
+  AddPlayerRequest,
+  DeleteRequest,
+  MessageResponse,
   ListGame,
   ListGamesResponse,
   StartRequest,
+  ValidatedListGame,
   Visibility,
 } from '../libs/request';
-
-type GameListProps = {
-  handleLoadGame: (gameId: string) => void;
-  handleDeleteGame: (gameId: string) => void;
-};
 
 // function isPlayerNames(input: string): boolean {
 //   if (input.includes(',')) {
@@ -62,26 +59,43 @@ type GameListProps = {
 // }
 
 /* Merges two game lists. Identical ids in prev are overriden by update. */
-function merge(prev: ListGame[], update: ListGame[]): ListGame[] {
-  const local = [...prev];
+function merge(
+  prev: ValidatedListGame[],
+  updates: ValidatedListGame[],
+  deleted: ListGame[],
+): ValidatedListGame[] {
+  const local: (ValidatedListGame | null)[] = [...prev];
   const idToIdx = prev.reduce(
     (acc, game, idx) => ({ ...acc, [game.id]: idx }),
     {} as { [key: string] : number },
   );
-  const newGames = update.map((game: ListGame) => {
+  const newGames = updates.map((game: ValidatedListGame) => {
     if (game.id in idToIdx) {
       local[idToIdx[game.id]] = game;
       return null;
     }
     return game;
   }).filter(notEmpty);
-  return local.concat(newGames);
+  deleted.forEach(({ id }: ListGame) => {
+    if (id in idToIdx) {
+      local[idToIdx[id]] = null;
+    }
+  });
+  return local.filter(notEmpty).concat(newGames);
+}
+function clean(games: ListGame[]): ValidatedListGame[] {
+  return games.map((game: ListGame) => {
+    if (game.deleted || !game.players || !game.visibility || !game.numPlayers) {
+      return null;
+    }
+    return game as ValidatedListGame;
+  }).filter(notEmpty);
 }
 
-function GameList(_unused: GameListProps): JSX.Element {
+function GameList(): JSX.Element {
   // const [formValid, setFormValid] = useState(false);
-  const [privateGames, setPrivateGames] = useState<ListGame[]>([]);
-  const [publicGames, setPublicGames] = useState<ListGame[]>([]);
+  const [privateGames, setPrivateGames] = useState<ValidatedListGame[]>([]);
+  const [publicGames, setPublicGames] = useState<ValidatedListGame[]>([]);
   const [numPlayers, setNumPlayers] = useState<number>(2);
 
   const handleNewGame = useCallback((visibility: Visibility) => {
@@ -89,20 +103,26 @@ function GameList(_unused: GameListProps): JSX.Element {
     socket.emit('start_game', request);
   }, [numPlayers]);
 
-  const onListGames = useCallback(({ games, partial } : ListGamesResponse) => {
-    const privateG = games.filter((game) => game.visibility === 'PRIVATE');
-    setPrivateGames((prev) => ((partial) ? merge(prev, privateG) : privateG));
-
-    const publicG = games.filter((game) => game.visibility === 'PUBLIC');
-    setPublicGames((prev) => ((partial) ? merge(prev, publicG) : publicG));
+  const handleDeleteGame = useCallback((toDeleteId: string) => {
+    const request: DeleteRequest = { gameId: toDeleteId };
+    socket.emit('delete', request);
   }, []);
-  // const onDelete = useCallback(({ message, level }: MessageResponse) => {
-  //   enqueueSnackbar(message, { variant: level });
-  //   if (level === 'success') {
-  //     setGameOrPlayers('');
-  //     socket.emit('list_games');
-  //   }
-  // }, []);
+  const handleAddPlayer = useCallback((gameId: string) => {
+    const request: AddPlayerRequest = { gameId };
+    socket.emit('add_player', request);
+  }, []);
+
+  const onListGames = useCallback(({ games, partial } : ListGamesResponse) => {
+    const deleted = games.filter((game) => game.deleted);
+    const privateG = clean(games.filter((game) => game.visibility === 'PRIVATE'));
+    setPrivateGames((prev) => ((partial) ? merge(prev, privateG, deleted) : privateG));
+
+    const publicG = clean(games.filter((game) => game.visibility === 'PUBLIC'));
+    setPublicGames((prev) => ((partial) ? merge(prev, publicG, deleted) : publicG));
+  }, []);
+  const onDelete = useCallback(({ message, level }: MessageResponse) => {
+    enqueueSnackbar(message, { variant: level });
+  }, []);
   useEffect(() => {
     socket.on('list_games', onListGames);
     socket.emit('list_games');
@@ -110,15 +130,34 @@ function GameList(_unused: GameListProps): JSX.Element {
       socket.off('list_games', onListGames);
     };
   }, [onListGames]);
-  // useEffect(() => {
-  //   socket.on('delete', onDelete);
-  //   return () => {
-  //     socket.off('delete', onDelete);
-  //   };
-  // }, [onDelete]);
+  useEffect(() => {
+    socket.on('delete', onDelete);
+    return () => {
+      socket.off('delete', onDelete);
+    };
+  }, [onDelete]);
 
-  const renderGame = useCallback(({ id, players }: ListGame) => (
-    <ListItem alignItems="flex-start">
+  const renderGame = useCallback(({ id, players }: ValidatedListGame) => (
+    <ListItem
+      key={`game-${id}`}
+      alignItems="flex-start"
+      secondaryAction={(
+        <ButtonGroup>
+          <IconButton
+            aria-label="join"
+            onClick={() => handleAddPlayer(id)}
+          >
+            <PersonAdd />
+          </IconButton>
+          <IconButton
+            aria-label="delete"
+            onClick={() => handleDeleteGame(id)}
+          >
+            <Delete />
+          </IconButton>
+        </ButtonGroup>
+      )}
+    >
       <ListItemIcon>
         <VideogameAsset />
       </ListItemIcon>
@@ -127,7 +166,7 @@ function GameList(_unused: GameListProps): JSX.Element {
         secondary={players.toString()}
       />
     </ListItem>
-  ), []);
+  ), [handleAddPlayer, handleDeleteGame]);
 
   // const handleChange = useCallback((
   //   e: SyntheticEvent<Element, Event>,

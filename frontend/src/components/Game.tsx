@@ -25,7 +25,6 @@ import type {
 import type {
   ApiResponse,
   ActionRequest,
-  DeleteRequest,
   JoinLeaveRequest,
 } from '../libs/request';
 
@@ -44,10 +43,6 @@ function Game({ playerName }: GameProps): JSX.Element {
   const handleLoadGame = useCallback((requestedId: string) => {
     const request: ActionRequest = { gameId: requestedId, command: 'LOAD' };
     socket.emit('act', request);
-  }, []);
-  const handleDeleteGame = useCallback((toDeleteId: string) => {
-    const request: DeleteRequest = { gameId: toDeleteId };
-    socket.emit('delete', request);
   }, []);
   const handleDraw = useCallback(() => {
     const request: ActionRequest = { gameId, command: 'DRAW' };
@@ -227,10 +222,7 @@ function Game({ playerName }: GameProps): JSX.Element {
           </Grid>
         </Grid>
       ) : (
-        <GameList
-          handleLoadGame={handleLoadGame}
-          handleDeleteGame={handleDeleteGame}
-        />
+        <GameList />
       )}
     </Container>
   );

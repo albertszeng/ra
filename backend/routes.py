@@ -273,23 +273,34 @@ async def add_player(
     gameIdStr: Optional[str],
     fetchGame: Callable[[uuid.UUID], Awaitable[Optional[Tuple[RaGame, Visibility]]]],
     saveGame: Callable[[uuid.UUID, RaGame], Awaitable[bool]],
-) -> Union[Message, ListGamesResponse]:
+) -> Tuple[Message, Optional[ListGamesResponse]]:
     """Attempts to add a player to the indicated game."""
     if not gameIdStr:
-        return WarningMessage("Must provide gameId to join game.")
+        return WarningMessage("Must provide gameId to join game."), None
     try:
         gameId = uuid.UUID(gameIdStr)
     except ValueError as e:
-        return ErrorMessage(f"Unparseable gameId: {e}")
+        return ErrorMessage(f"Unparseable gameId: {e}"), None
     if not (gameInfo := await fetchGame(gameId)):
-        return WarningMessage(f"Cannot add player to non-existant game: {gameId}.")
+        return (
+            WarningMessage(f"Cannot add player to non-existant game: {gameId}."),
+            None,
+        )
     game, visibility = gameInfo
     if game.maybe_add_player(username) is None:
-        return WarningMessage(f"Game {gameId} is full. {username} cannot be added.")
+        return (
+            WarningMessage(f"Game {gameId} is full. {username} cannot be added."),
+            None,
+        )
     if not await saveGame(gameId, game):
-        return ErrorMessage(f"{username} failed to add {username} to game: {gameId}.")
+        return (
+            ErrorMessage(f"{username} failed to add {username} to game: {gameId}."),
+            None,
+        )
 
-    return single_game(gameIdStr, game, visibility)
+    return SuccessMessage(f"{username} added to game: {gameId}"), single_game(
+        gameIdStr, game, visibility
+    )
 
 
 async def join_game(
