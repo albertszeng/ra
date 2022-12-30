@@ -8,6 +8,7 @@ import React, {
 
 import {
   Button,
+  ButtonGroup,
   Container,
   IconButton,
   InputAdornment,
@@ -19,7 +20,12 @@ import { AccountCircle, Visibility, VisibilityOff } from '@mui/icons-material';
 import { enqueueSnackbar } from 'notistack';
 
 import { socket } from '../common';
-import type { LoginResponse, LoginSuccess } from '../libs/request';
+import type { LoginOrRegisterRequest, LoginResponse, LoginSuccess } from '../libs/request';
+
+type AuthEndpoint = 'login' | 'register';
+function isValidForm(username: string, password: string): boolean {
+  return username.length >= 3 && password.length >= 4;
+}
 
 type LoginProps = {
   // Called on successful login.
@@ -35,7 +41,7 @@ function Login({ onLoginSuccess }: LoginProps): JSX.Element {
     event.preventDefault();
   };
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback((endpoint: AuthEndpoint) => {
     if (user.length < 3) {
       enqueueSnackbar('Username too short. Must be at least 3 characters.', { variant: 'info' });
       return;
@@ -44,7 +50,8 @@ function Login({ onLoginSuccess }: LoginProps): JSX.Element {
       enqueueSnackbar('Password too short. Must be at least 4 characters.', { variant: 'info' });
       return;
     }
-    socket.emit('login', { username: user, password });
+    const request = { username: user, password } as LoginOrRegisterRequest;
+    socket.emit(endpoint, request);
   }, [user, password]);
   const onLogin = useCallback(({
     token, username, message, level,
@@ -114,15 +121,24 @@ function Login({ onLoginSuccess }: LoginProps): JSX.Element {
             />
           </Grid>
           <Grid xs={4} display="flex" justifyContent="center" alignItems="center">
-            <Button
+            <ButtonGroup
               variant="contained"
               size="large"
-              color="primary"
-              disabled={user.length === 0 || password.length === 0}
-              onClick={handleSubmit}
+              disabled={!isValidForm(user, password)}
             >
-              Login or Register
-            </Button>
+              <Button
+                color="primary"
+                onClick={() => handleSubmit('login')}
+              >
+                Login
+              </Button>
+              <Button
+                color="secondary"
+                onClick={() => handleSubmit('register')}
+              >
+                Register
+              </Button>
+            </ButtonGroup>
           </Grid>
         </Grid>
       </Container>
