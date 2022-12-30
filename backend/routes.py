@@ -70,7 +70,7 @@ class RaGame(ra.RaGame, mutable.Mutable):
             The index of the player.
         """
         if self.initialized():
-            return None
+            return self._player_names.index(username) if allowDup else None
 
         if username in self._player_names:
             return self._player_names.index(username) if allowDup else None
