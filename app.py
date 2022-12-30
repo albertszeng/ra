@@ -153,11 +153,11 @@ async def _leave_room(sid: str, gameIdStr: str, name: Optional[str] = None) -> N
 
 
 def debuggable(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
-    @functools.wraps(fun)
+    @functools.wraps(func)
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         if _C.DEBUG:
             logger.info("[[%s]]: Inputs: %s, %s", func.__name__, args, kwargs)
-        ret = await fun(*args, **kwargs)
+        ret = await func(*args, **kwargs)
         if _C.DEBUG:
             logger.info("[[%s]]: Outputs: %s", func.__name__, ret)
         return ret
@@ -405,7 +405,7 @@ async def _on_login_success(username: str, sid: str) -> routes.LoginResponse:
 
 @sio.event  # pyre-ignore[56]
 @debuggable
-async def register(sid: str, data: routes.RegisterRequest) -> routes.LoginResponse:
+async def register(sid: str, data: routes.RegisterRequest) -> routes.Message:
     username, password = data.get("username"), data.get("password")
     if not (username and password):
         return routes.WarningMessage("Must provide username and password.")
@@ -420,12 +420,12 @@ async def register(sid: str, data: routes.RegisterRequest) -> routes.LoginRespon
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
-    return _on_login_success(username, sid)
+    return await _on_login_success(username, sid)
 
 
 @sio.event  # pyre-ignore[56]
 @debuggable
-async def login(sid: str, data: routes.LoginRequest) -> routes.LoginResponse:
+async def login(sid: str, data: routes.LoginRequest) -> routes.Message:
     """SocketIO handlers for when a user attempts to login/register."""
     username, password, oldToken = (
         data.get("username"),
@@ -449,7 +449,7 @@ async def login(sid: str, data: routes.LoginRequest) -> routes.LoginResponse:
         user = db.session.get(User, username)
 
     if not user:
-        response = WarningMessage(f"{username} not registered.")
+        response = routes.WarningMessage(f"{username} not registered.")
         await sio.emit("login", response, room=sid)
         return response
 
@@ -457,7 +457,7 @@ async def login(sid: str, data: routes.LoginRequest) -> routes.LoginResponse:
         response = routes.WarningMessage(message="Invalid password.")
         await sio.emit("login", response, room=sid)
         return response
-    return _on_login_success(username, sid)
+    return await _on_login_success(username, sid)
 
 
 @sio.event  # pyre-ignore[56]
