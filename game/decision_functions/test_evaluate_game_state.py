@@ -16,12 +16,31 @@ class EvaluateGameStateTest(unittest.TestCase):
         game.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P1
         game.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P2
         game.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P1
-        game.execute_action(gi.AUCTION)  # P2
-        game.execute_action(gi.BID_4)  # P1  # bid highest
-        game.execute_action(gi.BID_NOTHING)  # P2  # bid nothing
+        game.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P2
+        game.execute_action(gi.AUCTION)  # P1
+        game.execute_action(gi.BID_NOTHING)  # P2
+        game.execute_action(gi.BID_4)  # P1 bid 9
 
         evaluation2 = e.evaluate_game_state_no_auction_tiles(game.game_state)
         self.assertTrue(evaluation2["P1"] > evaluation2["P2"])
+
+        game2 = ra.RaGame(player_names=["P1", "P2"], randomize_play_order=False)
+        game2.init_game()
+        self.assertTrue(evaluation["P1"] == evaluation["P2"])
+
+        game2.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P1
+        game2.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P2
+        game2.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P1
+        game2.execute_action(gi.DRAW, None, gi.INDEX_OF_GOLD)  # P2
+        game2.execute_action(gi.AUCTION)  # P1
+        game2.execute_action(gi.BID_NOTHING)  # P2
+        game2.execute_action(gi.BID_1)  # P1 bid 2
+
+        evaluation3 = e.evaluate_game_state_no_auction_tiles(game2.game_state)
+        self.assertTrue(evaluation3["P1"] > evaluation3["P2"])
+        self.assertTrue(
+            evaluation3["P1"] > evaluation2["P1"]
+        )  # bidding 2 better than bidding 9
 
     def test_value_one_players_unusable_sun(self) -> None:
         unusable_sun_0 = []

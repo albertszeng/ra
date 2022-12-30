@@ -74,7 +74,7 @@ def evaluate_game_state_no_auction_tiles(game_state: gs.GameState) -> Dict[str, 
 
     TODO(albertz): If the game has ended, the valuation is simply the end-game points
 
-    TODO(albertz): actually implement this, by evaluating:
+    TODO(albertz): instead of using unrealized points, actually value their hand by evaluating:
     - Currently held tiles
        - Niles + Floods: need to value for future, based on ras remaining
        - Pharaohs: value based on differential from min and max, compared to expected
@@ -89,22 +89,28 @@ def evaluate_game_state_no_auction_tiles(game_state: gs.GameState) -> Dict[str, 
        - Golden God: just 2 points for now. In future, need to look for key tiles,
             ras left, etc.
        - 3 gold: just 3 gold
-    - Usable sun
-       - Value suns based on the average haul per sun (6 points), modified by:
-           - [-2, +2] based on their rank,
-           - num ras left in round, and maybe average value of tile?
-    - Unusable sun
-       - Modify score by [-2, +2] based on rank
-       - In final round, calculate end-of-game suns
     """
     unrealized_points = scoring.calculate_unrealized_points(
         game_state.player_states, game_state.is_final_round()
     )
-    return {
-        player_state.get_player_name(): player_state.get_player_points()
-        + unrealized_points[player_state.get_player_name()]
-        for player_state in game_state.player_states
-    }
+    usable_sun_valuations = value_of_usable_sun(game_state)
+    unusable_sun_valuations = value_of_unusable_sun(game_state)
+
+    # Each player's valuation is a sum of:
+    # - their current points
+    # - their unrealized points
+    # - value of usable sun
+    # - value of unusable sun
+    player_state_valuations = {}
+    for player_state in game_state.player_states:
+        player_name = player_state.get_player_name()
+        player_state_valuations[player_name] = (
+            player_state.get_player_points()
+            + unrealized_points[player_name]
+            + usable_sun_valuations[player_name]
+            + unusable_sun_valuations[player_name]
+        )
+    return player_state_valuations
 
 
 def value_of_usable_sun(game_state: gs.GameState) -> Dict[str, float]:
@@ -130,7 +136,7 @@ def value_one_players_usable_sun(
     TODO(albertz): this needs to be much more complex, factoring in both how many
     opponent suns are left, and also what those opposing suns are.
 
-    TODO(albertz): alternatively, instead of having a mutliplicative sun_value_modifier,
+    TODO(albertz): also, instead of having a mutliplicative sun_value_modifier,
     it can be a flat modifier based on how many sun tiles have been drawn compared to
     how many sun you have.
 
