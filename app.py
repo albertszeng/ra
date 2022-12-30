@@ -8,7 +8,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Awaitable, Callable, Optional, TypeVar, Union, cast
+from typing import Awaitable, Callable, Optional, Tuple, TypeVar, Union, cast
 
 import flask_sqlalchemy
 import jwt
@@ -192,11 +192,8 @@ async def list_games(username: str, sid: str) -> routes.ListGamesResponse:
     async with app.app_context():
         results = db.session.scalars(expression.select(Game)).all()
     response = routes.list(
-        [
-            (uuid.UUID(result.id), result.data)
-            for result in results
-            if username in result.data.player_names
-        ]
+        username,
+        [(uuid.UUID(result.id), result.data, result.visibility) for result in results],
     )
     await sio.emit("list_games", response, room=sid)
     return response
@@ -288,13 +285,14 @@ async def act(
             assert _game is not None
             return _game
 
-        resp = await routes.join(
+        resp = await routes.join_game(
             username,
             request=routes.JoinLeaveRequest(gameId=gameIdStr),
             fetchGame=fetchLocal,
             saveGame=saveGame,
         )
         if "message" in resp:
+            await sio.emit("update", resp, room=sid)
             return cast(routes.Message, resp)
         resp = await _join_room(sid, cast(routes.JoinSessionSuccess, resp))
         response = routes.StartResponse(
@@ -310,6 +308,38 @@ async def act(
             data, session.get("playerIdx"), username, fetchGame, saveGame
         )
     await sio.emit("update", response, room=gameIdStr)
+    return response
+
+
+@sio.event  # pyre-ignore[56]
+@login_required
+async def add_player(
+    username: str, sid: str, data: routes.AddPlayerRequest
+) -> Union[routes.Message, routes.ListGamesResponse]:
+    async def fetchGame(
+        gameId: uuid.UUID,
+    ) -> Optional[Tuple[routes.RaGame, routes.Visibility]]:
+        async with app.app_context():
+            if not (dbGame := db.session.get(Game, gameId.hex)):
+                return None
+            return dbGame.data, dbGame.visibility
+
+    async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async with app.app_context():
+            if not (dbGame := db.session.get(Game, gameId.hex)):
+                return False
+            dbGame.data = copy.deepcopy(game)
+            db.session.commit()
+            return True
+
+    response = await routes.add_player(
+        username, data.gameId, fetchGame=fetchGame, saveGame=saveGame
+    )
+    if "message" in response:
+        await sio.emit("update", response, to=sid)
+        return response
+    # TODO: respect visibility settings. Currently update is sent to all connected clients.
+    await sio.emit("list_games", response)
     return response
 
 
@@ -334,10 +364,11 @@ async def join(
             db.session.commit()
             return True
 
-    resp = await routes.join(
+    resp = await routes.join_game(
         username, request=data, fetchGame=fetchGame, saveGame=saveGame
     )
     if "message" in resp:
+        await sio.emit("update", resp, room=sid)
         return resp
     return await _join_room(sid, cast(routes.JoinSessionSuccess, resp))
 
