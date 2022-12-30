@@ -47,12 +47,15 @@ type LoginSuccess = {
   username: string;
 };
 
+type Visibility = 'PUBLIC' | 'PRIVATE';
 type ListGame = {
   id: string;
   players: string[];
+  visibility: Visibility;
+  numPlayers: number;
 };
 type ListGamesResponse = {
-  total: number;
+  partial: boolean;
   games: ListGame[];
 };
 

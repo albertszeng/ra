@@ -19,13 +19,14 @@ import Grid from '@mui/material/Unstable_Grid2';
 import { enqueueSnackbar } from 'notistack';
 
 import { socket } from '../common';
+import { notEmpty } from '../libs/game';
 import type {
   MessageResponse,
   ListGame,
   ListGamesResponse,
 } from '../libs/request';
 
-type PlayerFormProps = {
+type GameListProps = {
   handleNewGame: (players: string[]) => void;
   handleLoadGame: (gameId: string) => void;
   handleDeleteGame: (gameId: string) => void;
@@ -53,14 +54,36 @@ function isValid(input: string): boolean {
   return input !== '' && (isPlayerNames(input) || isGameId(input));
 }
 
-function PlayerForm({
+/* Merges two game lists. Identical ids in prev are overriden by update. */
+function merge(prev: ListGame[], update: ListGame[]): ListGame[] {
+  const local = [...prev];
+  const idToIdx = prev.reduce(
+    (acc, game, idx) => ({ ...acc, [game.id]: idx }),
+    {} as { [key: string] : number },
+  );
+  const newGames = update.map((game: ListGame) => {
+    if (game.id in idToIdx) {
+      local[idToIdx[game.id]] = game;
+      return null;
+    }
+    return game;
+  }).filter(notEmpty);
+  return local.concat(newGames);
+}
+
+function GameList({
   handleNewGame, handleLoadGame, handleDeleteGame,
-}: PlayerFormProps): JSX.Element {
+}: GameListProps): JSX.Element {
   const [gameOrPlayers, setGameOrPlayers] = useState<string>('');
   const [formValid, setFormValid] = useState(false);
-  const [gameList, setGameList] = useState<ListGame[]>([]);
-  const onListGames = useCallback(({ games } : ListGamesResponse) => {
-    setGameList(games);
+  const [privateGames, setPrivateGames] = useState<ListGame[]>([]);
+  const [publicGames, setPublicGames] = useState<ListGame[]>([]);
+  const onListGames = useCallback(({ games, partial } : ListGamesResponse) => {
+    const privateG = games.filter((game) => game.visibility === 'PRIVATE');
+    setPrivateGames((prev) => ((partial) ? merge(prev, privateG) : privateG));
+
+    const publicG = games.filter((game) => game.visibility === 'PUBLIC');
+    setPublicGames((prev) => ((partial) ? merge(prev, publicG) : publicG));
   }, []);
   const onDelete = useCallback(({ message, level }: MessageResponse) => {
     enqueueSnackbar(message, { variant: level });
@@ -128,7 +151,7 @@ function PlayerForm({
             <Autocomplete
               freeSolo
               id="games_or_players"
-              options={gameList}
+              options={publicGames}
               renderOption={(props, { id, players }: ListGame) => (
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 <li {...props}>
@@ -181,4 +204,4 @@ function PlayerForm({
   );
 }
 
-export default PlayerForm;
+export default GameList;

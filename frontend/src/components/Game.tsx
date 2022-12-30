@@ -10,7 +10,7 @@ import { enqueueSnackbar } from 'notistack';
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
 import PlayersInfo from './PlayersInfo';
-import PlayerForm from './PlayerForm';
+import GameList from './GameList';
 
 import { socket } from '../common';
 import {
@@ -246,7 +246,7 @@ function Game({ playerName }: GameProps): JSX.Element {
           </Grid>
         </Grid>
       ) : (
-        <PlayerForm
+        <GameList
           handleNewGame={handleNewGame}
           handleLoadGame={handleLoadGame}
           handleDeleteGame={handleDeleteGame}
