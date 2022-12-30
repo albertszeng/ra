@@ -64,7 +64,8 @@ class RaGame(ra.RaGame, mutable.Mutable):
 
         Args:
             username - The name of the player, should be unique.
-            allowDup - If True and username is already in game, returns the index of the user.
+            allowDup - If True and username is already in game, returns the index of the
+                user.
 
         Returns:
             The index of the player.
@@ -342,7 +343,8 @@ async def delete(
     if username not in game.get_player_names():
         return (
             WarningMessage(
-                message=f"Cannot delete game: {gameId} since {username} is not a player."
+                message=f"Cannot delete game: {gameId} since \
+                {username} is not a player."
             ),
             None,
         )

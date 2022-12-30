@@ -344,7 +344,8 @@ async def add_player(
     )
     await sio.emit("update", msg, to=sid)
     if lst:
-        # TODO: respect visibility settings. Currently update is sent to all connected clients.
+        # TODO: respect visibility settings. Currently update is sent to all connected
+        # clients.
         await sio.emit("list_games", lst)
     return msg, lst
 
