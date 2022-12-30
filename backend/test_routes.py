@@ -81,7 +81,7 @@ Possible actions:
                     routes.GameInfo(
                         id=str(testId),
                         players=["testPlayer"],
-                        visibility=testVisibility,
+                        visibility=testVisibility.name,
                         numPlayers=4,
                     )
                 ],
@@ -102,7 +102,7 @@ Possible actions:
                     routes.GameInfo(
                         id=str(testId),
                         players=["Name1", "Name2"],
-                        visibility=testVisibility,
+                        visibility=testVisibility.name,
                         numPlayers=2,
                     )
                 ],
@@ -131,13 +131,13 @@ Possible actions:
                     routes.GameInfo(
                         id=str(testIds[0]),
                         players=["Game10", "Game11"],
-                        visibility=routes.Visibility.PUBLIC,
+                        visibility=routes.Visibility.PUBLIC.name,
                         numPlayers=2,
                     ),
                     routes.GameInfo(
                         id=str(testIds[1]),
                         players=["Game20", "Game21"],
-                        visibility=routes.Visibility.PUBLIC,
+                        visibility=routes.Visibility.PUBLIC.name,
                         numPlayers=2,
                     ),
                 ],
@@ -166,13 +166,13 @@ Possible actions:
                     routes.GameInfo(
                         id=str(testIds[0]),
                         players=["Game10", "Game11"],
-                        visibility=routes.Visibility.PUBLIC,
+                        visibility=routes.Visibility.PUBLIC.name,
                         numPlayers=2,
                     ),
                     routes.GameInfo(
                         id=str(testIds[1]),
                         players=["Game20", "Game21"],
-                        visibility=routes.Visibility.PRIVATE,
+                        visibility=routes.Visibility.PRIVATE.name,
                         numPlayers=2,
                     ),
                 ],
@@ -187,7 +187,7 @@ Possible actions:
                     routes.GameInfo(
                         id=str(testIds[0]),
                         players=["Game10", "Game11"],
-                        visibility=routes.Visibility.PUBLIC,
+                        visibility=routes.Visibility.PUBLIC.name,
                         numPlayers=2,
                     ),
                 ],
@@ -263,21 +263,21 @@ class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
             return False
 
         validGameId = str(uuid.uuid4())
-        resp = await routes.delete("invalid", "test1", fetchGame, persistDelete)
-        self.assertEqual(resp["level"], "error")
+        msg, _ = await routes.delete("invalid", "test1", fetchGame, persistDelete)
+        self.assertEqual(msg["level"], "error")
 
-        resp = await routes.delete(
+        msg, _ = await routes.delete(
             validGameId, "test1", fetchGame=failFetch, persistDelete=persistDelete
         )
-        self.assertEqual(resp["level"], "warning")
+        self.assertEqual(msg["level"], "warning")
 
-        resp = await routes.delete(validGameId, "invalid", fetchGame, persistDelete)
-        self.assertEqual(resp["level"], "warning")
+        msg, _ = await routes.delete(validGameId, "invalid", fetchGame, persistDelete)
+        self.assertEqual(msg["level"], "warning")
 
-        resp = await routes.delete(
+        msg, _ = await routes.delete(
             validGameId, "test1", fetchGame, persistDelete=failPersist
         )
-        self.assertEqual(resp["level"], "warning")
+        self.assertEqual(msg["level"], "warning")
 
     async def test_delete(self) -> None:
         storage: dict[str, routes.RaGame] = {}
@@ -291,9 +291,15 @@ class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
             return True
 
         gameId = uuid.uuid4()
-        resp = await routes.delete(str(gameId), "test1", fetchGame, persistDelete)
-        self.assertEqual(resp["level"], "success")
+        msg, lst = await routes.delete(str(gameId), "test1", fetchGame, persistDelete)
+        self.assertEqual(msg["level"], "success")
         self.assertEqual(storage, {})
+        self.assertEqual(
+            lst,
+            routes.ListGamesResponse(
+                partial=True, games=[routes.GameInfo(id=str(gameId), deleted=True)]
+            ),
+        )
 
 
 class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
@@ -303,19 +309,19 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         ) -> None:
             return
 
-        resp = await routes.start(
+        msg, _ = await routes.start(
             routes.StartRequest(numPlayers=0),
             username="user",
             commitGame=commitGame,
         )
-        self.assertEqual(resp["level"], "warning")
+        self.assertEqual(msg["level"], "warning")
 
-        resp = await routes.start(
+        msg, _ = await routes.start(
             routes.StartRequest(numPlayers=1),
             username="user",
             commitGame=commitGame,
         )
-        self.assertEqual(resp["level"], "warning")
+        self.assertEqual(msg["level"], "warning")
 
     async def test_start(self) -> None:
         self.maxDiff = None
@@ -328,7 +334,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
             storage["game"] = game
             storage["visibility"] = visibility
 
-        response = await routes.start(
+        msg, lst = await routes.start(
             routes.StartRequest(
                 numPlayers=2,
             ),
@@ -343,7 +349,21 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(storedGameId)
         self.assertIsNotNone(storedGame)
         self.assertEqual(storedVisibility, routes.Visibility.PUBLIC)
-        self.assertEqual(response["level"], "success")
+        self.assertEqual(msg["level"], "success")
+        self.assertEqual(
+            lst,
+            routes.ListGamesResponse(
+                partial=True,
+                games=[
+                    routes.GameInfo(
+                        id=str(storedGameId),
+                        players=["user"],
+                        visibility=routes.Visibility.PUBLIC.name,
+                        numPlayers=2,
+                    )
+                ],
+            ),
+        )
 
 
 class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):

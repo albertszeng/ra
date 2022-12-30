@@ -27,8 +27,6 @@ import type {
   ActionRequest,
   DeleteRequest,
   JoinLeaveRequest,
-  StartRequest,
-  StartResponse,
 } from '../libs/request';
 
 type GameProps = {
@@ -43,10 +41,6 @@ function Game({ playerName }: GameProps): JSX.Element {
   // When true and set to a valid index, swap occurs.
   const [swapInfo, setSwapInfo] = useState<[boolean, number]>([false, -1]);
 
-  const handleNewGame = useCallback((players: string[]) => {
-    const request: StartRequest = { playerNames: players, numPlayers: players.length };
-    socket.emit('start_game', request);
-  }, []);
   const handleLoadGame = useCallback((requestedId: string) => {
     const request: ActionRequest = { gameId: requestedId, command: 'LOAD' };
     socket.emit('act', request);
@@ -127,13 +121,6 @@ function Game({ playerName }: GameProps): JSX.Element {
       socket.emit('join', { gameId } as JoinLeaveRequest);
     }
   }, [gameId]);
-  const onStartGame = useCallback(({ gameId: id, gameState: state } : StartResponse) => {
-    setIsPlaying(true);
-    setGameId(id);
-    setGame((prevGame: GameState) => ({ ...prevGame, ...state }));
-    // Let the server know we've joined.
-    socket.emit('join', { gameId: id } as JoinLeaveRequest);
-  }, []);
   const updateGame = useCallback(({
     level, message, gameState, action, username, gameId: remoteGameId,
   }: ApiResponse) => {
@@ -185,12 +172,6 @@ function Game({ playerName }: GameProps): JSX.Element {
       socket.off('logout', onReset);
     };
   }, [onReset]);
-  useEffect(() => {
-    socket.on('start_game', onStartGame);
-    return () => {
-      socket.off('start_game', onStartGame);
-    };
-  }, [onStartGame]);
   useEffect(() => {
     socket.on('update', onUpdateGame);
     return () => {
@@ -247,7 +228,6 @@ function Game({ playerName }: GameProps): JSX.Element {
         </Grid>
       ) : (
         <GameList
-          handleNewGame={handleNewGame}
           handleLoadGame={handleLoadGame}
           handleDeleteGame={handleDeleteGame}
         />

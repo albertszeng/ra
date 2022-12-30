@@ -1,6 +1,8 @@
 import { Game } from './game';
 import { WarningLevel } from '../common';
 
+type Visibility = 'PUBLIC' | 'PRIVATE';
+
 type ActionRequest = {
   gameId: string;
   command: string;
@@ -16,7 +18,7 @@ type ActionResponse = {
 
 type StartRequest = {
   numPlayers: number;
-  playerNames: string[];
+  visibility: Visibility;
 };
 type JoinLeaveRequest = {
   gameId: string;
@@ -47,7 +49,6 @@ type LoginSuccess = {
   username: string;
 };
 
-type Visibility = 'PUBLIC' | 'PRIVATE';
 type ListGame = {
   id: string;
   players: string[];
@@ -77,5 +78,6 @@ export type {
   StartRequest,
   StartResponse,
   TokenLoginRequest,
+  Visibility,
   WarningLevel,
 };

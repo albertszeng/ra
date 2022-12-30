@@ -203,7 +203,7 @@ async def list_games(username: str, sid: str) -> routes.ListGamesResponse:
 @login_required
 async def start_game(
     username: str, sid: str, data: routes.StartRequest
-) -> routes.Message:
+) -> Tuple[routes.Message, Optional[routes.ListGamesResponse]]:
     async def commitGame(
         gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
     ) -> None:
@@ -215,14 +215,19 @@ async def start_game(
             db.session.add(dbGame)
             db.session.commit()
 
-    response = await routes.start(data, username, commitGame=commitGame)
-    await sio.emit("start_game", response, room=sid)
-    return response
+    msg, lstResponse = await routes.start(data, username, commitGame=commitGame)
+    await sio.emit("update", msg, room=sid)
+    if lstResponse:
+        # TODO(luis): Don't do this for private.
+        await sio.emit("list_games", lstResponse)
+    return msg, lstResponse
 
 
 @sio.event  # pyre-ignore[56]
 @login_required
-async def delete(username: str, sid: str, data: routes.DeleteRequest) -> routes.Message:
+async def delete(
+    username: str, sid: str, data: routes.DeleteRequest
+) -> Tuple[routes.Message, Optional[routes.ListGamesResponse]]:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -238,15 +243,17 @@ async def delete(username: str, sid: str, data: routes.DeleteRequest) -> routes.
         return True
 
     if not (gameIdStr := data.get("gameId")):
-        return routes.ErrorMessage(message="Must provide a gameId with request.")
+        return routes.ErrorMessage(message="Must provide a gameId with request."), None
 
-    response = await routes.delete(
+    msg, lstResponse = await routes.delete(
         gameIdStr, username, fetchGame=fetchGame, persistDelete=persistDelete
     )
     # Update game room as well as sid.
-    await sio.emit("update", response, to=gameIdStr)
-    await sio.emit("delete", response, to=sid)
-    return response
+    await sio.emit("update", msg, to=gameIdStr)
+    await sio.emit("delete", msg, to=sid)
+    if lstResponse:
+        await sio.emit("list_games", lstResponse)
+    return msg, lstResponse
 
 
 @sio.event  # pyre-ignore[56]

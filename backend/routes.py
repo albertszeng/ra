@@ -27,6 +27,15 @@ class Visibility(enum.Enum):
     PUBLIC = 1
     PRIVATE = 2
 
+    @staticmethod
+    def from_str(label: Optional[str]) -> Optional["Visibility"]:
+        if not label:
+            return None
+        label = label.upper()
+        if label in ("PUBLIC", "PRIVATE"):
+            return Visibility[label]
+        return None
+
 
 class RaGame(ra.RaGame, mutable.Mutable):
     """Required so database can update on changes to state."""
@@ -136,7 +145,7 @@ class LoginResponse(Message):
 
 class StartRequest(TypedDict):
     numPlayers: NotRequired[int]
-    visibility: NotRequired[Visibility]
+    visibility: NotRequired[str]
 
 
 class StartResponse(ActionResponse):
@@ -166,11 +175,13 @@ class GameInfo(TypedDict):
     # Unique identifier for this game.
     id: str
     # Usernames of the players that have joined.
-    players: List[str]
+    players: NotRequired[List[str]]
     # Game visibility. Private games are only sent to members of the game.
-    visibility: Visibility
+    visibility: NotRequired[str]
     # How many total players this game hosts.
-    numPlayers: int
+    numPlayers: NotRequired[int]
+    # When specified, means this game was deleted.
+    deleted: NotRequired[bool]
 
 
 class ListGamesResponse(TypedDict):
@@ -189,6 +200,24 @@ def get_game_repr(game: ra.RaGame) -> str:
     return f"{val}\n\n{prompt}"
 
 
+def single_game(
+    gameId: str, game: Optional[RaGame] = None, visibility: Optional[Visibility] = None
+) -> ListGamesResponse:
+    if game and visibility:
+        return ListGamesResponse(
+            partial=True,
+            games=[
+                GameInfo(
+                    id=gameId,
+                    players=game.get_player_names(),
+                    visibility=visibility.name,
+                    numPlayers=game.get_num_players(),
+                )
+            ],
+        )
+    return ListGamesResponse(partial=True, games=[GameInfo(id=gameId, deleted=True)])
+
+
 def list(
     username: str, dbGames: Sequence[Tuple[uuid.UUID, RaGame, Visibility]]
 ) -> ListGamesResponse:
@@ -199,7 +228,7 @@ def list(
             GameInfo(
                 id=str(gameId),
                 players=game.get_player_names(),
-                visibility=visibility,
+                visibility=visibility.name,
                 numPlayers=game.get_num_players(),
             )
             for gameId, game, visibility in dbGames
@@ -212,7 +241,7 @@ async def start(
     request: StartRequest,
     username: str,
     commitGame: Callable[[uuid.UUID, RaGame, Visibility], Awaitable[None]],
-) -> Message:
+) -> Tuple[Message, Optional[ListGamesResponse]]:
     """Starts a RaGame.
 
     Args:
@@ -226,14 +255,17 @@ async def start(
         not (numPlayers := request.get("numPlayers"))
         or numPlayers < info.MIN_NUM_PLAYERS
     ):
-        return WarningMessage(f"Cannot start a game with {numPlayers} players.")
+        return WarningMessage(f"Cannot start a game with {numPlayers} players."), None
 
     gameId = uuid.uuid4()
     game = RaGame(num_players=numPlayers)
     if game.maybe_add_player(username) is None:
-        return ErrorMessage("Failed to start game. Internal error.")
-    await commitGame(gameId, game, request.get("visibility") or Visibility.PUBLIC)
-    return SuccessMessage(f"{username} created game: {gameId}.")
+        return ErrorMessage("Failed to start game. Internal error."), None
+    visibility = Visibility.from_str(request.get("visibility")) or Visibility.PUBLIC
+    await commitGame(gameId, game, visibility)
+    return SuccessMessage(f"{username} created game: {gameId}."), single_game(
+        str(gameId), game, visibility
+    )
 
 
 async def add_player(
@@ -252,22 +284,12 @@ async def add_player(
     if not (gameInfo := await fetchGame(gameId)):
         return WarningMessage(f"Cannot add player to non-existant game: {gameId}.")
     game, visibility = gameInfo
-    if (playerIdx := game.maybe_add_player(username)) is None:
+    if game.maybe_add_player(username) is None:
         return WarningMessage(f"Game {gameId} is full. {username} cannot be added.")
     if not await saveGame(gameId, game):
         return ErrorMessage(f"{username} failed to add {username} to game: {gameId}.")
 
-    return ListGamesResponse(
-        partial=True,
-        games=[
-            GameInfo(
-                id=gameIdStr,
-                players=game.get_player_names(),
-                visibility=visibility,
-                numPlayers=game.get_num_players(),
-            )
-        ],
-    )
+    return single_game(gameIdStr, game, visibility)
 
 
 async def join_game(
@@ -300,20 +322,23 @@ async def delete(
     username: str,
     fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaGame]]],
     persistDelete: Callable[[uuid.UUID], Awaitable[bool]],
-) -> Message:
+) -> Tuple[Message, Optional[ListGamesResponse]]:
     try:
         gameId = uuid.UUID(gameIdStr)
     except ValueError as err:
-        return ErrorMessage(message=str(err))
+        return ErrorMessage(message=str(err)), None
     if not (game := await fetchGame(gameId)):
-        return WarningMessage(message=f"No game with id {gameId} found.")
+        return WarningMessage(message=f"No game with id {gameId} found."), None
     if username not in game.get_player_names():
-        return WarningMessage(
-            message=f"Cannot delete game: {gameId} since {username} is not a player."
+        return (
+            WarningMessage(
+                message=f"Cannot delete game: {gameId} since {username} is not a player."
+            ),
+            None,
         )
     if not await persistDelete(gameId):
-        return WarningMessage(message=f"No game with id {gameId} found.")
-    return SuccessMessage(message=f"Deleted game: {gameId}")
+        return WarningMessage(message=f"No game with id {gameId} found."), None
+    return SuccessMessage(message=f"Deleted game: {gameId}"), single_game(str(gameId))
 
 
 async def action(
