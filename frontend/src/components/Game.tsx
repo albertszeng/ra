@@ -5,7 +5,7 @@ import {
   Container,
   Paper,
 } from '@mui/material';
-import { enqueueSnackbar } from 'notistack';
+import { closeSnackbar, enqueueSnackbar } from 'notistack';
 
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
@@ -104,6 +104,7 @@ function Game({ playerName }: GameProps): JSX.Element {
   const AIUIDelayMs = 2000;
 
   const onReset = useCallback(() => {
+    closeSnackbar();
     setIsPlaying(false);
     setGameId('');
     window.localStorage.setItem(GAME_STATE_KEY, '{}');
@@ -222,7 +223,7 @@ function Game({ playerName }: GameProps): JSX.Element {
           </Grid>
         </Grid>
       ) : (
-        <GameList />
+        <GameList handleLoadGame={handleLoadGame} />
       )}
     </Container>
   );

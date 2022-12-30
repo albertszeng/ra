@@ -340,7 +340,7 @@ async def add_player(
             return True
 
     msg, lst = await routes.add_player(
-        username, data.gameId, fetchGame=fetchGame, saveGame=saveGame
+        username, data.get("gameId"), fetchGame=fetchGame, saveGame=saveGame
     )
     await sio.emit("update", msg, to=sid)
     if lst:

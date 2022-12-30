@@ -1,4 +1,3 @@
-import dataclasses
 import datetime as datetime_lib
 import enum
 import uuid
@@ -60,20 +59,21 @@ class RaGame(ra.RaGame, mutable.Mutable):
         super().init_game()
         self._initialized = True
 
-    def maybe_add_player(self, username: str) -> Optional[int]:
+    def maybe_add_player(self, username: str, allowDup: bool = True) -> Optional[int]:
         """Maybe adds the player to the game.
 
         Args:
             username - The name of the player, should be unique.
+            allowDup - If True and username is already in game, returns the index of the user.
 
         Returns:
-            The index of the newly added player or existing player. None if no more room.
+            The index of the player.
         """
         if self.initialized():
             return None
 
         if username in self._player_names:
-            return self._player_names.index(username)
+            return self._player_names.index(username) if allowDup else None
         self._player_names.append(username)
         if len(self._player_names) == self._num_players:
             # Automatically initialize if we've hit max players.
@@ -166,8 +166,7 @@ class DeleteRequest(TypedDict):
     gameId: NotRequired[str]
 
 
-@dataclasses.dataclass(frozen=True)
-class AddPlayerRequest:
+class AddPlayerRequest(TypedDict):
     gameId: Optional[str]
 
 
@@ -287,9 +286,9 @@ async def add_player(
             None,
         )
     game, visibility = gameInfo
-    if game.maybe_add_player(username) is None:
+    if game.maybe_add_player(username, allowDup=False) is None:
         return (
-            WarningMessage(f"Game {gameId} is full. {username} cannot be added."),
+            WarningMessage(f"{username} cannot be added to {gameId}."),
             None,
         )
     if not await saveGame(gameId, game):

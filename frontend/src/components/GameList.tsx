@@ -11,6 +11,7 @@ import {
   IconButton,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   ListSubheader,
@@ -92,7 +93,10 @@ function clean(games: ListGame[]): ValidatedListGame[] {
   }).filter(notEmpty);
 }
 
-function GameList(): JSX.Element {
+type GameListProps = {
+  handleLoadGame: (gameId: string) => void;
+};
+function GameList({ handleLoadGame }: GameListProps): JSX.Element {
   // const [formValid, setFormValid] = useState(false);
   const [privateGames, setPrivateGames] = useState<ValidatedListGame[]>([]);
   const [publicGames, setPublicGames] = useState<ValidatedListGame[]>([]);
@@ -137,7 +141,7 @@ function GameList(): JSX.Element {
     };
   }, [onDelete]);
 
-  const renderGame = useCallback(({ id, players }: ValidatedListGame) => (
+  const renderGame = useCallback(({ id, players, numPlayers: count }: ValidatedListGame) => (
     <ListItem
       key={`game-${id}`}
       alignItems="flex-start"
@@ -158,15 +162,20 @@ function GameList(): JSX.Element {
         </ButtonGroup>
       )}
     >
-      <ListItemIcon>
-        <VideogameAsset />
-      </ListItemIcon>
-      <ListItemText
-        primary={`Game ID: ${id}`}
-        secondary={players.toString()}
-      />
+      <ListItemButton
+        dense
+        onClick={() => handleLoadGame(id)}
+      >
+        <ListItemIcon>
+          <VideogameAsset />
+        </ListItemIcon>
+        <ListItemText
+          primary={`Game ID: ${id}`}
+          secondary={`(${players.length}/${count}): ${players.toString()}`}
+        />
+      </ListItemButton>
     </ListItem>
-  ), [handleAddPlayer, handleDeleteGame]);
+  ), [handleAddPlayer, handleDeleteGame, handleLoadGame]);
 
   // const handleChange = useCallback((
   //   e: SyntheticEvent<Element, Event>,
