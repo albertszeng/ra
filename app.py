@@ -322,9 +322,8 @@ async def act(
         responses = await routes.action(
             data, session.get("playerIdx"), username, fetchGame, saveGame
         )
-    # It's possible multiple actions occurred.
-    for response in responses:
-        await sio.emit("update", response, room=gameIdStr)
+    # Send in one-update to maintain order.
+    await sio.emit("update", responses, room=gameIdStr)
     return responses
 
 

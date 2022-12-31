@@ -107,7 +107,6 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
       handleLoadGame(restoredGameId);
     }
   }, [handleLoadGame]);
-  const [timestampMs, setTimestampMs] = useState(Date.now());
   const AIUIDelayMs = 1000;
 
   const onReset = useCallback(() => {
@@ -141,27 +140,22 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
       enqueueSnackbar(`${username} performed action: ${action}`, { variant: 'info' });
     }
   }, [setIsPlaying]);
-  const onUpdateGame = useCallback((resp: ApiResponse) => {
-    if (!resp.gameState) {
-      // Only game state updates are delayed.
+  const onUpdateGame = useCallback((resp: ApiResponse | ApiResponse[]) => {
+    if (!Array.isArray(resp)) {
       updateGame(resp);
       return;
     }
-    const now = Date.now();
-    if (now >= timestampMs + AIUIDelayMs) {
-      setTimestampMs(now);
-      updateGame(resp);
-    } else {
-      // Increase timestamp so next action happens at at least this delay.
-      setTimestampMs((prev) => prev + AIUIDelayMs);
-      setLoading(true);
-      // Need to enqueue the action to execute later.
-      setTimeout(() => {
-        setLoading(Date.now() < timestampMs + AIUIDelayMs);
-        updateGame(resp);
-      }, (timestampMs + AIUIDelayMs) - now);
-    }
-  }, [updateGame, timestampMs]);
+    setLoading(true);
+    resp.forEach((item: ApiResponse, idx: number) => {
+      if (idx > 0 || idx < resp.length - 1) {
+        setTimeout(() => updateGame(item), idx * AIUIDelayMs);
+      }
+    });
+    setTimeout(() => {
+      setLoading(false);
+      updateGame(resp[resp.length - 1]);
+    }, (resp.length - 1) * AIUIDelayMs);
+  }, [updateGame]);
   const onSpectate = useCallback((isSpectating: boolean) => {
     if (isSpectating) {
       enqueueSnackbar('In Spectator Mode', { variant: 'success', persist: true });
