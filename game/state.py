@@ -67,6 +67,29 @@ class TileBag:
         """
         return self.draw_order[:]
 
+    def set_next_tile_to_be_drawn(self, tile: int) -> int:
+        """
+        Sets "tile" as the next tile to be drawn. Returns what the next draw
+        would have been otherwise.
+
+        Internally, this swaps the next tile to be drawn with the first occurence
+        of "tile" in the draw order.
+        """
+        assert (
+            tile in self.draw_order
+        ), f"Cannot set {tile} to be next draw because it is not in the tile bag"
+
+        # If next draw is equal to tile, then just put it back
+        if self.draw_order[0] == tile:
+            return tile
+
+        next_draw = self.draw_order.pop(0)
+        first_occurrence_of_tile = self.draw_order.index(tile)
+        self.draw_order.remove(tile)
+        self.draw_order.insert(first_occurrence_of_tile, next_draw)
+        self.draw_order.insert(0, tile)
+        return next_draw
+
     def print_contents_of_bag(self) -> None:
         print(self)
 

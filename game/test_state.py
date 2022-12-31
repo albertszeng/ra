@@ -48,6 +48,27 @@ class TileBagTests(unittest.TestCase):
         self.assertEqual([0] * gi.NUM_TILE_TYPES, t.get_bag_contents())
         self.assertEqual(None, t.draw_tile(log=False))
 
+    def test_set_next_tile_to_be_drawn(self) -> None:
+        t = gs.TileBag()
+        draw_order = t.get_draw_order()
+        initial_num_tiles = t.get_num_tiles_left()
+        initial_bag_contents = t.get_bag_contents()
+
+        tile_to_be_set = (
+            gi.INDEX_OF_PHAR if draw_order[0] != gi.INDEX_OF_PHAR else gi.INDEX_OF_RA
+        )
+        t.set_next_tile_to_be_drawn(tile_to_be_set)
+        new_draw_order = t.get_draw_order()
+        self.assertEqual(initial_num_tiles, t.get_num_tiles_left())
+        self.assertEqual(initial_bag_contents, t.get_bag_contents())
+        self.assertNotEqual(draw_order, new_draw_order)
+        self.assertEqual(new_draw_order[0], tile_to_be_set)
+
+        t.set_next_tile_to_be_drawn(tile_to_be_set)
+        self.assertEqual(initial_num_tiles, t.get_num_tiles_left())
+        self.assertEqual(initial_bag_contents, t.get_bag_contents())
+        self.assertEqual(new_draw_order, t.get_draw_order())
+
 
 class PlayerStateTests(unittest.TestCase):
     def setUp(self) -> None:
