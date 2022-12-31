@@ -15,12 +15,13 @@ type PlayerInfoProps = {
   bidWithSun: (idx: number) => void;
   // When a tile is selected by the player, this is called.
   selectTile: (player: Player, tile: Tile) => void;
+  goldenGodSelected: boolean;
 
 };
 
 function PlayerInfo({
   data: player, isActive, isCurrent, isLocalPlayer, auctionStarted,
-  maxBidSun, bidWithSun, selectTile,
+  maxBidSun, bidWithSun, selectTile, goldenGodSelected,
 }: PlayerInfoProps): JSX.Element {
   const { collection, usableSun, unusableSun } = player;
   const handleTileClick = useCallback(
@@ -39,7 +40,12 @@ function PlayerInfo({
         unavailableSun={unusableSun}
         bidWithSun={bidWithSun}
       />
-      <PlayerTiles tiles={collection} onTileClick={handleTileClick} />
+      <PlayerTiles
+        tiles={collection}
+        goldenGodSelected={goldenGodSelected}
+        onTileClick={handleTileClick}
+        disabledTiles={!isActive || !isCurrent || !isLocalPlayer || auctionStarted}
+      />
     </>
   );
 }

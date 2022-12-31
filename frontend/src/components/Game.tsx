@@ -46,6 +46,8 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
   const [swapInfo, setSwapInfo] = useState<[boolean, number]>([false, -1]);
   // Used when waiting between updates to game state.
   const [loading, setLoading] = useState<boolean>(false);
+  // Track when we select a golden god.
+  const [goldenGodSelected, setGoldeGodSelected] = useState(false);
 
   const handleLoadGame = useCallback((requestedId: string) => {
     const request: ActionRequest = { gameId: requestedId, command: 'LOAD' };
@@ -65,15 +67,18 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
     socket.emit('act', request);
   }, [gameId]);
   const handleSelectCardFromGrid = useCallback((idx: number, { name: tileName }: Tile) => {
-    const [shouldSwap/* swapIdx */] = swapInfo;
-    if (!shouldSwap) {
+    if (!goldenGodSelected) {
       enqueueSnackbar(`Click your Golden God to atttempt a swap for ${tileName}.`, { variant: 'info' });
-      setSwapInfo([shouldSwap, idx]);
+      setSwapInfo([true, idx]);
       return;
     }
+    setSwapInfo([false, -1]);
     const request: ActionRequest = { gameId, command: `G${idx + 1}` };
     socket.emit('act', request);
-  }, [gameId, swapInfo]);
+  }, [gameId, goldenGodSelected]);
+  const resetSelectCardFromGrid = useCallback(() => {
+    setSwapInfo([false, -1]);
+  }, []);
   const handlePlayerSelectTile = useCallback((player: Player, tile: Tile) => {
     let action = getTileAction(tile);
     if (!action) {
@@ -83,14 +88,19 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
     if (action === 'SWAP') {
       const [/* shouldSwap */, swapIdx] = swapInfo;
       if (swapIdx < 0) {
-        enqueueSnackbar('Click the card you wish to swap for your Golden God', { variant: 'info' });
+        if (!goldenGodSelected) {
+          // If already selected, we're deselecting.
+          enqueueSnackbar('Click the card you wish to swap for your Golden God', { variant: 'info' });
+        }
+        setGoldeGodSelected(!goldenGodSelected);
         return;
       }
+      setGoldeGodSelected(false);
       action = `G${swapIdx + 1}`;
     }
     const request: ActionRequest = { gameId, command: action };
     socket.emit('act', request);
-  }, [gameId, swapInfo]);
+  }, [gameId, swapInfo, goldenGodSelected]);
 
   useEffect(() => {
     // When the gameId changes, store in local storage.
@@ -200,12 +210,21 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
   } = gameState;
   return (
     <Container disableGutters>
-      {gameEnded ? <EndInfo resetGame={onReset} /> : <div /> }
-      {(!gameEnded && isPlaying) ? (
+      {(isPlaying) ? (
         <Grid container spacing={{ xs: 2, md: 3 }}>
+          {gameEnded ? (
+            <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
+              <EndInfo players={playerStates} />
+            </Grid>
+          ) : null}
           <Grid xs={12}>
             <Paper elevation={3}>
-              <CardGrid game={gameState} selectTileForSwap={handleSelectCardFromGrid} />
+              <CardGrid
+                game={gameState}
+                selectTileForSwap={handleSelectCardFromGrid}
+                resetSelectTileForSwap={resetSelectCardFromGrid}
+                selectedTileIdx={swapInfo[1]}
+              />
             </Paper>
           </Grid>
           <Grid xs={12} />
@@ -223,6 +242,7 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
                 auctionSuns={auctionSuns}
                 bidWithSun={handleBidAction}
                 selectTile={handlePlayerSelectTile}
+                goldenGodSelected={goldenGodSelected}
                 actionsProps={{
                   onDraw: handleDraw,
                   onAuction: handleAuction,

@@ -1,21 +1,35 @@
 import React from 'react';
 import {
   Card,
+  CardContent,
   CardMedia,
   Tooltip,
+  Typography,
 } from '@mui/material';
 
 import type { Tile as TileInfo } from '../libs/game';
 
 type TileProps = {
   tile: TileInfo;
+  selected: boolean | undefined,
+  onSelect: ((tile: TileInfo) => void) | null;
 };
 
-function Tile({ tile }: TileProps): JSX.Element {
+function Tile({ tile, selected, onSelect }: TileProps): JSX.Element {
   const { name } = tile;
   const imageSrc = `${process.env.PUBLIC_URL}/assets/tiles/${name}.jpeg`;
+  const getSuffix = () => {
+    const pieces = name.split(' -- ');
+    return pieces[pieces.length - 1];
+  };
   return (
-    <Card>
+    <Card
+      sx={{
+        border: (tile.tileType === 'DISASTER' || selected) ? 3 : 0,
+        borderColor: (selected) ? 'yellow' : 'red',
+      }}
+      onClick={(onSelect) ? (() => onSelect(tile)) : undefined}
+    >
       <Tooltip title={name}>
         <CardMedia
           component="img"
@@ -23,6 +37,11 @@ function Tile({ tile }: TileProps): JSX.Element {
           alt={name}
         />
       </Tooltip>
+      <CardContent>
+        <Typography variant="body2" color="text.secondary">
+          {getSuffix()}
+        </Typography>
+      </CardContent>
     </Card>
   );
 }
