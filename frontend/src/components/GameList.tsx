@@ -6,12 +6,8 @@ import React, {
 
 import {
   // Autocomplete,
-  Button,
   ButtonGroup,
   IconButton,
-  FormControl,
-  FormControlLabel,
-  FormLabel,
   List,
   ListItem,
   ListItemButton,
@@ -19,16 +15,11 @@ import {
   ListItemText,
   ListSubheader,
   Paper,
-  Radio,
-  RadioGroup,
   Typography,
 } from '@mui/material';
 import {
-  AddModerator,
   Delete,
-  Diversity3,
   PersonAdd,
-  Public,
   VideogameAsset,
 } from '@mui/icons-material';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -43,9 +34,7 @@ import type {
   MessageResponse,
   ListGame,
   ListGamesResponse,
-  StartRequest,
   ValidatedListGame,
-  Visibility,
 } from '../libs/request';
 
 // function isPlayerNames(input: string): boolean {
@@ -111,13 +100,6 @@ function GameList({ handleLoadGame }: GameListProps): JSX.Element {
   // const [formValid, setFormValid] = useState(false);
   const [privateGames, setPrivateGames] = useState<ValidatedListGame[]>([]);
   const [publicGames, setPublicGames] = useState<ValidatedListGame[]>([]);
-  const [numPlayers, setNumPlayers] = useState<number>(2);
-
-  const handleNewGame = useCallback((visibility: Visibility) => {
-    const request: StartRequest = { numPlayers, visibility };
-    socket.emit('start_game', request);
-  }, [numPlayers]);
-
   const handleDeleteGame = useCallback((toDeleteId: string) => {
     const request: DeleteRequest = { gameId: toDeleteId };
     socket.emit('delete', request);
@@ -208,90 +190,33 @@ function GameList({ handleLoadGame }: GameListProps): JSX.Element {
   // const tooltipText = 'Enter comma-seperated list of players or the Game ID
   // of an existing game.';
   return (
-    <>
-      <Paper variant="outlined" elevation={1}>
-        <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
-          <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
-            <Typography variant="h4">
-              Start a Game of Ra!
-            </Typography>
-          </Grid>
-          <Grid xs={12} justifyContent="center" alignItems="center">
-            <List
-              sx={{
-                width: '100%',
-                overflow: 'auto',
-                maxHeight: 680,
-              }}
-            >
-              <ListSubheader>
-                {`Public (${publicGames.length})`}
-              </ListSubheader>
-              {publicGames.map(renderGame)}
-              <ListSubheader>
-                {`Private (${privateGames.length})`}
-              </ListSubheader>
-              {privateGames.map(renderGame)}
-            </List>
-          </Grid>
+    <Paper variant="outlined" elevation={1}>
+      <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
+        <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
+          <Typography variant="h4">
+            Available Games
+          </Typography>
         </Grid>
-      </Paper>
-      <Paper variant="outlined" elevation={1}>
-        <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
-          <Grid xs={6} display="flex" justifyContent="center" alignItems="center">
-            <FormControl>
-              <FormLabel id="player-label">Players</FormLabel>
-              <RadioGroup
-                row
-                aria-labelledby="player-label"
-                name="players-group"
-                value={numPlayers}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                  setNumPlayers(Number(event.target.value));
-                }}
-              >
-                {[2, 3, 4, 5].map((nPlayers: number) => (
-                  <FormControlLabel
-                    value={nPlayers}
-                    control={<Radio />}
-                    label={nPlayers}
-                  />
-                ))}
-              </RadioGroup>
-            </FormControl>
-          </Grid>
-          <Grid xs={6} display="flex" justifyContent="center" alignItems="center">
-            <ButtonGroup
-              variant="contained"
-              size="large"
-              aria-label="game action buttons"
-            >
-              <Button
-                color="primary"
-                onClick={() => handleNewGame('PUBLIC')}
-                startIcon={<Public />}
-              >
-                Public Game
-              </Button>
-              <Button
-                color="secondary"
-                onClick={() => handleNewGame('PRIVATE')}
-                startIcon={<AddModerator />}
-              >
-                Private Game
-              </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                startIcon={<Diversity3 />}
-              >
-                Join Game
-              </Button>
-            </ButtonGroup>
-          </Grid>
+        <Grid xs={12} justifyContent="center" alignItems="center">
+          <List
+            sx={{
+              width: '100%',
+              overflow: 'auto',
+              maxHeight: 680,
+            }}
+          >
+            <ListSubheader>
+              {`Public (${publicGames.length})`}
+            </ListSubheader>
+            {publicGames.map(renderGame)}
+            <ListSubheader>
+              {`Private (${privateGames.length})`}
+            </ListSubheader>
+            {privateGames.map(renderGame)}
+          </List>
         </Grid>
-      </Paper>
-    </>
+      </Grid>
+    </Paper>
   );
 }
 

@@ -9,8 +9,9 @@ import { closeSnackbar, enqueueSnackbar } from 'notistack';
 
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
-import PlayersInfo from './PlayersInfo';
 import GameList from './GameList';
+import PlayersInfo from './PlayersInfo';
+import StartGameForm from './StartGameForm';
 
 import { socket } from '../common';
 import {
@@ -133,6 +134,11 @@ function Game({ playerName }: GameProps): JSX.Element {
     enqueueSnackbar(`${username} performed action: ${action}`, { variant: 'info' });
   }, []);
   const onUpdateGame = useCallback((resp: ApiResponse) => {
+    if (!resp.gameState) {
+      // Only game state updates are delayed.
+      updateGame(resp);
+      return;
+    }
     const now = Date.now();
     if (now >= timestampMs + AIUIDelayMs) {
       setTimestampMs(now);
@@ -223,7 +229,15 @@ function Game({ playerName }: GameProps): JSX.Element {
           </Grid>
         </Grid>
       ) : (
-        <GameList handleLoadGame={handleLoadGame} />
+        <Grid container spacing={{ xs: 2, md: 3 }}>
+          <Grid xs={12}>
+            <StartGameForm />
+          </Grid>
+          <Grid xs={12} />
+          <Grid xs={12}>
+            <GameList handleLoadGame={handleLoadGame} />
+          </Grid>
+        </Grid>
       )}
     </Container>
   );

@@ -5,7 +5,12 @@ import React, {
   useState,
 } from 'react';
 
-import { Brightness4, Brightness7, Logout } from '@mui/icons-material';
+import {
+  Brightness4,
+  Brightness7,
+  Delete,
+  Logout,
+} from '@mui/icons-material';
 import {
   AppBar,
   Button,
@@ -17,7 +22,7 @@ import {
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Grid from '@mui/material/Unstable_Grid2';
-import { closeSnackbar, enqueueSnackbar } from 'notistack';
+import { closeSnackbar, enqueueSnackbar, SnackbarProvider } from 'notistack';
 import type { SnackbarKey } from 'notistack';
 
 import { socket, ColorModeContext } from './common';
@@ -61,6 +66,15 @@ function App() {
     }),
     [mode],
   );
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const renderAction = useCallback((snackbarId: SnackbarKey | undefined) => (
+    <IconButton
+      aria-label="delete"
+      onClick={() => closeSnackbar(snackbarId)}
+    >
+      <Delete />
+    </IconButton>
+  ), []);
   const onLogout = useCallback(({ message, level }: MessageResponse) => {
     setLoggedIn(false);
     setPlayerName('');
@@ -122,20 +136,27 @@ function App() {
             </IconButton>
           </Toolbar>
         </AppBar>
-        <Container maxWidth="lg">
-          <Grid container spacing={2}>
-            <Grid xs />
-            <Grid xs={12}>
-              {(loggedIn)
-                ? (
-                  <Game
-                    playerName={playerName}
-                  />
-                )
-                : <Login onLoginSuccess={onLoginSuccess} />}
+        <SnackbarProvider
+          preventDuplicate
+          autoHideDuration={3500}
+          maxSnack={(isSmallScreen) ? 1 : 4}
+          action={renderAction}
+        >
+          <Container maxWidth="lg">
+            <Grid container spacing={2}>
+              <Grid xs />
+              <Grid xs={12}>
+                {(loggedIn)
+                  ? (
+                    <Game
+                      playerName={playerName}
+                    />
+                  )
+                  : <Login onLoginSuccess={onLoginSuccess} />}
+              </Grid>
             </Grid>
-          </Grid>
-        </Container>
+          </Container>
+        </SnackbarProvider>
       </ThemeProvider>
     </ColorModeContext.Provider>
   );
