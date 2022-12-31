@@ -15,7 +15,8 @@ class TileBag:
     bag: List[int]
     # total number of tiles left
     num_tiles_left: int
-    # the order that tiles will be drawn, unless a specific tile is requested to be drawn
+    # the order that tiles will be drawn, unless a specific tile is requested
+    # to be drawn
     draw_order: List[int]
 
     def __init__(self) -> None:
@@ -27,9 +28,9 @@ class TileBag:
         random.shuffle(self.draw_order)
 
     def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
-        """Remove a "random" tile for the bag. The tile draw order is randomly determined
-        when the TileBag class is instantiated. If a specific tile is to be drawn, it
-        will take a random occurrence of it from the bag.
+        """Remove a "random" tile for the bag. The tile draw order is randomly
+        determined when the TileBag class is instantiated. If a specific tile is
+        to be drawn, it will take a random occurrence of it from the bag.
 
         Args:
             tile - if specified, remove the tile at this index.
@@ -106,7 +107,8 @@ class TileBag:
         """
         assert (
             i < self.num_tiles_left
-        ), f"Cannot draw tile {i} from draw order because there aren't that many tiles left."
+        ), f"Cannot draw tile {i} from draw order because there aren't that \
+        many tiles left."
         assert i >= 0, "Cannot draw negative tile from tile bag."
         assert (
             self.num_tiles_left > 0
@@ -138,7 +140,8 @@ class TileBag:
                     return self.draw_tile_from_index(i)
 
         raise Exception(
-            f"Could not remove the {nth_occurrence} of tile index {tile_index} from tile bag"
+            f"Could not remove the {nth_occurrence} of tile index {tile_index} \
+            from tile bag"
         )
 
 

@@ -9,11 +9,15 @@ type CardGridProps = {
   game: GameState;
   // Called when a player selects one of the cards in the grid.
   selectTileForSwap: (idx: number, tile: TileInfo) => void;
+  // Called when no tile is selected.
+  resetSelectTileForSwap: () => void;
+  // The currently selected tile. -1 when nothing is selected.
+  selectedTileIdx: number;
 };
 function CardGrid({
   game: {
     numRasPerRound, numRasThisRound, maxAuctionTiles, auctionTiles,
-  }, selectTileForSwap,
+  }, selectTileForSwap, resetSelectTileForSwap, selectedTileIdx,
 }: CardGridProps): JSX.Element {
   const renderRaTile = (idx: number) => (
     <Grid key={idx} xs={2} sm={1}>
@@ -23,11 +27,21 @@ function CardGrid({
   const renderAuctionTile = (idx: number) => {
     let tile = <SlotTile />;
     if (idx < auctionTiles.length) {
-      tile = <Tile tile={auctionTiles[idx]} />;
+      tile = (
+        <Tile
+          selected={idx === selectedTileIdx}
+          tile={auctionTiles[idx]}
+          onSelect={(self: TileInfo) => {
+            resetSelectTileForSwap();
+            if (idx !== selectedTileIdx) {
+              selectTileForSwap(idx, self);
+            }
+          }}
+        />
+      );
     }
     return (
       <Grid
-        onClick={() => selectTileForSwap(idx, auctionTiles[idx])}
         key={idx}
         xs={2}
         sm={1}

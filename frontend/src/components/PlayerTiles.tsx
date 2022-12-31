@@ -11,14 +11,19 @@ import { deepPurple } from '@mui/material/colors';
 import { useTheme } from '@mui/material/styles';
 
 import { Tile } from './Tile';
+import { getTileShortName } from '../libs/game';
 import type { Tile as TileInfo } from '../libs/game';
 
 type PlayerTilesProps = {
   tiles: TileInfo[];
   onTileClick: (tile: TileInfo) => void;
+  goldenGodSelected: boolean;
+  disabledTiles: boolean;
 };
 
-function PlayerTiles({ tiles, onTileClick }: PlayerTilesProps): JSX.Element {
+function PlayerTiles({
+  tiles, onTileClick, goldenGodSelected, disabledTiles,
+}: PlayerTilesProps): JSX.Element {
   const theme = useTheme();
   const matchDownSm = useMediaQuery(theme.breakpoints.down('sm'));
   const matchDownMd = useMediaQuery(theme.breakpoints.down('md'));
@@ -35,10 +40,14 @@ function PlayerTiles({ tiles, onTileClick }: PlayerTilesProps): JSX.Element {
   const renderTile = ([count, tile]: [number, TileInfo]) => {
     const { name, tileType } = tile;
     return (
-      <ImageListItem key={name} onClick={() => onTileClick(tile)}>
-        <Tile tile={tile} />
+      <ImageListItem key={name}>
+        <Tile
+          tile={tile}
+          selected={name.toUpperCase() === 'GOLDEN GOD' && goldenGodSelected}
+          onSelect={(disabledTiles) ? null : onTileClick}
+        />
         <ImageListItemBar
-          title={name}
+          title={getTileShortName(name)}
           subtitle={tileType}
           actionIcon={(
             <Avatar sx={{ bgcolor: deepPurple[500] }}>

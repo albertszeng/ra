@@ -1,6 +1,5 @@
-# from game import info as gi
-# from game import state as gs
 import argparse
+import random
 from datetime import datetime
 from typing import List
 
@@ -11,6 +10,12 @@ from game.decision_functions import oracle as o
 AI_PLAYER_NAME = "AI_PLAYER"
 OUTFILE_FOLDER_NAME: str = "move_histories"
 DEFAULT_OUTFILE_PREFIX: str = "move_history"
+
+
+def random_ai(game_state: gs.GameState) -> int:
+    legal_actions = ra.get_possible_actions(game_state)
+    assert legal_actions, "no legal actions"
+    return random.choice(legal_actions)
 
 
 def make_first_move_ai(game_state: gs.GameState) -> int:

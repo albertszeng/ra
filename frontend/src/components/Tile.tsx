@@ -1,21 +1,31 @@
 import React from 'react';
 import {
   Card,
+  CardHeader,
   CardMedia,
   Tooltip,
 } from '@mui/material';
 
+import { getTileShortName } from '../libs/game';
 import type { Tile as TileInfo } from '../libs/game';
 
 type TileProps = {
   tile: TileInfo;
+  selected: boolean | undefined,
+  onSelect: ((tile: TileInfo) => void) | null;
 };
 
-function Tile({ tile }: TileProps): JSX.Element {
+function Tile({ tile, selected, onSelect }: TileProps): JSX.Element {
   const { name } = tile;
   const imageSrc = `${process.env.PUBLIC_URL}/assets/tiles/${name}.jpeg`;
   return (
-    <Card>
+    <Card
+      sx={{
+        border: (tile.tileType === 'DISASTER' || selected) ? 3 : 0,
+        borderColor: (selected) ? 'yellow' : 'red',
+      }}
+      onClick={(onSelect) ? (() => onSelect(tile)) : undefined}
+    >
       <Tooltip title={name}>
         <CardMedia
           component="img"
@@ -23,6 +33,7 @@ function Tile({ tile }: TileProps): JSX.Element {
           alt={name}
         />
       </Tooltip>
+      <CardHeader subheader={getTileShortName(name)} />
     </Card>
   );
 }

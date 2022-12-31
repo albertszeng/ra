@@ -4,7 +4,7 @@ import random
 import unittest
 import uuid
 from datetime import datetime
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 from unittest import mock
 from unittest.mock import patch
 
@@ -478,12 +478,13 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
                 fetchGame=fetchGame,
                 saveGame=saveGame,
             ),
-            routes.ActionResponse(
-                gameState=game.serialize(),
-                gameAsStr=routes.get_game_repr(game),
-                username="user",
-                action="Load finished game.",
-            ),
+            [
+                routes.ActionResponse(
+                    gameState=game.serialize(),
+                    username="user",
+                    action="Load finished game.",
+                )
+            ],
         )
 
     async def test_action_spectator(self) -> None:
@@ -645,7 +646,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             return True
 
         response = cast(
-            routes.ActionResponse,
+            List[routes.ActionResponse],
             await routes.action(
                 routes.ActionRequest(gameId=testId.hex, command="draw"),
                 playerIdx=0,
@@ -663,10 +664,11 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(firstMove[0], "0")
         self.assertEqual(
             response,
-            routes.ActionResponse(
-                gameState=savedGame.serialize(),
-                gameAsStr=routes.get_game_repr(savedGame),
-                username="user",
-                action=info.DRAW_DESC,
-            ),
+            [
+                routes.ActionResponse(
+                    gameState=savedGame.serialize(),
+                    username="user",
+                    action=info.DRAW_DESC,
+                )
+            ],
         )

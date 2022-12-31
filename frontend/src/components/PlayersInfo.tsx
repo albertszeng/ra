@@ -36,16 +36,18 @@ type PlayersInfoProps = {
   auctionStarted: boolean;
   // Called with the index of the bid tile. 0 is lowest.
   bidWithSun: (idx: number) => void;
+  // True if the golden god the current player holds is selected.
+  goldenGodSelected: boolean;
   // Called when a player selects a tile in their bag.
   selectTile: (player: Player, tile: Tile) => void;
   actionsProps: ActionsProps;
 };
 
 function PlayersInfo({
-  localName, players, active, current, auctionStarted, bidWithSun,
-  selectTile, centerSun, auctionSuns, playerPointsIfWin, playerEstimatedDelta,
+  localName, players, active, current, auctionStarted, bidWithSun, selectTile,
+  centerSun, auctionSuns, playerPointsIfWin, playerEstimatedDelta, goldenGodSelected,
   actionsProps: {
-    disabled: actionsDisabled, onDraw, onAuction, resetGame,
+    disabled: actionsDisabled, onDraw, onAuction,
   },
 }: PlayersInfoProps) {
   const [value, setValue] = useState(current.toString());
@@ -59,6 +61,7 @@ function PlayersInfo({
   // Maximum of actually bid values. Otherwise, maximum is 0;
   const bidValues = auctionSuns.filter(notEmpty);
   const maxBidSun = (bidValues.length > 0) ? Math.max(...bidValues) : 0;
+  const disableActions = actionsDisabled || auctionStarted;
   return (
     <Box sx={{ width: '100%', typography: 'body1' }}>
       <TabContext value={value}>
@@ -109,15 +112,16 @@ function PlayersInfo({
         </Box>
         {players.map((player: Player, idx: number) => (
           <TabPanel key={`${player.playerName}`} value={idx.toString()}>
-            <Card variant={(current === idx) ? 'outlined' : undefined}>
+            <Card
+              sx={{ border: (current === idx) ? 2 : 0, borderColor: 'primary.main' }}
+              variant={(current === idx) ? 'outlined' : undefined}
+            >
               <Grid container spacing={2} columns={{ xs: 12 }}>
                 <Actions
                   onDraw={onDraw}
                   onAuction={onAuction}
                   pointsIfWin={playerPointsIfWin[player.playerName]}
-                  disabled={actionsDisabled || current !== idx
-                    || auctionStarted || player.playerName !== localName}
-                  resetGame={resetGame}
+                  disabled={disableActions || current !== idx || player.playerName !== localName}
                 />
                 <PlayerInfo
                   auctionStarted={auctionStarted}
@@ -128,6 +132,7 @@ function PlayersInfo({
                   bidWithSun={bidWithSun}
                   maxBidSun={maxBidSun}
                   selectTile={selectTile}
+                  goldenGodSelected={player.playerName === localName && goldenGodSelected}
                 />
               </Grid>
             </Card>

@@ -15,20 +15,20 @@ type Tile = {
   // Whether we should keep or not.
   toKeep: boolean;
 };
+function getTileShortName(name: string): string {
+  const pieces = name.split(' -- ');
+  return pieces[pieces.length - 1];
+}
 // These tiles have special actions associated with them.
 type TileAction = 'SWAP' | string;
 function getTileAction({ name }: Tile): TileAction | null {
   // Currently based on the name.
   const upper = name.toUpperCase();
-  const getSuffix = () => {
-    const pieces = name.split(' -- ');
-    return pieces[pieces.length - 1];
-  };
   if (upper.includes('MONUMENT')) {
-    return `DISCARD ${getSuffix()}`;
+    return `DISCARD ${getTileShortName(upper)}`;
   }
   if (upper.includes('CIVILIZATION')) {
-    return `DISCARD ${getSuffix()}`;
+    return `DISCARD ${getTileShortName(upper)}`;
   }
   if (upper.includes('GOLDEN GOD')) {
     return 'SWAP';
@@ -141,5 +141,6 @@ export {
   DefaultGame,
   DefaultPlayer,
   getTileAction,
+  getTileShortName,
   notEmpty,
 };

@@ -5,13 +5,8 @@ import React, {
 } from 'react';
 
 import {
-  // Autocomplete,
-  Button,
   ButtonGroup,
   IconButton,
-  FormControl,
-  FormControlLabel,
-  FormLabel,
   List,
   ListItem,
   ListItemButton,
@@ -19,22 +14,19 @@ import {
   ListItemText,
   ListSubheader,
   Paper,
-  Radio,
-  RadioGroup,
   Typography,
 } from '@mui/material';
 import {
-  AddModerator,
+  ContentCopy,
   Delete,
-  Diversity3,
   PersonAdd,
-  Public,
   VideogameAsset,
 } from '@mui/icons-material';
 import Grid from '@mui/material/Unstable_Grid2';
 
 import { enqueueSnackbar } from 'notistack';
 
+import JoinPrivateDialog from './JoinPrivateDialog';
 import { socket } from '../common';
 import { notEmpty } from '../libs/game';
 import type {
@@ -43,32 +35,8 @@ import type {
   MessageResponse,
   ListGame,
   ListGamesResponse,
-  StartRequest,
   ValidatedListGame,
-  Visibility,
 } from '../libs/request';
-
-// function isPlayerNames(input: string): boolean {
-//   if (input.includes(',')) {
-//     // Must be player names. Validate at least 2.
-//     const segments = input.split(',');
-//     return segments && segments.length >= 2;
-//   }
-//   return false;
-// }
-
-// function isGameId(input: string): boolean {
-//   // Assume it must be a game id.
-//   let hex = input;
-//   if (input.includes('-')) {
-//     hex = input.replace(/-|\s/g, '');
-//   }
-//   return hex.length === 32;
-// }
-
-// function isValid(input: string): boolean {
-//   return input !== '' && (isPlayerNames(input) || isGameId(input));
-// }
 
 /* Merges two game lists. Identical ids in prev are overriden by update. */
 function merge(
@@ -103,21 +71,31 @@ function clean(games: ListGame[]): ValidatedListGame[] {
     return game as ValidatedListGame;
   }).filter(notEmpty);
 }
+/* Sorts games so those including the user are first.
+    sorted = [gamesWithUser, gamesWithoutUser]
+  Each partition above is then sorted internally players left to start.
+*/
+function smartSort(user: string, games: ValidatedListGame[]): ValidatedListGame[] {
+  const withUser = games.filter(({ players }) => players.includes(user));
+  const withoutUser = games.filter(({ players }) => !players.includes(user));
+  const compareFn = (a: ValidatedListGame, b: ValidatedListGame) => {
+    const aLeft = a.numPlayers - a.players.length;
+    const bLeft = b.numPlayers - b.players.length;
+    return aLeft - bLeft;
+  };
+  withUser.sort(compareFn);
+  withoutUser.sort(compareFn);
+  return withUser.concat(withoutUser);
+}
 
 type GameListProps = {
+  user: string;
   handleLoadGame: (gameId: string) => void;
 };
-function GameList({ handleLoadGame }: GameListProps): JSX.Element {
+function GameList({ user, handleLoadGame }: GameListProps): JSX.Element {
   // const [formValid, setFormValid] = useState(false);
   const [privateGames, setPrivateGames] = useState<ValidatedListGame[]>([]);
   const [publicGames, setPublicGames] = useState<ValidatedListGame[]>([]);
-  const [numPlayers, setNumPlayers] = useState<number>(2);
-
-  const handleNewGame = useCallback((visibility: Visibility) => {
-    const request: StartRequest = { numPlayers, visibility };
-    socket.emit('start_game', request);
-  }, [numPlayers]);
-
   const handleDeleteGame = useCallback((toDeleteId: string) => {
     const request: DeleteRequest = { gameId: toDeleteId };
     socket.emit('delete', request);
@@ -130,11 +108,13 @@ function GameList({ handleLoadGame }: GameListProps): JSX.Element {
   const onListGames = useCallback(({ games, partial } : ListGamesResponse) => {
     const deleted = games.filter((game) => game.deleted);
     const privateG = clean(games.filter((game) => game.visibility === 'PRIVATE'));
-    setPrivateGames((prev) => ((partial) ? merge(prev, privateG, deleted) : privateG));
+    setPrivateGames((prev) => (
+      smartSort(user, (partial) ? merge(prev, privateG, deleted) : privateG)));
 
     const publicG = clean(games.filter((game) => game.visibility === 'PUBLIC'));
-    setPublicGames((prev) => ((partial) ? merge(prev, publicG, deleted) : publicG));
-  }, []);
+    setPublicGames((prev) => (
+      smartSort(user, (partial) ? merge(prev, publicG, deleted) : publicG)));
+  }, [user]);
   const onDelete = useCallback(({ message, level }: MessageResponse) => {
     enqueueSnackbar(message, { variant: level });
   }, []);
@@ -152,41 +132,53 @@ function GameList({ handleLoadGame }: GameListProps): JSX.Element {
     };
   }, [onDelete]);
 
-  const renderGame = useCallback(({ id, players, numPlayers: count }: ValidatedListGame) => (
-    <ListItem
-      key={`game-${id}`}
-      alignItems="flex-start"
-      secondaryAction={(
-        <ButtonGroup>
+  const renderGame = useCallback(({ id, players, numPlayers: count }: ValidatedListGame) => {
+    const isFull = (players.length === count);
+    const secondaryAction = (
+      <ButtonGroup>
+        {(isFull) ? null : (
           <IconButton
             aria-label="join"
             onClick={() => handleAddPlayer(id)}
           >
             <PersonAdd />
           </IconButton>
-          <IconButton
-            aria-label="delete"
-            onClick={() => handleDeleteGame(id)}
-          >
-            <Delete />
-          </IconButton>
-        </ButtonGroup>
-      )}
-    >
-      <ListItemButton
-        dense
-        onClick={() => handleLoadGame(id)}
+        )}
+        <IconButton
+          aria-label="share"
+          onClick={async () => {
+            await navigator.clipboard.writeText(id);
+            enqueueSnackbar('Copied to clipboard', { variant: 'info' });
+          }}
+        >
+          <ContentCopy />
+        </IconButton>
+        <IconButton
+          aria-label="delete"
+          onClick={() => handleDeleteGame(id)}
+        >
+          <Delete />
+        </IconButton>
+      </ButtonGroup>
+    );
+    return (
+      <ListItem
+        key={`game-${id}`}
+        alignItems="flex-start"
+        secondaryAction={secondaryAction}
       >
-        <ListItemIcon>
-          <VideogameAsset />
-        </ListItemIcon>
-        <ListItemText
-          primary={`Game ID: ${id}`}
-          secondary={`(${players.length}/${count}): ${players.toString()}`}
-        />
-      </ListItemButton>
-    </ListItem>
-  ), [handleAddPlayer, handleDeleteGame, handleLoadGame]);
+        <ListItemButton dense onClick={() => handleLoadGame(id)}>
+          <ListItemIcon>
+            <VideogameAsset />
+          </ListItemIcon>
+          <ListItemText
+            primary={`Game ID: ${id}`}
+            secondary={`(${players.length}/${count}): ${players.toString()}`}
+          />
+        </ListItemButton>
+      </ListItem>
+    );
+  }, [handleAddPlayer, handleDeleteGame, handleLoadGame]);
 
   // const handleChange = useCallback((
   //   e: SyntheticEvent<Element, Event>,
@@ -208,90 +200,39 @@ function GameList({ handleLoadGame }: GameListProps): JSX.Element {
   // const tooltipText = 'Enter comma-seperated list of players or the Game ID
   // of an existing game.';
   return (
-    <>
-      <Paper variant="outlined" elevation={1}>
-        <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
-          <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
-            <Typography variant="h4">
-              Start a Game of Ra!
-            </Typography>
-          </Grid>
-          <Grid xs={12} justifyContent="center" alignItems="center">
-            <List
-              sx={{
-                width: '100%',
-                overflow: 'auto',
-                maxHeight: 680,
-              }}
-            >
-              <ListSubheader>
-                {`Public (${publicGames.length})`}
-              </ListSubheader>
-              {publicGames.map(renderGame)}
-              <ListSubheader>
-                {`Private (${privateGames.length})`}
-              </ListSubheader>
-              {privateGames.map(renderGame)}
-            </List>
-          </Grid>
+    <Paper variant="outlined" elevation={1}>
+      <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
+        <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
+          <Typography variant="h4">
+            Available Games
+          </Typography>
         </Grid>
-      </Paper>
-      <Paper variant="outlined" elevation={1}>
-        <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
-          <Grid xs={6} display="flex" justifyContent="center" alignItems="center">
-            <FormControl>
-              <FormLabel id="player-label">Players</FormLabel>
-              <RadioGroup
-                row
-                aria-labelledby="player-label"
-                name="players-group"
-                value={numPlayers}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                  setNumPlayers(Number(event.target.value));
-                }}
-              >
-                {[2, 3, 4, 5].map((nPlayers: number) => (
-                  <FormControlLabel
-                    value={nPlayers}
-                    control={<Radio />}
-                    label={nPlayers}
-                  />
-                ))}
-              </RadioGroup>
-            </FormControl>
-          </Grid>
-          <Grid xs={6} display="flex" justifyContent="center" alignItems="center">
-            <ButtonGroup
-              variant="contained"
-              size="large"
-              aria-label="game action buttons"
+        <Grid xs={12} justifyContent="center" alignItems="center">
+          <List
+            sx={{
+              width: '100%',
+              overflow: 'auto',
+              maxHeight: 680,
+            }}
+          >
+            <ListSubheader>
+              {`Public (${publicGames.length})`}
+            </ListSubheader>
+            {publicGames.map(renderGame)}
+            <ListSubheader>
+              {`Private (${privateGames.length})`}
+            </ListSubheader>
+            {privateGames.map(renderGame)}
+            <ListItem
+              key="join-private"
+              alignItems="center"
             >
-              <Button
-                color="primary"
-                onClick={() => handleNewGame('PUBLIC')}
-                startIcon={<Public />}
-              >
-                Public Game
-              </Button>
-              <Button
-                color="secondary"
-                onClick={() => handleNewGame('PRIVATE')}
-                startIcon={<AddModerator />}
-              >
-                Private Game
-              </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                startIcon={<Diversity3 />}
-              >
-                Join Game
-              </Button>
-            </ButtonGroup>
-          </Grid>
+              <JoinPrivateDialog onJoin={handleLoadGame} />
+            </ListItem>
+          </List>
         </Grid>
-      </Paper>
-    </>
+      </Grid>
+    </Paper>
   );
 }
 

@@ -8,7 +8,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Awaitable, Callable, Optional, Tuple, TypeVar, Union, cast
+from typing import Awaitable, Callable, List, Optional, Tuple, TypeVar, Union, cast
 
 import flask_sqlalchemy
 import jwt
@@ -119,7 +119,6 @@ async def _join_room(
     async with sio.session(sid) as session:
         session["gameId"] = gameIdStr
         session["playerIdx"] = playerIdx
-        session["playerName"] = playerName
     await sio.emit("spectate", False, room=sid)
     if _C.DEBUG:
         logger.info("Client %s (%s) JOINED room: %s", sid, playerName, gameIdStr)
@@ -130,7 +129,7 @@ async def _leave_room(sid: str, gameIdStr: str, name: Optional[str] = None) -> N
     session = await sio.get_session(sid)
     sio.leave_room(sid, gameIdStr)
 
-    if (playerIdx := session.get("playerIdx")) is None:
+    if session.get("playerIdx") is None:
         async with sio.session(sid) as session:
             session["gameId"] = None
         if _C.DEBUG:
@@ -142,21 +141,33 @@ async def _leave_room(sid: str, gameIdStr: str, name: Optional[str] = None) -> N
         if not (dbGame := db.session.get(Game, gameId.hex)):
             return
         game = dbGame.data
-        game.player_in_game[playerIdx] = False
         dbGame.data = copy.deepcopy(game)
         db.session.commit()
 
     async with sio.session(sid) as session:
         session["playerIdx"] = None
-        session["playerName"] = None
 
     if _C.DEBUG:
         logger.info("Client %s (%s) LEFT room: %s", sid, name, gameIdStr)
 
 
-def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+def debuggable(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
     @functools.wraps(func)
-    async def login_fn(*args: P.args, **kwargs: P.kwargs) -> T:
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        if _C.DEBUG:
+            logger.info("[[%s]]: Inputs: %s, %s", func.__name__, args, kwargs)
+        ret = await func(*args, **kwargs)
+        if _C.DEBUG:
+            logger.info("[[%s]]: Outputs: %s", func.__name__, ret)
+        return ret
+
+    return wrapper
+
+
+def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+    @debuggable
+    @functools.wraps(func)
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         # pyre-ignore[16]
         sid = (await request.json).get("socketId") if len(args) == 0 else args[0]
         errorMsg = routes.ErrorMessage("Not logged in!")
@@ -169,18 +180,10 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
             return cast(T, errorMsg)
         return await func(session["username"], *args, **kwargs)
 
-    @functools.wraps(login_fn)
-    async def logger_fn(*args: P.args, **kwargs: P.kwargs) -> T:
-        if _C.DEBUG:
-            logger.info("%s: Inputs on login: %s, %s", func.__name__, args, kwargs)
-        ret = await login_fn(*args, **kwargs)
-        if _C.DEBUG:
-            logger.info("%s: Outputs: %s", func.__name__, ret)
-        return ret
-
-    return logger_fn
+    return wrapper
 
 
+@debuggable
 @app.route("/", methods=["GET"])  # pyre-ignore[56]
 async def hello_world() -> str:
     return "<p>Hello, World!</p>"
@@ -260,7 +263,7 @@ async def delete(
 @login_required
 async def act(
     username: str, sid: str, data: routes.ActionRequest
-) -> Union[routes.Message, routes.ActionResponse, routes.StartResponse]:
+) -> Union[List[routes.ActionResponse], List[routes.StartResponse], routes.Message]:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -276,14 +279,18 @@ async def act(
         return True
 
     if not (gameIdStr := data.get("gameId")):
-        return routes.ErrorMessage(message="Must provide a gameId with request.")
+        resp = routes.ErrorMessage(message="Must provide a gameId with request.")
+        await sio.emit("update", resp, room=sid)
+        return resp
     if (
         (command := data.get("command"))
         and command.upper() == "LOAD"
         and (game := await fetchGame(uuid.UUID(gameIdStr)))
     ):
         if not game.initialized():
-            return routes.WarningMessage(f"Cannot load incomplete game: {gameIdStr}.")
+            resp = routes.WarningMessage(f"Cannot load incomplete game: {gameIdStr}.")
+            await sio.emit("update", resp, room=sid)
+            return resp
 
         async def fetchLocal(
             gameId: uuid.UUID, _game: routes.RaGame = game
@@ -302,20 +309,22 @@ async def act(
             await sio.emit("update", resp, room=sid)
             return cast(routes.Message, resp)
         resp = await _join_room(sid, cast(routes.JoinSessionSuccess, resp))
-        response = routes.StartResponse(
-            gameState=game.serialize(),
-            gameAsStr=routes.get_game_repr(game),
-            action=command.upper(),
-            username=username,
-            gameId=resp["gameId"],
-        )
+        responses = [
+            routes.StartResponse(
+                gameState=game.serialize(),
+                action=command.upper(),
+                username=username,
+                gameId=resp["gameId"],
+            )
+        ]
     else:
         session = await sio.get_session(sid)
-        response = await routes.action(
+        responses = await routes.action(
             data, session.get("playerIdx"), username, fetchGame, saveGame
         )
-    await sio.emit("update", response, room=gameIdStr)
-    return response
+    # Send in one-update to maintain order.
+    await sio.emit("update", responses, room=gameIdStr)
+    return responses
 
 
 @sio.event  # pyre-ignore[56]
@@ -380,8 +389,52 @@ async def join(
     return await _join_room(sid, cast(routes.JoinSessionSuccess, resp))
 
 
+async def _on_login_success(username: str, sid: str) -> routes.LoginResponse:
+    async with sio.session(sid) as session:
+        session["loggedIn"] = True
+        session["username"] = username
+
+    # Create unique token to authenticate the user.
+    payload = {"username": username, "exp": routes.gen_exp()}
+    token = jwt.encode(payload, _C.SECRET_KEY, algorithm="HS256")
+
+    response = routes.LoginResponse(
+        token=token,
+        username=username,
+        message=f"{username} is now logged in!",
+        level="success",
+    )
+    await sio.emit("login", response, room=sid)
+    return response
+
+
 @sio.event  # pyre-ignore[56]
-async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
+@debuggable
+async def register(sid: str, data: routes.RegisterRequest) -> routes.Message:
+    username, password = data.get("username"), data.get("password")
+    if not (username and password):
+        resp = routes.WarningMessage("Must provide username and password.")
+        await sio.emit("update", resp, room=sid)
+        return resp
+    async with app.app_context():
+        if user := db.session.get(User, username):
+            resp = routes.WarningMessage(
+                f"{username} already registered. Please login."
+            )
+            await sio.emit("update", resp, room=sid)
+            return resp
+    # Register a new user.
+    async with app.app_context():
+        user = User(username=username)  # pyre-ignore[28]
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+    return await _on_login_success(username, sid)
+
+
+@sio.event  # pyre-ignore[56]
+@debuggable
+async def login(sid: str, data: routes.LoginRequest) -> routes.Message:
     """SocketIO handlers for when a user attempts to login/register."""
     username, password, oldToken = (
         data.get("username"),
@@ -396,44 +449,30 @@ async def login(sid: str, data: routes.LoginOrRegisterRequest) -> None:
             session["loggedIn"] = True
             session["username"] = response["username"]
         await sio.emit("login", response, room=sid)
-        return
+        return response
     # Must have set username and password.
     if not (username and password):
-        return
+        response = routes.WarningMessage("Must provide username and password.")
+        await sio.emit("login", response, room=sid)
+        return response
 
-    # Authenticate with data provided.
-    payload = {"username": username, "exp": routes.gen_exp()}
-    token = jwt.encode(payload, _C.SECRET_KEY, algorithm="HS256")
-
-    successMessage = f"{username} is now logged in!"
     async with app.app_context():
         user = db.session.get(User, username)
-        # Register the user first.
-        if not user:
-            user = User(username=username)  # pyre-ignore[28]
-            user.set_password(password)
-            db.session.add(user)
-            db.session.commit()
-            successMessage = f"New account created. {successMessage}"
 
-        if not user.check_password(password):
-            response = routes.WarningMessage(message=f"{username} cannot login.")
-            await sio.emit("login", response, room=sid)
-            return
-    # Successful login at this point.
-    async with sio.session(sid) as session:
-        session["loggedIn"] = True
-        session["username"] = username
-    response = routes.LoginResponse(
-        token=token,
-        username=username,
-        message=successMessage,
-        level="success",
-    )
-    await sio.emit("login", response, room=sid)
+    if not user:
+        response = routes.WarningMessage(f"{username} not registered.")
+        await sio.emit("login", response, room=sid)
+        return response
+
+    if not user.check_password(password):
+        response = routes.WarningMessage(message="Invalid password.")
+        await sio.emit("login", response, room=sid)
+        return response
+    return await _on_login_success(username, sid)
 
 
 @sio.event  # pyre-ignore[56]
+@debuggable
 async def logout(sid: str) -> routes.Message:
     """SocketIO handler where the client is requesting to log out."""
     for room in sio.rooms(sid):
@@ -448,6 +487,7 @@ async def logout(sid: str) -> routes.Message:
 
 
 @sio.event  # pyre-ignore[56]
+@debuggable
 async def leave(sid: str, data: routes.JoinLeaveRequest) -> None:
     session = await sio.get_session(sid)
     if gameIdStr := data.get("gameId"):
@@ -456,19 +496,15 @@ async def leave(sid: str, data: routes.JoinLeaveRequest) -> None:
 
 # Client connections. TODO: Use for auth cookies and stuff.
 @sio.event  # pyre-ignore[56]
+@debuggable
 async def connect(sid: str, environ, auth) -> None:  # pyre-ignore[2]
-    if _C.DEBUG:
-        logger.info("Client %s CONNECTED.", sid)
+    pass
 
 
 @sio.event  # pyre-ignore[56]
+@debuggable
 async def disconnect(sid: str) -> None:
-    session = await sio.get_session(sid)
-    for room in sio.rooms(sid):
-        if room != sid:
-            await _leave_room(sid, room, session.get("username"))
-    if _C.DEBUG:
-        logger.info("Client %s DISCONNECTED.", sid)
+    pass
 
 
 # pyre-ignore[11]

@@ -5,10 +5,15 @@ import React, {
   useState,
 } from 'react';
 
-import { Brightness4, Brightness7, Logout } from '@mui/icons-material';
+import {
+  Brightness4,
+  Brightness7,
+  Delete,
+  Logout,
+  ResetTv,
+} from '@mui/icons-material';
 import {
   AppBar,
-  Button,
   CssBaseline,
   Container,
   IconButton,
@@ -17,7 +22,7 @@ import {
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Grid from '@mui/material/Unstable_Grid2';
-import { closeSnackbar, enqueueSnackbar } from 'notistack';
+import { closeSnackbar, enqueueSnackbar, SnackbarProvider } from 'notistack';
 import type { SnackbarKey } from 'notistack';
 
 import { socket, ColorModeContext } from './common';
@@ -41,6 +46,8 @@ function App() {
   const [playerName, setPlayerName] = useState('');
   // Gets set to a snackbar id when we lose connection.
   const [connAlert, setConnAlert] = useState<SnackbarKey | null>(null);
+  // Tracks when a player leaves a game.
+  const [inGame, setInGame] = useState(false);
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
@@ -61,6 +68,15 @@ function App() {
     }),
     [mode],
   );
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const renderAction = useCallback((snackbarId: SnackbarKey | undefined) => (
+    <IconButton
+      aria-label="delete"
+      onClick={() => closeSnackbar(snackbarId)}
+    >
+      <Delete />
+    </IconButton>
+  ), []);
   const onLogout = useCallback(({ message, level }: MessageResponse) => {
     setLoggedIn(false);
     setPlayerName('');
@@ -106,36 +122,49 @@ function App() {
         <CssBaseline />
         <AppBar position="static">
           <Toolbar>
-            {(loggedIn) ? (
-              <Button
-                variant="text"
-                size="large"
-                startIcon={<Logout />}
-                onClick={() => socket.emit('logout')}
-              >
-                Logout
-              </Button>
-            ) : null}
-            <Header name={playerName} />
+            <IconButton
+              size="large"
+              onClick={() => socket.emit('logout')}
+              disabled={!loggedIn}
+            >
+              <Logout />
+            </IconButton>
+            <Header />
+            <IconButton
+              size="large"
+              onClick={() => setInGame(false)}
+              disabled={!inGame}
+            >
+              <ResetTv />
+            </IconButton>
             <IconButton onClick={colorMode.toggleColorMode} color="inherit">
               {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
           </Toolbar>
         </AppBar>
-        <Container maxWidth="lg">
-          <Grid container spacing={2}>
-            <Grid xs />
-            <Grid xs={12}>
-              {(loggedIn)
-                ? (
-                  <Game
-                    playerName={playerName}
-                  />
-                )
-                : <Login onLoginSuccess={onLoginSuccess} />}
+        <SnackbarProvider
+          preventDuplicate
+          autoHideDuration={3500}
+          maxSnack={(isSmallScreen) ? 1 : 4}
+          action={renderAction}
+        >
+          <Container maxWidth="lg">
+            <Grid container spacing={2}>
+              <Grid xs />
+              <Grid xs={12}>
+                {(loggedIn)
+                  ? (
+                    <Game
+                      playerName={playerName}
+                      isPlaying={inGame}
+                      setIsPlaying={setInGame}
+                    />
+                  )
+                  : <Login onLoginSuccess={onLoginSuccess} />}
+              </Grid>
             </Grid>
-          </Grid>
-        </Container>
+          </Container>
+        </SnackbarProvider>
       </ThemeProvider>
     </ColorModeContext.Provider>
   );

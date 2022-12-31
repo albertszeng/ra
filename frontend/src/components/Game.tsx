@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import {
+  Backdrop,
+  CircularProgress,
   Container,
   Paper,
 } from '@mui/material';
@@ -9,8 +11,9 @@ import { closeSnackbar, enqueueSnackbar } from 'notistack';
 
 import CardGrid from './CardGrid';
 import EndInfo from './EndInfo';
-import PlayersInfo from './PlayersInfo';
 import GameList from './GameList';
+import PlayersInfo from './PlayersInfo';
+import StartGameForm from './StartGameForm';
 
 import { socket } from '../common';
 import {
@@ -29,16 +32,22 @@ import type {
 } from '../libs/request';
 
 type GameProps = {
+  // Parent component keeps track of whether we're in a game or not.
+  isPlaying: boolean;
+  setIsPlaying: (value: boolean) => void;
   playerName: string;
 };
 
-function Game({ playerName }: GameProps): JSX.Element {
+function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
   const GAME_STATE_KEY = 'LOCAL_GAME_STATE';
   const [game, setGame] = useState<GameState>(DefaultGame);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [gameId, setGameId] = useState<string>('');
   // When true and set to a valid index, swap occurs.
   const [swapInfo, setSwapInfo] = useState<[boolean, number]>([false, -1]);
+  // Used when waiting between updates to game state.
+  const [loading, setLoading] = useState<boolean>(false);
+  // Track when we select a golden god.
+  const [goldenGodSelected, setGoldeGodSelected] = useState(false);
 
   const handleLoadGame = useCallback((requestedId: string) => {
     const request: ActionRequest = { gameId: requestedId, command: 'LOAD' };
@@ -58,15 +67,18 @@ function Game({ playerName }: GameProps): JSX.Element {
     socket.emit('act', request);
   }, [gameId]);
   const handleSelectCardFromGrid = useCallback((idx: number, { name: tileName }: Tile) => {
-    const [shouldSwap/* swapIdx */] = swapInfo;
-    if (!shouldSwap) {
+    if (!goldenGodSelected) {
       enqueueSnackbar(`Click your Golden God to atttempt a swap for ${tileName}.`, { variant: 'info' });
-      setSwapInfo([shouldSwap, idx]);
+      setSwapInfo([true, idx]);
       return;
     }
+    setSwapInfo([false, -1]);
     const request: ActionRequest = { gameId, command: `G${idx + 1}` };
     socket.emit('act', request);
-  }, [gameId, swapInfo]);
+  }, [gameId, goldenGodSelected]);
+  const resetSelectCardFromGrid = useCallback(() => {
+    setSwapInfo([false, -1]);
+  }, []);
   const handlePlayerSelectTile = useCallback((player: Player, tile: Tile) => {
     let action = getTileAction(tile);
     if (!action) {
@@ -76,14 +88,19 @@ function Game({ playerName }: GameProps): JSX.Element {
     if (action === 'SWAP') {
       const [/* shouldSwap */, swapIdx] = swapInfo;
       if (swapIdx < 0) {
-        enqueueSnackbar('Click the card you wish to swap for your Golden God', { variant: 'info' });
+        if (!goldenGodSelected) {
+          // If already selected, we're deselecting.
+          enqueueSnackbar('Click the card you wish to swap for your Golden God', { variant: 'info' });
+        }
+        setGoldeGodSelected(!goldenGodSelected);
         return;
       }
+      setGoldeGodSelected(false);
       action = `G${swapIdx + 1}`;
     }
     const request: ActionRequest = { gameId, command: action };
     socket.emit('act', request);
-  }, [gameId, swapInfo]);
+  }, [gameId, swapInfo, goldenGodSelected]);
 
   useEffect(() => {
     // When the gameId changes, store in local storage.
@@ -100,8 +117,7 @@ function Game({ playerName }: GameProps): JSX.Element {
       handleLoadGame(restoredGameId);
     }
   }, [handleLoadGame]);
-  const [timestampMs, setTimestampMs] = useState(Date.now());
-  const AIUIDelayMs = 2000;
+  const AIUIDelayMs = 1000;
 
   const onReset = useCallback(() => {
     closeSnackbar();
@@ -110,7 +126,7 @@ function Game({ playerName }: GameProps): JSX.Element {
     window.localStorage.setItem(GAME_STATE_KEY, '{}');
     // Let the server know we've left the game.
     socket.emit('leave', { gameId } as JoinLeaveRequest);
-  }, [gameId]);
+  }, [gameId, setIsPlaying]);
   const onConnect = useCallback(() => {
     if (gameId) {
       // Join game if one is available.
@@ -130,20 +146,26 @@ function Game({ playerName }: GameProps): JSX.Element {
     setIsPlaying(true);
     setSwapInfo([false, -1]); // Reset swap info.
     setGame(gameState);
-    enqueueSnackbar(`${username} performed action: ${action}`, { variant: 'info' });
-  }, []);
-  const onUpdateGame = useCallback((resp: ApiResponse) => {
-    const now = Date.now();
-    if (now >= timestampMs + AIUIDelayMs) {
-      setTimestampMs(now);
-      updateGame(resp);
-    } else {
-      // Increase timestamp so next action happens at at least this delay.
-      setTimestampMs((prev) => prev + AIUIDelayMs);
-      // Need to enqueue the action to execute later.
-      setTimeout(() => updateGame(resp), (timestampMs + AIUIDelayMs) - now);
+    if (action !== 'LOAD') {
+      enqueueSnackbar(`${username} performed action: ${action}`, { variant: 'info' });
     }
-  }, [updateGame, timestampMs]);
+  }, [setIsPlaying]);
+  const onUpdateGame = useCallback((resp: ApiResponse | ApiResponse[]) => {
+    if (!Array.isArray(resp)) {
+      updateGame(resp);
+      return;
+    }
+    setLoading(true);
+    resp.forEach((item: ApiResponse, idx: number) => {
+      if (idx > 0 || idx < resp.length - 1) {
+        setTimeout(() => updateGame(item), idx * AIUIDelayMs);
+      }
+    });
+    setTimeout(() => {
+      setLoading(false);
+      updateGame(resp[resp.length - 1]);
+    }, (resp.length - 1) * AIUIDelayMs);
+  }, [updateGame]);
   const onSpectate = useCallback((isSpectating: boolean) => {
     if (isSpectating) {
       enqueueSnackbar('In Spectator Mode', { variant: 'success', persist: true });
@@ -188,12 +210,21 @@ function Game({ playerName }: GameProps): JSX.Element {
   } = gameState;
   return (
     <Container disableGutters>
-      {gameEnded ? <EndInfo resetGame={onReset} /> : <div /> }
-      {(!gameEnded && isPlaying) ? (
+      {(isPlaying) ? (
         <Grid container spacing={{ xs: 2, md: 3 }}>
+          {gameEnded ? (
+            <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
+              <EndInfo players={playerStates} />
+            </Grid>
+          ) : null}
           <Grid xs={12}>
             <Paper elevation={3}>
-              <CardGrid game={gameState} selectTileForSwap={handleSelectCardFromGrid} />
+              <CardGrid
+                game={gameState}
+                selectTileForSwap={handleSelectCardFromGrid}
+                resetSelectTileForSwap={resetSelectCardFromGrid}
+                selectedTileIdx={swapInfo[1]}
+              />
             </Paper>
           </Grid>
           <Grid xs={12} />
@@ -211,11 +242,11 @@ function Game({ playerName }: GameProps): JSX.Element {
                 auctionSuns={auctionSuns}
                 bidWithSun={handleBidAction}
                 selectTile={handlePlayerSelectTile}
+                goldenGodSelected={goldenGodSelected}
                 actionsProps={{
                   onDraw: handleDraw,
                   onAuction: handleAuction,
                   disabled: gameEnded || !isPlaying,
-                  resetGame: onReset,
                   pointsIfWin: null,
                 }}
               />
@@ -223,8 +254,19 @@ function Game({ playerName }: GameProps): JSX.Element {
           </Grid>
         </Grid>
       ) : (
-        <GameList handleLoadGame={handleLoadGame} />
+        <Grid container spacing={{ xs: 2, md: 3 }}>
+          <Grid xs={12}>
+            <StartGameForm />
+          </Grid>
+          <Grid xs={12} />
+          <Grid xs={12}>
+            <GameList user={playerName} handleLoadGame={handleLoadGame} />
+          </Grid>
+        </Grid>
       )}
+      <Backdrop open={loading}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </Container>
   );
 }
