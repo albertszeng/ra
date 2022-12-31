@@ -1,4 +1,5 @@
 import copy
+import dataclasses
 import datetime as datetime_lib
 import enum
 import uuid
@@ -88,7 +89,7 @@ class RaGame(ra.RaGame, mutable.Mutable):
             # Not an AI.
             return None
         name = self._player_names[self.game_state.current_player]
-        action = ai.get(level)(self.game_state)
+        action = ai.get()[level](self.game_state)
         self.execute_action(action)
         return name, action
 
@@ -102,7 +103,7 @@ class RaGame(ra.RaGame, mutable.Mutable):
         if self.initialized():
             return False
         toAdd = len(levels)
-        currAIs = len([_ for player in self._players if player.quality])
+        currAIs = len([player for player in self._players if player.quality])
         if currAIs + toAdd == self._num_players:
             # Can't have a game with all AIs.
             return False
@@ -516,7 +517,7 @@ async def action(
             ActionResponse(
                 gameState=copy.deepcopy(game.serialize()),
                 username=name,
-                action=action,
+                action=info.action_description(action),
             )
         )
 

@@ -8,7 +8,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Awaitable, Callable, Optional, Tuple, TypeVar, Union, cast
+from typing import Awaitable, Callable, List, Optional, Tuple, TypeVar, Union, cast
 
 import flask_sqlalchemy
 import jwt
@@ -263,7 +263,7 @@ async def delete(
 @login_required
 async def act(
     username: str, sid: str, data: routes.ActionRequest
-) -> Union[routes.Message, List[routes.ActionResponse], routes.StartResponse]:
+) -> Union[List[routes.ActionResponse], List[routes.StartResponse], routes.Message]:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):

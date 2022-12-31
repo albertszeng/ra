@@ -1,6 +1,6 @@
 import enum
 import random
-from typing import Callable, List
+from typing import Callable, List, Mapping, Optional
 
 from backend import ai_names
 from game import state
@@ -13,7 +13,7 @@ class AILevel(enum.Enum):
     EASY = 1
 
 
-_AIs = None
+_AIs: Optional[Mapping[AILevel, AIFunc]] = None
 
 
 def get() -> Mapping[AILevel, AIFunc]:
