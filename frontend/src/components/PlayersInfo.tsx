@@ -45,7 +45,7 @@ function PlayersInfo({
   localName, players, active, current, auctionStarted, bidWithSun,
   selectTile, centerSun, auctionSuns, playerPointsIfWin, playerEstimatedDelta,
   actionsProps: {
-    disabled: actionsDisabled, onDraw, onAuction, resetGame,
+    disabled: actionsDisabled, onDraw, onAuction,
   },
 }: PlayersInfoProps) {
   const [value, setValue] = useState(current.toString());
@@ -117,7 +117,6 @@ function PlayersInfo({
                   pointsIfWin={playerPointsIfWin[player.playerName]}
                   disabled={actionsDisabled || current !== idx
                     || auctionStarted || player.playerName !== localName}
-                  resetGame={resetGame}
                 />
                 <PlayerInfo
                   auctionStarted={auctionStarted}

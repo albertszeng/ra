@@ -10,10 +10,10 @@ import {
   Brightness7,
   Delete,
   Logout,
+  ResetTv,
 } from '@mui/icons-material';
 import {
   AppBar,
-  Button,
   CssBaseline,
   Container,
   IconButton,
@@ -46,6 +46,8 @@ function App() {
   const [playerName, setPlayerName] = useState('');
   // Gets set to a snackbar id when we lose connection.
   const [connAlert, setConnAlert] = useState<SnackbarKey | null>(null);
+  // Tracks when a player leaves a game.
+  const [inGame, setInGame] = useState(false);
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
@@ -120,17 +122,21 @@ function App() {
         <CssBaseline />
         <AppBar position="static">
           <Toolbar>
-            {(loggedIn) ? (
-              <Button
-                variant="text"
-                size="large"
-                startIcon={<Logout />}
-                onClick={() => socket.emit('logout')}
-              >
-                Logout
-              </Button>
-            ) : null}
-            <Header name={playerName} />
+            <IconButton
+              size="large"
+              onClick={() => socket.emit('logout')}
+              disabled={!loggedIn}
+            >
+              <Logout />
+            </IconButton>
+            <Header />
+            <IconButton
+              size="large"
+              onClick={() => setInGame(false)}
+              disabled={!inGame}
+            >
+              <ResetTv />
+            </IconButton>
             <IconButton onClick={colorMode.toggleColorMode} color="inherit">
               {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
@@ -150,6 +156,8 @@ function App() {
                   ? (
                     <Game
                       playerName={playerName}
+                      isPlaying={inGame}
+                      setIsPlaying={setInGame}
                     />
                   )
                   : <Login onLoginSuccess={onLoginSuccess} />}

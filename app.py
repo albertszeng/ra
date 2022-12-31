@@ -141,7 +141,6 @@ async def _leave_room(sid: str, gameIdStr: str, name: Optional[str] = None) -> N
         if not (dbGame := db.session.get(Game, gameId.hex)):
             return
         game = dbGame.data
-        game.player_in_game[playerIdx] = False
         dbGame.data = copy.deepcopy(game)
         db.session.commit()
 

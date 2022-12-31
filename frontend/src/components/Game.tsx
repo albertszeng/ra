@@ -30,13 +30,15 @@ import type {
 } from '../libs/request';
 
 type GameProps = {
+  // Parent component keeps track of whether we're in a game or not.
+  isPlaying: boolean;
+  setIsPlaying: (value: boolean) => void;
   playerName: string;
 };
 
-function Game({ playerName }: GameProps): JSX.Element {
+function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
   const GAME_STATE_KEY = 'LOCAL_GAME_STATE';
   const [game, setGame] = useState<GameState>(DefaultGame);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [gameId, setGameId] = useState<string>('');
   // When true and set to a valid index, swap occurs.
   const [swapInfo, setSwapInfo] = useState<[boolean, number]>([false, -1]);
@@ -111,7 +113,7 @@ function Game({ playerName }: GameProps): JSX.Element {
     window.localStorage.setItem(GAME_STATE_KEY, '{}');
     // Let the server know we've left the game.
     socket.emit('leave', { gameId } as JoinLeaveRequest);
-  }, [gameId]);
+  }, [gameId, setIsPlaying]);
   const onConnect = useCallback(() => {
     if (gameId) {
       // Join game if one is available.
@@ -132,7 +134,7 @@ function Game({ playerName }: GameProps): JSX.Element {
     setSwapInfo([false, -1]); // Reset swap info.
     setGame(gameState);
     enqueueSnackbar(`${username} performed action: ${action}`, { variant: 'info' });
-  }, []);
+  }, [setIsPlaying]);
   const onUpdateGame = useCallback((resp: ApiResponse) => {
     if (!resp.gameState) {
       // Only game state updates are delayed.
@@ -221,7 +223,6 @@ function Game({ playerName }: GameProps): JSX.Element {
                   onDraw: handleDraw,
                   onAuction: handleAuction,
                   disabled: gameEnded || !isPlaying,
-                  resetGame: onReset,
                   pointsIfWin: null,
                 }}
               />
