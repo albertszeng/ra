@@ -263,7 +263,7 @@ async def delete(
 @login_required
 async def act(
     username: str, sid: str, data: routes.ActionRequest
-) -> Union[routes.Message, routes.ActionResponse, routes.StartResponse]:
+) -> Union[routes.Message, List[routes.ActionResponse], routes.StartResponse]:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -309,20 +309,23 @@ async def act(
             await sio.emit("update", resp, room=sid)
             return cast(routes.Message, resp)
         resp = await _join_room(sid, cast(routes.JoinSessionSuccess, resp))
-        response = routes.StartResponse(
-            gameState=game.serialize(),
-            gameAsStr=routes.get_game_repr(game),
-            action=command.upper(),
-            username=username,
-            gameId=resp["gameId"],
-        )
+        responses = [
+            routes.StartResponse(
+                gameState=game.serialize(),
+                action=command.upper(),
+                username=username,
+                gameId=resp["gameId"],
+            )
+        ]
     else:
         session = await sio.get_session(sid)
-        response = await routes.action(
+        responses = await routes.action(
             data, session.get("playerIdx"), username, fetchGame, saveGame
         )
-    await sio.emit("update", response, room=gameIdStr)
-    return response
+    # It's possible multiple actions occurred.
+    for response in responses:
+        await sio.emit("update", response, room=gameIdStr)
+    return responses
 
 
 @sio.event  # pyre-ignore[56]

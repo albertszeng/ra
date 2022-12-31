@@ -480,7 +480,6 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             ),
             routes.ActionResponse(
                 gameState=game.serialize(),
-                gameAsStr=routes.get_game_repr(game),
                 username="user",
                 action="Load finished game.",
             ),
@@ -665,7 +664,6 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
             response,
             routes.ActionResponse(
                 gameState=savedGame.serialize(),
-                gameAsStr=routes.get_game_repr(savedGame),
                 username="user",
                 action=info.DRAW_DESC,
             ),

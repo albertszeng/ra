@@ -1,3 +1,4 @@
+import copy
 import datetime as datetime_lib
 import enum
 import uuid
@@ -18,6 +19,7 @@ import jwt
 from sqlalchemy.ext import mutable
 from typing_extensions import NotRequired, TypedDict
 
+from backend import ai
 from game import info, ra
 
 
@@ -36,50 +38,114 @@ class Visibility(enum.Enum):
         return None
 
 
+@dataclasses.dataclass(frozen=True)
+class PlayerInfo:
+    name: str
+    # When set, this player is not a human player but rather an AI.
+    quality: Optional[ai.AILevel] = None
+
+
 class RaGame(ra.RaGame, mutable.Mutable):
     """Required so database can update on changes to state."""
 
     def __init__(self, num_players: Optional[int] = None, **kwargs: Any) -> None:
         self._kwargs: Dict[str, Any] = kwargs
         self._player_names: List[str] = kwargs.get("player_names", [])
+        self._players: List[PlayerInfo] = [
+            PlayerInfo(name=name) for name in self._player_names
+        ]
         self._num_players: int = (
-            num_players if num_players is not None else len(self._player_names)
+            num_players if num_players is not None else len(self._players)
         )
         self._initialized: bool = False
-        if len(self._player_names) == self._num_players:
+        if len(self._players) == self._num_players:
             self._init_game()
 
     def _init_game(self) -> None:
         """Actually initializes the RaGame if all players have joined."""
-        if len(self._player_names) != self._num_players:
+        if len(self._players) != self._num_players:
             raise ValueError("Should never call init w/o the right number of players")
 
-        self._kwargs["player_names"] = self._player_names
+        self._kwargs["player_names"] = [player.name for player in self._players]
         super().__init__(**self._kwargs)
         super().init_game()
+
+        # Init above might shuffle player names. Update self._players to match.
+        nameToPlayer = {player.name: player for player in self._players}
+        self._players = [nameToPlayer[name] for name in self.player_names]
+
+        # Check if we need to execute some AI actions, and if so, do so.
+        while self._execute_next_ai_action() is not None:
+            pass
+
         self._initialized = True
 
+    def _execute_next_ai_action(self) -> Optional[Tuple[str, int]]:
+        # Assumes we're initialized.
+        if self.game_state.is_game_ended():
+            return None
+        if not (level := self._players[self.game_state.current_player].quality):
+            # Not an AI.
+            return None
+        name = self._player_names[self.game_state.current_player]
+        action = ai.get(level)(self.game_state)
+        self.execute_action(action)
+        return name, action
+
+    def add_ai_players(self, levels: List[ai.AILevel]) -> bool:
+        """Adds AI players of the specified levels to the game.
+
+        Note that we can never have a game that is all AIs.
+
+        Returns if successful in adding all.
+        """
+        if self.initialized():
+            return False
+        toAdd = len(levels)
+        currAIs = len([_ for player in self._players if player.quality])
+        if currAIs + toAdd == self._num_players:
+            # Can't have a game with all AIs.
+            return False
+        if len(self._players) + toAdd > self._num_players:
+            # Can't add these name AIs to this game.
+            return False
+
+        for level in levels:
+            name = ai.generate_name([player.name for player in self._players])
+            self._players.append(PlayerInfo(name=name, quality=level))
+        if len(self._players) == self._num_players:
+            # Automatically initialize if
+            self._init_game()
+        return True
+
+    def execute_next_ai_action(self) -> Optional[Tuple[str, int]]:
+        """Executes the next AI action, if available. Returns the action executed."""
+        if not self.initialized():
+            return None
+        return self._execute_next_ai_action()
+
     def maybe_add_player(self, username: str, allowDup: bool = True) -> Optional[int]:
-        """Maybe adds the player to the game.
+        """Maybe adds a human player to the game.
 
         Args:
-            username - The name of the player, should be unique.
+            username - The name of the human player, should be unique.
             allowDup - If True and username is already in game, returns the index of the
                 user.
 
         Returns:
-            The index of the player.
+            The index of the human player with the given username.
         """
+        humanPlayer = PlayerInfo(name=username)
         if self.initialized():
-            return self._player_names.index(username) if allowDup else None
+            return self._players.index(humanPlayer) if allowDup else None
 
-        if username in self._player_names:
-            return self._player_names.index(username) if allowDup else None
-        self._player_names.append(username)
-        if len(self._player_names) == self._num_players:
+        if humanPlayer in self._players:
+            return self._players.index(humanPlayer) if allowDup else None
+        self._players.append(humanPlayer)
+        if len(self._players) == self._num_players:
             # Automatically initialize if we've hit max players.
             self._init_game()
-        return len(self._player_names) - 1
+        return len(self._players) - 1
 
     def initialized(self) -> bool:
         """Returns true if the game has been initialized."""
@@ -89,7 +155,7 @@ class RaGame(ra.RaGame, mutable.Mutable):
         return self._num_players
 
     def get_player_names(self) -> List[str]:
-        return self._player_names
+        return [player.name for player in self._players]
 
     def __getstate__(self) -> Dict[str, str]:
         d = self.__dict__.copy()
@@ -124,7 +190,6 @@ class ActionRequest(TypedDict):
 
 
 class ActionResponse(TypedDict):
-    gameAsStr: str
     gameState: ra.SerializedRaGame
     action: str
     username: str
@@ -149,6 +214,7 @@ class LoginResponse(Message):
 
 class StartRequest(TypedDict):
     numPlayers: NotRequired[int]
+    numAIPlayers: NotRequired[int]
     visibility: NotRequired[str]
 
 
@@ -254,15 +320,26 @@ async def start(
     Returns:
         Response to client.
     """
+    # Reasonable default is 0.
+    numAIPlayers = request.get("numAIPlayers", 0)
     if (
         not (numPlayers := request.get("numPlayers"))
-        or numPlayers < info.MIN_NUM_PLAYERS
+        or numPlayers + numAIPlayers < info.MIN_NUM_PLAYERS
+        # Cannot start a game with only AIs.
+        or numPlayers == 0
     ):
-        return WarningMessage(f"Cannot start a game with {numPlayers} players."), None
+        return (
+            WarningMessage(
+                f"Cannot start a game with {numPlayers} humans and {numAIPlayers} AIs."
+            ),
+            None,
+        )
 
     gameId = uuid.uuid4()
-    game = RaGame(num_players=numPlayers)
+    game = RaGame(num_players=numPlayers + numAIPlayers)
     if game.maybe_add_player(username) is None:
+        return ErrorMessage("Failed to start game. Internal error."), None
+    if not game.add_ai_players(levels=[ai.AILevel.EASY for _ in range(numAIPlayers)]):
         return ErrorMessage("Failed to start game. Internal error."), None
     visibility = Visibility.from_str(request.get("visibility")) or Visibility.PUBLIC
     await commitGame(gameId, game, visibility)
@@ -362,7 +439,7 @@ async def action(
     username: str,
     fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaGame]]],
     saveGame: Callable[[uuid.UUID, RaGame], Awaitable[bool]],
-) -> Union[Message, ActionResponse]:
+) -> Union[Message, List[ActionResponse]]:
     """Performs the action as specified by the request.
 
     Args:
@@ -393,12 +470,13 @@ async def action(
         )
 
     if game.game_state.is_game_ended():
-        return ActionResponse(
-            gameState=game.serialize(),
-            gameAsStr=get_game_repr(game),
-            action="Load finished game.",
-            username=username,
-        )
+        return [
+            ActionResponse(
+                gameState=game.serialize(),
+                action="Load finished game.",
+                username=username,
+            )
+        ]
 
     parsedAction = ra.parse_action(action)
     if parsedAction < 0:
@@ -423,17 +501,29 @@ async def action(
             info.action_description(legal_action) for legal_action in legal_actions
         ]
         return InfoMessage(message=f"Only legal actions are: {description}")
+
     game.execute_action(parsedAction, legal_actions)
+    responses = [
+        ActionResponse(
+            gameState=copy.deepcopy(game.serialize()),
+            username=username,
+            action=info.action_description(parsedAction),
+        )
+    ]
+    while (aiInfo := game.execute_next_ai_action()) is not None:
+        name, action = aiInfo
+        responses.append(
+            ActionResponse(
+                gameState=copy.deepcopy(game.serialize()),
+                username=name,
+                action=action,
+            )
+        )
 
     if not (await saveGame(gameId, game)):
         return ErrorMessage(f"Failed to update game: {gameId}. Repeat action.")
 
-    return ActionResponse(
-        gameState=game.serialize(),
-        gameAsStr=get_game_repr(game),
-        username=username,
-        action=info.action_description(parsedAction),
-    )
+    return responses
 
 
 def gen_exp() -> float:
