@@ -40,9 +40,8 @@ def get() -> Mapping[AILevel, AIFunc]:
 
 
 def generate_name(curr_players: List[str]) -> str:
-    name = random.choice(ai_names.ALL)
-    count = 1
-    while (count == 1 and name in curr_players) or (f"{name}-{count}" in curr_players):
+    name = f"AI {' '.join(part.capitalize() for part in random.choice(ai_names.ALL).split(' '))}"
+    count = 0
+    while (count == 0 and name in curr_players) or (f"{name}-{count}" in curr_players):
         count += 1
-    uniqueName = name if count == 1 else f"{name}-{count}"
-    return f"AI {uniqueName.capitalize()}"
+    return name if count == 0 else f"{name}-{count}"
