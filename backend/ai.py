@@ -3,14 +3,16 @@ import random
 from typing import Callable, List, Mapping, Optional
 
 from backend import ai_names
+from game import decision_functions as ai
 from game import state
-from game.decision_functions import ai_base
 
 AIFunc = Callable[[state.GameState], int]
 
 
 class AILevel(enum.Enum):
     EASY = 1
+    RANDOM = 2
+    ORACLE = 3
 
 
 _AIs: Optional[Mapping[AILevel, AIFunc]] = None
@@ -19,7 +21,11 @@ _AIs: Optional[Mapping[AILevel, AIFunc]] = None
 def get() -> Mapping[AILevel, AIFunc]:
     global _AIs
     if _AIs is None:
-        _AIs = {AILevel.EASY: ai_base.make_first_move_ai}
+        _AIs = {
+            AILevel.EASY: ai.first_move,
+            AILevel.RANDOM: ai.random,
+            AILevel.ORACLE: ai.oracle,
+        }
     return _AIs
 
 
