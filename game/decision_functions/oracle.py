@@ -84,10 +84,11 @@ def oracle_search_internal(
                 num_auctions_left_to_occur - (1 if action == gi.AUCTION else 0),
             )
 
-    assert len(action_results.keys()) == len(
-        legal_actions
-    ), f"There are {len(action_results.keys())} action results but \
-        {len(legal_actions)} legal actions"
+    # TODO(albertz): Uncomment this once we allow AI to do golden gods
+    # assert len(action_results.keys()) == len(
+    #     legal_actions
+    # ), f"There are {len(action_results.keys())} action results but \
+    #     {len(legal_actions)} legal actions"
 
     # Pick the action that leads to the best resulting valuation for the current player
     best_action = None
