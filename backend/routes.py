@@ -89,7 +89,7 @@ class RaExecutor(ra.RaGame, mutable.Mutable):
         if not (level := self._players[self.game_state.current_player].quality):
             # Not an AI.
             return None
-        name = self._player_names[self.game_state.current_player]
+        name = self.player_names[self.game_state.current_player]
         action = ai.get()[level](self.game_state)
         self.execute_action(action)
         return name, action

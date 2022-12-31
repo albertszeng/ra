@@ -24,7 +24,32 @@ class TestVisibility(unittest.TestCase):
 
 
 class TestRaExectur(unittest.TestCase):
-    pass
+    def test_initialized(self) -> None:
+        game = routes.RaExecutor(num_players=2, randomize_play_order=False)
+        self.assertFalse(game.initialized())
+        self.assertEqual(game.get_num_players(), 2)
+        self.assertEqual(game.get_player_names(), [])
+
+    def test_add_players(self) -> None:
+        game = routes.RaExecutor(num_players=2)
+        self.assertEqual(game.maybe_add_player("test1"), 0)
+        self.assertEqual(game.maybe_add_player("test1"), 0)
+        self.assertEqual(game.maybe_add_player("test1", allowDup=False), None)
+        self.assertFalse(game.initialized())
+        self.assertEqual(game.get_num_players(), 2)
+        self.assertEqual(game.get_player_names(), ["test1"])
+
+        self.assertEqual(game.maybe_add_player("test2"), 1)
+        self.assertTrue(game.initialized())
+        self.assertEqual(game.get_num_players(), 2)
+        self.assertEqual(game.get_player_names(), ["test1", "test2"])
+
+        # Should return existing index
+        self.assertEqual(game.maybe_add_player("test1"), 0)
+        self.assertEqual(game.maybe_add_player("test2"), 1)
+
+    def test_add_ai_players(self) -> None:
+        pass
 
 
 class RoutesTest(unittest.TestCase):
