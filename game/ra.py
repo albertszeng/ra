@@ -562,6 +562,7 @@ class RaGame:
             with open(self.move_history_file, "r") as f:
                 self.player_names = [name.rstrip() for name in f.readline().split(" ")]
         elif randomize_play_order:
+            # Only randomize play order if no move history provided
             random.shuffle(self.player_names)
 
         self.game_state = gs.GameState(self.player_names)
@@ -590,6 +591,20 @@ class RaGame:
         with open(self.outfile, "w+") as outfile:
             # write the player names to the outfile
             outfile.write(f"{' '.join(self.player_names)}\n")
+
+    def write_tile_draw_order_to_outfile(self) -> None:
+        """Write the tile bag's draw order to the outfile. Appends to file."""
+        if not self.outfile:
+            return
+
+        with open(self.outfile, "a+") as outfile:
+            draw_order = self.game_state.get_tile_bag().get_draw_order()
+            outfile.write(f"{' '.join([str(tile) for tile in draw_order])}\n")
+
+    def write_pregame_info_to_outfile(self) -> None:
+        """Writes player names and draw order to the outfile."""
+        self.write_player_names_to_outfile()
+        self.write_tile_draw_order_to_outfile()
 
     def get_action_prompt(self, legal_actions: List[int]) -> str:
         prompt = "User Action: "
@@ -702,9 +717,13 @@ class RaGame:
     def load_actions(self, action_lst: Iterable[List[str]]) -> None:
         """
         Execute a list of actions. draw actions must have a specified tile
-        to draw each action is a string lst of length 1 or 2
+        to draw each action is a string lst of length 1 or 2.
+
+        NOTE: Assumes that the tileBag draw order has already been set
+        to the proper order, so it does NOT explicitly draw a tile from
+        the bag.
         """
-        self.write_player_names_to_outfile()
+        self.write_pregame_info_to_outfile()
 
         def loader() -> Iterator[str]:
             for action in action_lst:
@@ -719,10 +738,14 @@ class RaGame:
 
                 # if action is to draw
                 elif len(action) == 2:
-                    t = self.execute_action(
-                        int(action[0]), legal_actions, tile_to_draw=int(action[1])
+                    tile_to_be_drawn = int(action[1])
+                    tile_actually_drawn = self.execute_action(
+                        int(action[0]), legal_actions
                     )
-                    yield f"{gi.DRAW_OPTIONS[0]} {t}\n"
+                    assert (
+                        tile_to_be_drawn == tile_actually_drawn
+                    ), f"tile to be drawn {tile_to_be_drawn} does not match tile actually drawn {tile_actually_drawn}"
+                    yield f"{gi.DRAW_OPTIONS[0]} {tile_actually_drawn}\n"
 
                 # invalid action given
                 else:
@@ -742,14 +765,21 @@ class RaGame:
         when playing.
         """
         with open(infile, "r") as f:
-            action_lst = [action.split(" ") for action in f.readlines()][1:]
-        self.load_actions(action_lst)
+            file_lines = [action.split(" ") for action in f.readlines()]
+
+            tile_bag_draw_order = file_lines[1]
+            self.game_state.get_tile_bag().set_draw_order(
+                [int(tile) for tile in tile_bag_draw_order]
+            )
+
+            action_lst = file_lines[2:]
+            self.load_actions(action_lst)
 
     def init_game(self) -> None:
         if self.move_history_file is not None:
             self.load_actions_from_infile(self.move_history_file)
         else:
-            self.write_player_names_to_outfile()
+            self.write_pregame_info_to_outfile()
 
     def start_game(self) -> None:
         """Function to call to start the game.
@@ -773,31 +803,31 @@ def get_args() -> argparse.Namespace:
     parser.add_argument(
         "--player1",
         "--p1",
-        default="Player 1",
+        default="Player_1",
         help="optional argument for player 1's name",
     )
     parser.add_argument(
         "--player2",
         "--p2",
-        default="Player 2",
+        default="Player_2",
         help="optional argument for player 2's name",
     )
     parser.add_argument(
         "--player3",
         "--p3",
-        default="Player 3",
+        default="Player_3",
         help="optional argument for player 3's name",
     )
     parser.add_argument(
         "--player4",
         "--p4",
-        default="Player 4",
+        default="Player_4",
         help="optional argument for player 4's name",
     )
     parser.add_argument(
         "--player5",
         "--p5",
-        default="Player 5",
+        default="Player_5",
         help="optional argument for player 5's name",
     )
 

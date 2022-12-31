@@ -28,11 +28,7 @@ class TileBag:
                 self.draw_order += [i] * self.bag[i]
             random.shuffle(self.draw_order)
         else:
-            self.draw_order = draw_order
-            self.num_tiles_left = len(self.draw_order)
-            self.bag = [0] * gi.NUM_TILE_TYPES
-            for tile_index in self.draw_order:
-                self.bag[tile_index] += 1
+            self.set_draw_order(draw_order)
 
     def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
         """Remove a "random" tile for the bag. The tile draw order is randomly
@@ -97,6 +93,16 @@ class TileBag:
         self.draw_order.insert(first_occurrence_of_tile, next_draw)
         self.draw_order.insert(0, tile)
         return next_draw
+
+    def set_draw_order(self, draw_order: List[int]) -> None:
+        """
+        Set the draw order of the tile bag (and consequently, the bag contents too).
+        """
+        self.draw_order = draw_order
+        self.num_tiles_left = len(self.draw_order)
+        self.bag = [0] * gi.NUM_TILE_TYPES
+        for tile_index in self.draw_order:
+            self.bag[tile_index] += 1
 
     def print_contents_of_bag(self) -> None:
         print(self)

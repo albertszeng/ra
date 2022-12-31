@@ -21,14 +21,27 @@ class RaTest(unittest.TestCase):
     def test_integration_draw_6_ras(self) -> None:
         game = ra.RaGame(player_names=["P1", "P2"], randomize_play_order=False)
 
-        num_ras_per_round = gi.NUM_RAS_PER_ROUND[2]
-        round_action_list = [
-            [str(gi.DRAW), str(gi.INDEX_OF_RA)],
-            [str(gi.BID_NOTHING)],
-            [str(gi.BID_NOTHING)],
-        ] * (num_ras_per_round - 1) + [[str(gi.DRAW), str(gi.INDEX_OF_RA)]]
+        game.execute_action(gi.DRAW, None, gi.INDEX_OF_RA)  # P1
+        game.execute_action(gi.BID_NOTHING)  # P2
+        game.execute_action(gi.BID_NOTHING)  # P1
 
-        game.load_actions(round_action_list)
+        game.execute_action(gi.DRAW, None, gi.INDEX_OF_RA)  # P2
+        game.execute_action(gi.BID_NOTHING)  # P1
+        game.execute_action(gi.BID_NOTHING)  # P2
+
+        game.execute_action(gi.DRAW, None, gi.INDEX_OF_RA)  # P1
+        game.execute_action(gi.BID_NOTHING)  # P2
+        game.execute_action(gi.BID_NOTHING)  # P1
+
+        game.execute_action(gi.DRAW, None, gi.INDEX_OF_RA)  # P2
+        game.execute_action(gi.BID_NOTHING)  # P1
+        game.execute_action(gi.BID_NOTHING)  # P2
+
+        game.execute_action(gi.DRAW, None, gi.INDEX_OF_RA)  # P1
+        game.execute_action(gi.BID_NOTHING)  # P2
+        game.execute_action(gi.BID_NOTHING)  # P1
+
+        game.execute_action(gi.DRAW, None, gi.INDEX_OF_RA)  # P2
 
         # Verify player scores
         player_scores = game.game_state.get_all_player_points().values()
@@ -46,7 +59,7 @@ class RaTest(unittest.TestCase):
         # Verify number of tiles drawn is expected
         self.assertTrue(
             game.game_state.get_num_tiles_left()
-            == gi.STARTING_NUM_TILES - num_ras_per_round
+            == gi.STARTING_NUM_TILES - gi.NUM_RAS_PER_ROUND[2]
         )
 
     def test_integration_full_game_only_draw_ras(self) -> None:
