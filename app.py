@@ -129,7 +129,7 @@ async def _leave_room(sid: str, gameIdStr: str, name: Optional[str] = None) -> N
     session = await sio.get_session(sid)
     sio.leave_room(sid, gameIdStr)
 
-    if (playerIdx := session.get("playerIdx")) is None:
+    if session.get("playerIdx") is None:
         async with sio.session(sid) as session:
             session["gameId"] = None
         if _C.DEBUG:

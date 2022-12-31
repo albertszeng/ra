@@ -438,6 +438,7 @@ async def delete(
     return SuccessMessage(message=f"Deleted game: {gameId}"), single_game(str(gameId))
 
 
+# flake8: noqa: C901
 async def action(
     request: ActionRequest,
     playerIdx: Optional[int],
