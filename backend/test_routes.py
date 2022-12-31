@@ -544,6 +544,139 @@ class AddPlayerRoutesTest(unittest.IsolatedAsyncioTestCase):
         )
 
 
+class JoinGameRoutTest(unittest.IsolatedAsyncioTestCase):
+    async def test_join_game_validation(self) -> None:
+        async def fetchGame(id: uuid.UUID) -> Optional[routes.RaExecutor]:
+            return routes.RaExecutor(num_players=3)
+
+        async def saveGame(id: uuid.UUID, game: routes.RaExecutor) -> bool:
+            return True
+
+        res = cast(
+            routes.Message,
+            await routes.join_game(
+                "test", routes.JoinLeaveRequest(), fetchGame, saveGame
+            ),
+        )
+        self.assertEqual(res["level"], "warning")
+
+        res = cast(
+            routes.Message,
+            await routes.join_game(
+                "test", routes.JoinLeaveRequest(gameId="invalid"), fetchGame, saveGame
+            ),
+        )
+        self.assertEqual(res["level"], "error")
+
+        async def failFetch(id: uuid.UUID) -> Optional[routes.RaExecutor]:
+            return None
+
+        gameId = uuid.uuid4()
+        res = cast(
+            routes.Message,
+            await routes.join_game(
+                "test", routes.JoinLeaveRequest(gameId=str(gameId)), failFetch, saveGame
+            ),
+        )
+        self.assertEqual(res["level"], "warning")
+
+        async def failSave(id: uuid.UUID, game: routes.RaExecutor) -> bool:
+            return False
+
+        res = cast(
+            routes.Message,
+            await routes.join_game(
+                "test", routes.JoinLeaveRequest(gameId=str(gameId)), fetchGame, failSave
+            ),
+        )
+        self.assertEqual(res["level"], "error")
+
+    async def test_join_game_spectator(self) -> None:
+        async def fetchGame(id: uuid.UUID) -> Optional[routes.RaExecutor]:
+            game = routes.RaExecutor(num_players=2)
+            assert game.maybe_add_player("test") is not None
+            assert game.maybe_add_player("user") is not None
+            return game
+
+        async def saveGame(id: uuid.UUID, game: routes.RaExecutor) -> bool:
+            return True
+
+        gameId = uuid.uuid4()
+        res = cast(
+            routes.JoinSessionSuccess,
+            await routes.join_game(
+                "another_user",
+                routes.JoinLeaveRequest(gameId=str(gameId)),
+                fetchGame,
+                saveGame,
+            ),
+        )
+        self.assertEqual(
+            res,
+            routes.JoinSessionSuccess(gameId=str(gameId), playerName="another_user"),
+        )
+
+    async def test_join_same_user(self) -> None:
+        async def fetchGame(id: uuid.UUID) -> Optional[routes.RaExecutor]:
+            game = routes.RaExecutor(num_players=2, randomize_play_order=False)
+            assert game.maybe_add_player("test") is not None
+            assert game.maybe_add_player("user") is not None
+            return game
+
+        async def saveGame(id: uuid.UUID, game: routes.RaExecutor) -> bool:
+            return True
+
+        gameId = uuid.uuid4()
+        res = cast(
+            routes.JoinSessionSuccess,
+            await routes.join_game(
+                "test", routes.JoinLeaveRequest(gameId=str(gameId)), fetchGame, saveGame
+            ),
+        )
+        self.assertEqual(
+            res,
+            routes.JoinSessionSuccess(
+                gameId=str(gameId), playerName="test", playerIdx=0
+            ),
+        )
+
+        res = cast(
+            routes.JoinSessionSuccess,
+            await routes.join_game(
+                "user", routes.JoinLeaveRequest(gameId=str(gameId)), fetchGame, saveGame
+            ),
+        )
+        self.assertEqual(
+            res,
+            routes.JoinSessionSuccess(
+                gameId=str(gameId), playerName="user", playerIdx=1
+            ),
+        )
+
+    async def test_join_new_user(self) -> None:
+        async def fetchGame(id: uuid.UUID) -> Optional[routes.RaExecutor]:
+            game = routes.RaExecutor(num_players=2, randomize_play_order=False)
+            assert game.maybe_add_player("test") is not None
+            return game
+
+        async def saveGame(id: uuid.UUID, game: routes.RaExecutor) -> bool:
+            return True
+
+        gameId = uuid.uuid4()
+        res = cast(
+            routes.JoinSessionSuccess,
+            await routes.join_game(
+                "user", routes.JoinLeaveRequest(gameId=str(gameId)), fetchGame, saveGame
+            ),
+        )
+        self.assertEqual(
+            res,
+            routes.JoinSessionSuccess(
+                gameId=str(gameId), playerName="user", playerIdx=1
+            ),
+        )
+
+
 class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
     async def test_action_no_game_id(self) -> None:
         async def fetchGame(gameId: uuid.UUID) -> None:

@@ -139,11 +139,12 @@ class RaExecutor(ra.RaGame, mutable.Mutable):
             The index of the human player with the given username.
         """
         humanPlayer = PlayerInfo(name=username)
-        if self.initialized():
-            return self._players.index(humanPlayer) if allowDup else None
-
         if humanPlayer in self._players:
             return self._players.index(humanPlayer) if allowDup else None
+
+        if self.initialized():
+            return None
+
         self._players.append(humanPlayer)
         if len(self._players) == self._num_players:
             # Automatically initialize if we've hit max players.
