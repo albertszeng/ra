@@ -16,9 +16,12 @@ type ActionResponse = {
   username: string;
 };
 
+const AILevels = ['EASY', 'MEDIUM', 'HARD'] as const;
+type AILevel = typeof AILevels[number];
 type StartRequest = {
   numPlayers: number;
   numAIPlayers: number;
+  AILevel: AILevel;
   visibility: Visibility;
 };
 type JoinLeaveRequest = {
@@ -74,11 +77,14 @@ type DeleteRequest = {
 
 type AddPlayerRequest = {
   gameId: string;
-}
+};
+
+export { AILevels };
 
 export type {
   ActionRequest,
   AddPlayerRequest,
+  AILevel,
   ApiResponse,
   DeleteRequest,
   JoinLeaveRequest,

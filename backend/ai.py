@@ -9,10 +9,20 @@ from game import state
 AIFunc = Callable[[state.GameState], int]
 
 
+@enum.unique
 class AILevel(enum.Enum):
     EASY = 1
-    RANDOM = 2
-    ORACLE = 3
+    MEDIUM = 2
+    HARD = 3
+
+    @staticmethod
+    def from_str(label: Optional[str]) -> Optional["AILevel"]:
+        if not label:
+            return None
+        label = label.upper()
+        if label in ("EASY", "MEDIUM", "HARD"):
+            return AILevel[label]
+        return None
 
 
 _AIs: Optional[Mapping[AILevel, AIFunc]] = None
@@ -23,8 +33,8 @@ def get() -> Mapping[AILevel, AIFunc]:
     if _AIs is None:
         _AIs = {
             AILevel.EASY: ai.first_move,
-            AILevel.RANDOM: ai.random,
-            AILevel.ORACLE: ai.oracle,
+            AILevel.MEDIUM: ai.random,
+            AILevel.HARD: ai.oracle,
         }
     return _AIs
 

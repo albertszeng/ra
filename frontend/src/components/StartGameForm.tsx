@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 
 import {
-  // Autocomplete,
   Button,
   ButtonGroup,
   FormControl,
@@ -10,6 +9,7 @@ import {
   Paper,
   Radio,
   RadioGroup,
+  Slider,
   Typography,
 } from '@mui/material';
 import {
@@ -18,9 +18,8 @@ import {
 } from '@mui/icons-material';
 import Grid from '@mui/material/Unstable_Grid2';
 
-// import { enqueueSnackbar } from 'notistack';
-
 import { socket } from '../common';
+import { AILevels } from '../libs/request';
 import type {
   StartRequest,
   Visibility,
@@ -29,11 +28,17 @@ import type {
 function StartGameForm(): JSX.Element {
   const [numPlayers, setNumPlayers] = useState<number>(2);
   const [numAIPlayers, setNumAIPlayers] = useState<number>(0);
+  const [aiLevelIdx, setAILevelIdx] = useState<number>(0);
 
   const handleNewGame = useCallback((visibility: Visibility) => {
-    const request: StartRequest = { numPlayers, visibility, numAIPlayers };
+    const request: StartRequest = {
+      numPlayers,
+      visibility,
+      numAIPlayers,
+      AILevel: AILevels[aiLevelIdx],
+    };
     socket.emit('start_game', request);
-  }, [numPlayers, numAIPlayers]);
+  }, [numPlayers, numAIPlayers, aiLevelIdx]);
 
   return (
     <Paper elevation={1}>
@@ -55,9 +60,10 @@ function StartGameForm(): JSX.Element {
                 setNumPlayers(Number(event.target.value));
               }}
             >
-              {[1, 2, 3, 4, 5].map((nPlayers: number) => (
+              {[1, 2, 3, 4, 5].filter(
+                (n) => n + numAIPlayers >= 2 && n + numAIPlayers <= 5,
+              ).map((nPlayers: number) => (
                 <FormControlLabel
-                  disabled={nPlayers + numAIPlayers > 5}
                   value={nPlayers}
                   control={<Radio />}
                   label={nPlayers}
@@ -71,6 +77,7 @@ function StartGameForm(): JSX.Element {
             <FormLabel id="ai-label">AI Players</FormLabel>
             <RadioGroup
               row
+              color="secondary"
               aria-labelledby="ai-label"
               name="ais-group"
               value={numAIPlayers}
@@ -78,9 +85,10 @@ function StartGameForm(): JSX.Element {
                 setNumAIPlayers(Number(event.target.value));
               }}
             >
-              {[0, 1, 2, 3, 4].map((nAIs: number) => (
+              {[0, 1, 2, 3, 4].filter(
+                (n) => n + numPlayers >= 2 && n + numPlayers <= 5,
+              ).map((nAIs: number) => (
                 <FormControlLabel
-                  disabled={nAIs + numPlayers > 5}
                   value={nAIs}
                   control={<Radio />}
                   label={nAIs}
@@ -90,6 +98,37 @@ function StartGameForm(): JSX.Element {
           </FormControl>
         </Grid>
         <Grid xs={4} sm={8} md={4} display="flex" justifyContent="center" alignItems="center">
+          <FormControl>
+            <FormControlLabel
+              value="top"
+              control={(
+                <Slider
+                  aria-label="AI Difficulty"
+                  color="secondary"
+                  size="medium"
+                  step={1}
+                  min={0}
+                  max={2}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(idx: number) => AILevels[idx]}
+                  disabled={numAIPlayers <= 0}
+                  marks
+                  getAriaValueText={(_val: number, idx: number) => AILevels[idx]}
+                  getAriaLabel={(idx: number) => AILevels[idx]}
+                  value={aiLevelIdx}
+                  onChangeCommitted={(e, val: number | number[]) => {
+                    if (!Array.isArray(val)) {
+                      setAILevelIdx(val);
+                    }
+                  }}
+                />
+              )}
+              label="AI Difficulty"
+              labelPlacement="bottom"
+            />
+          </FormControl>
+        </Grid>
+        <Grid xs={4} sm={8} md={12} display="flex" justifyContent="center" alignItems="center">
           <ButtonGroup
             variant="contained"
             size="large"

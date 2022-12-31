@@ -217,6 +217,7 @@ class LoginResponse(Message):
 class StartRequest(TypedDict):
     numPlayers: NotRequired[int]
     numAIPlayers: NotRequired[int]
+    AILevel: NotRequired[str]
     visibility: NotRequired[str]
 
 
@@ -324,6 +325,8 @@ async def start(
     """
     # Reasonable default is 0.
     numAIPlayers = request.get("numAIPlayers", 0)
+    # Reasonable default is EASY.
+    aiLevel = ai.AILevel.from_str(request.get("AILevel")) or ai.AILevel.EASY
     if (
         not (numPlayers := request.get("numPlayers"))
         or numPlayers + numAIPlayers < info.MIN_NUM_PLAYERS
@@ -341,7 +344,7 @@ async def start(
     game = RaGame(num_players=numPlayers + numAIPlayers)
     if game.maybe_add_player(username) is None:
         return ErrorMessage("Failed to start game. Internal error."), None
-    if not game.add_ai_players(levels=[ai.AILevel.EASY for _ in range(numAIPlayers)]):
+    if not game.add_ai_players(levels=[aiLevel for _ in range(numAIPlayers)]):
         return ErrorMessage("Failed to start game. Internal error."), None
     visibility = Visibility.from_str(request.get("visibility")) or Visibility.PUBLIC
     await commitGame(gameId, game, visibility)
