@@ -11,6 +11,7 @@ import { deepPurple } from '@mui/material/colors';
 import { useTheme } from '@mui/material/styles';
 
 import { Tile } from './Tile';
+import { getTileShortName } from '../libs/game';
 import type { Tile as TileInfo } from '../libs/game';
 
 type PlayerTilesProps = {
@@ -46,7 +47,7 @@ function PlayerTiles({
           onSelect={(disabledTiles) ? null : onTileClick}
         />
         <ImageListItemBar
-          title={name}
+          title={getTileShortName(name)}
           subtitle={tileType}
           actionIcon={(
             <Avatar sx={{ bgcolor: deepPurple[500] }}>

@@ -1,12 +1,12 @@
 import React from 'react';
 import {
   Card,
-  CardContent,
+  CardHeader,
   CardMedia,
   Tooltip,
-  Typography,
 } from '@mui/material';
 
+import { getTileShortName } from '../libs/game';
 import type { Tile as TileInfo } from '../libs/game';
 
 type TileProps = {
@@ -18,10 +18,6 @@ type TileProps = {
 function Tile({ tile, selected, onSelect }: TileProps): JSX.Element {
   const { name } = tile;
   const imageSrc = `${process.env.PUBLIC_URL}/assets/tiles/${name}.jpeg`;
-  const getSuffix = () => {
-    const pieces = name.split(' -- ');
-    return pieces[pieces.length - 1];
-  };
   return (
     <Card
       sx={{
@@ -37,11 +33,7 @@ function Tile({ tile, selected, onSelect }: TileProps): JSX.Element {
           alt={name}
         />
       </Tooltip>
-      <CardContent>
-        <Typography variant="body2" color="text.secondary">
-          {getSuffix()}
-        </Typography>
-      </CardContent>
+      <CardHeader subheader={getTileShortName(name)} />
     </Card>
   );
 }
