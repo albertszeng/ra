@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import {
+  Backdrop,
+  CircularProgress,
   Container,
   Paper,
 } from '@mui/material';
@@ -42,6 +44,8 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
   const [gameId, setGameId] = useState<string>('');
   // When true and set to a valid index, swap occurs.
   const [swapInfo, setSwapInfo] = useState<[boolean, number]>([false, -1]);
+  // Used when waiting between updates to game state.
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleLoadGame = useCallback((requestedId: string) => {
     const request: ActionRequest = { gameId: requestedId, command: 'LOAD' };
@@ -133,7 +137,9 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
     setIsPlaying(true);
     setSwapInfo([false, -1]); // Reset swap info.
     setGame(gameState);
-    enqueueSnackbar(`${username} performed action: ${action}`, { variant: 'info' });
+    if (action !== 'LOAD') {
+      enqueueSnackbar(`${username} performed action: ${action}`, { variant: 'info' });
+    }
   }, [setIsPlaying]);
   const onUpdateGame = useCallback((resp: ApiResponse) => {
     if (!resp.gameState) {
@@ -148,8 +154,12 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
     } else {
       // Increase timestamp so next action happens at at least this delay.
       setTimestampMs((prev) => prev + AIUIDelayMs);
+      setLoading(true);
       // Need to enqueue the action to execute later.
-      setTimeout(() => updateGame(resp), (timestampMs + AIUIDelayMs) - now);
+      setTimeout(() => {
+        setLoading(Date.now() < timestampMs + AIUIDelayMs);
+        updateGame(resp);
+      }, (timestampMs + AIUIDelayMs) - now);
     }
   }, [updateGame, timestampMs]);
   const onSpectate = useCallback((isSpectating: boolean) => {
@@ -240,6 +250,9 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
           </Grid>
         </Grid>
       )}
+      <Backdrop open={loading}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </Container>
   );
 }
