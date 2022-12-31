@@ -368,7 +368,7 @@ async def add_player(
     try:
         gameId = uuid.UUID(gameIdStr)
     except ValueError as e:
-        return ErrorMessage(f"Unparseable gameId: {e}"), None
+        return WarningMessage(f"Unparseable gameId: {e}"), None
     if not (gameInfo := await fetchGame(gameId)):
         return (
             WarningMessage(f"Cannot add player to non-existant game: {gameId}."),

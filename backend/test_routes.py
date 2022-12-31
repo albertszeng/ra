@@ -3,7 +3,7 @@ import random
 import unittest
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 from unittest import mock
 from unittest.mock import patch
 
@@ -424,7 +424,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(msg["level"], "warning")
 
     # AI will be named AI Panda.
-    @patch.object(ai_names, "ALL", new=["panda"])
+    @patch.object(ai_names, "ALL", new=["panda"])  # pyre-ignore[56]
     async def test_start(self) -> None:
         self.maxDiff = None
         # Required to maintain shuffle order of players.
@@ -468,6 +468,76 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
                         players=["user", "AI Panda"],
                         visibility=routes.Visibility.PRIVATE.name,
                         numPlayers=3,
+                    )
+                ],
+            ),
+        )
+
+
+class AddPlayerRoutesTest(unittest.IsolatedAsyncioTestCase):
+    async def test_add_player_validation(self) -> None:
+        async def fetchGame(
+            id: uuid.UUID,
+        ) -> Optional[Tuple[routes.RaExecutor, routes.Visibility]]:
+            return routes.RaExecutor(num_players=2), routes.Visibility.PUBLIC
+
+        async def saveGame(id: uuid.UUID, game: routes.RaExecutor) -> bool:
+            return True
+
+        res, _ = await routes.add_player("user", None, fetchGame, saveGame)
+        self.assertEqual(res["level"], "warning")
+
+        res, _ = await routes.add_player("user", "invalid", fetchGame, saveGame)
+        self.assertEqual(res["level"], "warning")
+
+        async def failFetch(
+            id: uuid.UUID,
+        ) -> Optional[Tuple[routes.RaExecutor, routes.Visibility]]:
+            return None
+
+        res, _ = await routes.add_player("user", str(uuid.uuid4()), failFetch, saveGame)
+        self.assertEqual(res["level"], "warning")
+
+        async def fetchAlreadyInGame(
+            id: uuid.UUID,
+        ) -> Optional[Tuple[routes.RaExecutor, routes.Visibility]]:
+            game = routes.RaExecutor(num_players=2)
+            assert game.maybe_add_player("user") is not None
+            return game, routes.Visibility.PUBLIC
+
+        res, _ = await routes.add_player(
+            "user", str(uuid.uuid4()), fetchAlreadyInGame, saveGame
+        )
+        self.assertEqual(res["level"], "warning")
+
+        async def failSave(id: uuid.UUID, game: routes.RaExecutor) -> bool:
+            return False
+
+        res, _ = await routes.add_player("user", str(uuid.uuid4()), fetchGame, failSave)
+        self.assertEqual(res["level"], "error")
+
+    async def test_add_player_success(self) -> None:
+        async def fetchGame(
+            id: uuid.UUID,
+        ) -> Optional[Tuple[routes.RaExecutor, routes.Visibility]]:
+            return routes.RaExecutor(num_players=2), routes.Visibility.PUBLIC
+
+        async def saveGame(id: uuid.UUID, game: routes.RaExecutor) -> bool:
+            return True
+
+        gameId = uuid.uuid4()
+        res, lst = await routes.add_player("user", str(gameId), fetchGame, saveGame)
+        self.assertEqual(res["level"], "success")
+        self.assertEqual(
+            lst,
+            routes.ListGamesResponse(
+                partial=True,
+                games=[
+                    routes.GameInfo(
+                        id=str(gameId),
+                        visibility=routes.Visibility.PUBLIC.name,
+                        numPlayers=2,
+                        players=["user"],
                     )
                 ],
             ),
