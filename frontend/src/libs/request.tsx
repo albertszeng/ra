@@ -18,6 +18,7 @@ type ActionResponse = {
 
 type StartRequest = {
   numPlayers: number;
+  numAIPlayers: number;
   visibility: Visibility;
 };
 type JoinLeaveRequest = {

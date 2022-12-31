@@ -28,15 +28,15 @@ import type {
 
 function StartGameForm(): JSX.Element {
   const [numPlayers, setNumPlayers] = useState<number>(2);
-  const [numAIs, setNumAIs] = useState<number>(0);
+  const [numAIPlayers, setNumAIPlayers] = useState<number>(0);
 
   const handleNewGame = useCallback((visibility: Visibility) => {
-    const request: StartRequest = { numPlayers, visibility };
+    const request: StartRequest = { numPlayers, visibility, numAIPlayers };
     socket.emit('start_game', request);
-  }, [numPlayers]);
+  }, [numPlayers, numAIPlayers]);
 
   return (
-    <Paper variant="outlined" elevation={1}>
+    <Paper elevation={1}>
       <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
         <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
           <Typography variant="h4">
@@ -55,9 +55,9 @@ function StartGameForm(): JSX.Element {
                 setNumPlayers(Number(event.target.value));
               }}
             >
-              {[2, 3, 4, 5].map((nPlayers: number) => (
+              {[1, 2, 3, 4, 5].map((nPlayers: number) => (
                 <FormControlLabel
-                  disabled={nPlayers + numAIs > 5}
+                  disabled={nPlayers + numAIPlayers > 5}
                   value={nPlayers}
                   control={<Radio />}
                   label={nPlayers}
@@ -73,12 +73,12 @@ function StartGameForm(): JSX.Element {
               row
               aria-labelledby="ai-label"
               name="ais-group"
-              value={numAIs}
+              value={numAIPlayers}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                setNumAIs(Number(event.target.value));
+                setNumAIPlayers(Number(event.target.value));
               }}
             >
-              {[0, 1, 2, 3].map((nAIs: number) => (
+              {[0, 1, 2, 3, 4].map((nAIs: number) => (
                 <FormControlLabel
                   disabled={nAIs + numPlayers > 5}
                   value={nAIs}
@@ -94,6 +94,7 @@ function StartGameForm(): JSX.Element {
             variant="contained"
             size="large"
             aria-label="game action buttons"
+            disabled={numAIPlayers + numPlayers > 5 || numAIPlayers + numPlayers < 2}
           >
             <Button
               color="primary"

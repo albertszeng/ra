@@ -67,7 +67,8 @@ class RaGame(ra.RaGame, mutable.Mutable):
         if len(self._players) != self._num_players:
             raise ValueError("Should never call init w/o the right number of players")
 
-        self._kwargs["player_names"] = [player.name for player in self._players]
+        self._player_names = [player.name for player in self._players]
+        self._kwargs["player_names"] = self._player_names
         super().__init__(**self._kwargs)
         super().init_game()
 
