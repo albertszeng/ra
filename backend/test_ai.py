@@ -13,7 +13,7 @@ class TestAI(unittest.TestCase):
         self.assertEqual(ai.AILevel.from_str("Medium"), ai.AILevel.MEDIUM)
         self.assertEqual(ai.AILevel.from_str("haRD"), ai.AILevel.HARD)
 
-    @patch.object(ai_names, "ALL", new=["koala"])
+    @patch.object(ai_names, "ALL", new=["koala"])  # pyre-ignore[56]
     def test_generate_name(self) -> None:
         self.assertEqual(ai.generate_name([]), "AI Koala")
         self.assertEqual(ai.generate_name(["AI Koala"]), "AI Koala-1")

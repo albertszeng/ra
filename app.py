@@ -208,7 +208,7 @@ async def start_game(
     username: str, sid: str, data: routes.StartRequest
 ) -> Tuple[routes.Message, Optional[routes.ListGamesResponse]]:
     async def commitGame(
-        gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
+        gameId: uuid.UUID, game: routes.RaExecutor, visibility: routes.Visibility
     ) -> None:
         async with app.app_context():
             # Add game to database.
@@ -231,7 +231,7 @@ async def start_game(
 async def delete(
     username: str, sid: str, data: routes.DeleteRequest
 ) -> Tuple[routes.Message, Optional[routes.ListGamesResponse]]:
-    async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+    async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaExecutor]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
                 return None
@@ -264,13 +264,13 @@ async def delete(
 async def act(
     username: str, sid: str, data: routes.ActionRequest
 ) -> Union[List[routes.ActionResponse], List[routes.StartResponse], routes.Message]:
-    async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+    async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaExecutor]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
                 return None
         return dbGame.data
 
-    async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+    async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
                 return False
@@ -293,8 +293,8 @@ async def act(
             return resp
 
         async def fetchLocal(
-            gameId: uuid.UUID, _game: routes.RaGame = game
-        ) -> routes.RaGame:
+            gameId: uuid.UUID, _game: routes.RaExecutor = game
+        ) -> routes.RaExecutor:
             # Uses default param evaluation to capture the 'game' variable.
             assert _game is not None
             return _game
@@ -334,13 +334,13 @@ async def add_player(
 ) -> Tuple[routes.Message, Optional[routes.ListGamesResponse]]:
     async def fetchGame(
         gameId: uuid.UUID,
-    ) -> Optional[Tuple[routes.RaGame, routes.Visibility]]:
+    ) -> Optional[Tuple[routes.RaExecutor, routes.Visibility]]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
                 return None
             return dbGame.data, dbGame.visibility
 
-    async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+    async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
                 return False
@@ -366,13 +366,13 @@ async def join(
 ) -> Union[routes.Message, routes.JoinSessionSuccess]:
     """SocketIO handler for joining a specific room to listen to game updates."""
 
-    async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+    async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaExecutor]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
                 return None
             return dbGame.data
 
-    async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+    async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
                 return False

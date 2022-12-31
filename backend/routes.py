@@ -46,7 +46,7 @@ class PlayerInfo:
     quality: Optional[ai.AILevel] = None
 
 
-class RaGame(ra.RaGame, mutable.Mutable):
+class RaExecutor(ra.RaGame, mutable.Mutable):
     """Required so database can update on changes to state."""
 
     def __init__(self, num_players: Optional[int] = None, **kwargs: Any) -> None:
@@ -264,7 +264,9 @@ class ListGamesResponse(TypedDict):
 
 
 def single_game(
-    gameId: str, game: Optional[RaGame] = None, visibility: Optional[Visibility] = None
+    gameId: str,
+    game: Optional[RaExecutor] = None,
+    visibility: Optional[Visibility] = None,
 ) -> ListGamesResponse:
     if game and visibility:
         return ListGamesResponse(
@@ -282,7 +284,7 @@ def single_game(
 
 
 def list(
-    username: str, dbGames: Sequence[Tuple[uuid.UUID, RaGame, Visibility]]
+    username: str, dbGames: Sequence[Tuple[uuid.UUID, RaExecutor, Visibility]]
 ) -> ListGamesResponse:
     """Generates a response from all available games in the database."""
     return ListGamesResponse(
@@ -303,7 +305,7 @@ def list(
 async def start(
     request: StartRequest,
     username: str,
-    commitGame: Callable[[uuid.UUID, RaGame, Visibility], Awaitable[None]],
+    commitGame: Callable[[uuid.UUID, RaExecutor, Visibility], Awaitable[None]],
 ) -> Tuple[Message, Optional[ListGamesResponse]]:
     """Starts a RaGame.
 
@@ -332,7 +334,7 @@ async def start(
         )
 
     gameId = uuid.uuid4()
-    game = RaGame(num_players=numPlayers + numAIPlayers)
+    game = RaExecutor(num_players=numPlayers + numAIPlayers)
     if game.maybe_add_player(username) is None:
         return ErrorMessage("Failed to start game. Internal error."), None
     if not game.add_ai_players(levels=[aiLevel for _ in range(numAIPlayers)]):
@@ -347,8 +349,10 @@ async def start(
 async def add_player(
     username: str,
     gameIdStr: Optional[str],
-    fetchGame: Callable[[uuid.UUID], Awaitable[Optional[Tuple[RaGame, Visibility]]]],
-    saveGame: Callable[[uuid.UUID, RaGame], Awaitable[bool]],
+    fetchGame: Callable[
+        [uuid.UUID], Awaitable[Optional[Tuple[RaExecutor, Visibility]]]
+    ],
+    saveGame: Callable[[uuid.UUID, RaExecutor], Awaitable[bool]],
 ) -> Tuple[Message, Optional[ListGamesResponse]]:
     """Attempts to add a player to the indicated game."""
     if not gameIdStr:
@@ -382,8 +386,8 @@ async def add_player(
 async def join_game(
     username: str,
     request: JoinLeaveRequest,
-    fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaGame]]],
-    saveGame: Callable[[uuid.UUID, RaGame], Awaitable[bool]],
+    fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaExecutor]]],
+    saveGame: Callable[[uuid.UUID, RaExecutor], Awaitable[bool]],
 ) -> Union[JoinSessionSuccess, Message]:
     """Attempts to add the user to the requested game."""
     if not (gameIdStr := request.get("gameId")):
@@ -407,7 +411,7 @@ async def join_game(
 async def delete(
     gameIdStr: str,
     username: str,
-    fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaGame]]],
+    fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaExecutor]]],
     persistDelete: Callable[[uuid.UUID], Awaitable[bool]],
 ) -> Tuple[Message, Optional[ListGamesResponse]]:
     try:
@@ -434,8 +438,8 @@ async def action(
     request: ActionRequest,
     playerIdx: Optional[int],
     username: str,
-    fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaGame]]],
-    saveGame: Callable[[uuid.UUID, RaGame], Awaitable[bool]],
+    fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaExecutor]]],
+    saveGame: Callable[[uuid.UUID, RaExecutor], Awaitable[bool]],
 ) -> Union[Message, List[ActionResponse]]:
     """Performs the action as specified by the request.
 

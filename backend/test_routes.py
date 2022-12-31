@@ -23,6 +23,10 @@ class TestVisibility(unittest.TestCase):
         )
 
 
+class TestRaExectur(unittest.TestCase):
+    pass
+
+
 class RoutesTest(unittest.TestCase):
     def test_list_empty(self) -> None:
         self.assertEqual(
@@ -31,7 +35,7 @@ class RoutesTest(unittest.TestCase):
 
     def test_incomplete_game(self) -> None:
         testId = uuid.uuid4()
-        testGame = routes.RaGame(num_players=4)
+        testGame = routes.RaExecutor(num_players=4)
         testGame.maybe_add_player("testPlayer")
         testVisibility = routes.Visibility.PRIVATE
         self.assertEqual(
@@ -51,7 +55,7 @@ class RoutesTest(unittest.TestCase):
 
     def test_list_single(self) -> None:
         testId = uuid.uuid4()
-        testGame = routes.RaGame(
+        testGame = routes.RaExecutor(
             randomize_play_order=False, player_names=["Name1", "Name2"]
         )
         testVisibility = routes.Visibility.PUBLIC
@@ -76,10 +80,10 @@ class RoutesTest(unittest.TestCase):
             uuid.uuid4(),
         ]
         testGames = [
-            routes.RaGame(
+            routes.RaExecutor(
                 randomize_play_order=False, player_names=["Game10", "Game11"]
             ),
-            routes.RaGame(
+            routes.RaExecutor(
                 randomize_play_order=False, player_names=["Game20", "Game21"]
             ),
         ]
@@ -111,10 +115,10 @@ class RoutesTest(unittest.TestCase):
             uuid.uuid4(),
         ]
         testGames = [
-            routes.RaGame(
+            routes.RaExecutor(
                 randomize_play_order=False, player_names=["Game10", "Game11"]
             ),
-            routes.RaGame(
+            routes.RaExecutor(
                 randomize_play_order=False, player_names=["Game20", "Game21"]
             ),
         ]
@@ -211,13 +215,13 @@ class RoutesTest(unittest.TestCase):
 
 class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
     async def test_delete_invalid(self) -> None:
-        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
-            return routes.RaGame(player_names=["test1", "test2"])
+        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaExecutor]:
+            return routes.RaExecutor(player_names=["test1", "test2"])
 
         async def persistDelete(gameId: uuid.UUID) -> bool:
             return True
 
-        async def failFetch(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+        async def failFetch(gameId: uuid.UUID) -> Optional[routes.RaExecutor]:
             return None
 
         async def failPersist(gameId: uuid.UUID) -> bool:
@@ -241,10 +245,10 @@ class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(msg["level"], "warning")
 
     async def test_delete(self) -> None:
-        storage: dict[str, routes.RaGame] = {}
+        storage: dict[str, routes.RaExecutor] = {}
 
-        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
-            storage[str(gameId)] = routes.RaGame(player_names=["test1", "test2"])
+        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaExecutor]:
+            storage[str(gameId)] = routes.RaExecutor(player_names=["test1", "test2"])
             return storage[str(gameId)]
 
         async def persistDelete(gameId: uuid.UUID) -> bool:
@@ -266,7 +270,7 @@ class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
 class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
     async def test_start_too_few_players(self) -> None:
         async def commitGame(
-            gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
+            gameId: uuid.UUID, game: routes.RaExecutor, visibility: routes.Visibility
         ) -> None:
             return
 
@@ -289,7 +293,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         storage: Dict[str, Any] = {}
 
         async def commitGame(
-            gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
+            gameId: uuid.UUID, game: routes.RaExecutor, visibility: routes.Visibility
         ) -> None:
             storage["gameId"] = gameId
             storage["game"] = game
@@ -332,7 +336,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         async def fetchGame(gameId: uuid.UUID) -> None:
             return None
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             return True
 
         response = cast(
@@ -352,7 +356,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         async def fetchGame(gameId: uuid.UUID) -> None:
             return None
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             return True
 
         response = cast(
@@ -372,7 +376,7 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         async def fetchGame(gameId: uuid.UUID) -> None:
             return None
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             return True
 
         response = cast(
@@ -390,16 +394,16 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_action_unrecognized(self) -> None:
         testId: uuid.UUID = uuid.uuid4()
-        game: routes.RaGame = routes.RaGame(
+        game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
         game.init_game()
 
-        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
             return game
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             return True
 
         response = cast(
@@ -417,17 +421,17 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_action_game_ended(self) -> None:
         testId: uuid.UUID = uuid.uuid4()
-        game: routes.RaGame = routes.RaGame(
+        game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
         game.init_game()
         game.game_state.set_game_ended()
 
-        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
+        async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaExecutor]:
             self.assertEqual(gameId, testId)
             return game
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             self.assertEqual(gameId, testId)
             return True
 
@@ -450,16 +454,16 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_action_spectator(self) -> None:
         testId: uuid.UUID = uuid.uuid4()
-        game: routes.RaGame = routes.RaGame(
+        game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
         game.init_game()
 
-        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
             return game
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             return True
 
         response = cast(
@@ -477,16 +481,16 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_action_wrong_player(self) -> None:
         testId: uuid.UUID = uuid.uuid4()
-        game: routes.RaGame = routes.RaGame(
+        game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
         game.init_game()
 
-        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
             return game
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             return True
 
         response = cast(
@@ -508,16 +512,16 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
     ) -> None:
         mock_action.return_value = []
         testId: uuid.UUID = uuid.uuid4()
-        game: routes.RaGame = routes.RaGame(
+        game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
         game.init_game()
 
-        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
             return game
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             return True
 
         response = cast(
@@ -535,16 +539,16 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_action_illegal_move(self) -> None:
         testId: uuid.UUID = uuid.uuid4()
-        game: routes.RaGame = routes.RaGame(
+        game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
         game.init_game()
 
-        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
             return game
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             return True
 
         response = cast(
@@ -562,16 +566,16 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_action_failed_save(self) -> None:
         testId: uuid.UUID = uuid.uuid4()
-        game: routes.RaGame = routes.RaGame(
+        game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
         game.init_game()
 
-        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
             return game
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             # Fail to save.
             return False
 
@@ -590,18 +594,18 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_action_success(self) -> None:
         testId: uuid.UUID = uuid.uuid4()
-        game: routes.RaGame = routes.RaGame(
+        game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
         game.init_game()
 
-        async def fetchGame(gameId: uuid.UUID) -> routes.RaGame:
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
             return game
 
         storage: set[ra.RaGame] = set()
 
-        async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
             self.assertEqual(gameId, testId)
             storage.add(game)
             return True
