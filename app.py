@@ -169,7 +169,7 @@ def login_required(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]
     @functools.wraps(func)
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         # pyre-ignore[16]
-        sid = (await request.json).get("socketId") if len(args) == 0 else args[0]
+        sid = None if len(args) == 0 else args[0]
         errorMsg = routes.ErrorMessage("Not logged in!")
         if not sid or not isinstance(sid, str):
             await sio.emit("logout", errorMsg, room=sid)
