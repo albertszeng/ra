@@ -15,7 +15,6 @@ import jwt
 import quart  # pyre-ignore[21]
 import quart_cors
 import socketio  # pyre-ignore[21]
-from quart import request
 from sqlalchemy.sql import expression
 from typing_extensions import ParamSpec
 
