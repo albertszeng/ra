@@ -13,6 +13,16 @@ from backend import routes
 from game import info, ra
 
 
+class TestVisibility(unittest.TestCase):
+    def test_from_str(self) -> None:
+        self.assertIsNone(routes.Visibility.from_str(None))
+        self.assertIsNone(routes.Visibility.from_str("invalid"))
+        self.assertEqual(routes.Visibility.from_str("public"), routes.Visibility.PUBLIC)
+        self.assertEqual(
+            routes.Visibility.from_str("pRivate"), routes.Visibility.PRIVATE
+        )
+
+
 class RoutesTest(unittest.TestCase):
     def test_list_empty(self) -> None:
         self.assertEqual(
