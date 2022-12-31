@@ -108,7 +108,7 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
     }
   }, [handleLoadGame]);
   const [timestampMs, setTimestampMs] = useState(Date.now());
-  const AIUIDelayMs = 2000;
+  const AIUIDelayMs = 1000;
 
   const onReset = useCallback(() => {
     closeSnackbar();
