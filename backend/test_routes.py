@@ -1,6 +1,5 @@
 # flake8: noqa
 import datetime as datetime_lib
-import random
 import unittest
 import uuid
 from datetime import datetime
@@ -15,54 +14,6 @@ from game import info, ra
 
 
 class RoutesTest(unittest.TestCase):
-    def test_get_game_repr(self) -> None:
-        random.seed(10)
-        self.maxDiff = None
-        game = routes.RaGame(player_names=["P1", "P2"], randomize_play_order=True)
-        self.assertEqual(
-            routes.get_game_repr(game),
-            r"""-------------------------------------------------
-Player: P2
-
-Sun of P2
-Usable Sun: [2, 5, 6, 9]
-Unusable Sun: []
-
-Tiles of P2:
-
-Points: 10
-
-Player: P1
-
-Sun of P1
-Usable Sun: [3, 4, 7, 8]
-Unusable Sun: []
-
-Tiles of P1:
-
-Points: 10
-
-
-Round: 1
-Num Ras This Round: 0
-Center Sun: 1
-Scores: 
-    P2:                     10 points
-    P1:                     10 points
-
-Auction Tiles: 
-
-
-Player To Move: P2
-
-
-Possible actions:
-    0: Draw a Tile
-    1: Start an Auction
-
-        User Action: """,
-        )
-
     def test_list_empty(self) -> None:
         self.assertEqual(
             routes.list("user", []), routes.ListGamesResponse(partial=False, games=[])

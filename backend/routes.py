@@ -263,15 +263,6 @@ class ListGamesResponse(TypedDict):
     games: List[GameInfo]
 
 
-def get_game_repr(game: ra.RaGame) -> str:
-    legal_actions = ra.get_possible_actions(game.game_state)
-    val = str(game.game_state)
-    if not legal_actions:
-        return val
-    prompt = game.get_action_prompt(legal_actions)
-    return f"{val}\n\n{prompt}"
-
-
 def single_game(
     gameId: str, game: Optional[RaGame] = None, visibility: Optional[Visibility] = None
 ) -> ListGamesResponse:
