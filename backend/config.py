@@ -9,9 +9,10 @@ class Config:
     RESET_DATABASE: bool
 
     def __init__(self) -> None:
-        self.DEBUG = bool(os.environ.get("DEBUG", False))
+        _VALID_TRUE = ["true", "1", "t", "y", "yes"]
+        self.DEBUG = os.environ.get("DEBUG", "false").lower() in _VALID_TRUE
         self.SECRET_KEY = os.environ.get("SECRET_KEY", "debug" if self.DEBUG else "")
-        self.RESET_DATABASE = bool(os.environ.get("DROP_ALL", False))
+        self.RESET_DATABASE = os.environ.get("DROP_ALL", "false").lower() in _VALID_TRUE
 
         assert self.SECRET_KEY
 
