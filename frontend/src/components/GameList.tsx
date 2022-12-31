@@ -17,6 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import {
+  ContentCopy,
   Delete,
   PersonAdd,
   VideogameAsset,
@@ -143,6 +144,15 @@ function GameList({ user, handleLoadGame }: GameListProps): JSX.Element {
             <PersonAdd />
           </IconButton>
         )}
+        <IconButton
+          aria-label="share"
+          onClick={async () => {
+            await navigator.clipboard.writeText(id);
+            enqueueSnackbar('Copied to clipboard', { variant: 'info' });
+          }}
+        >
+          <ContentCopy />
+        </IconButton>
         <IconButton
           aria-label="delete"
           onClick={() => handleDeleteGame(id)}

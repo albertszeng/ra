@@ -44,4 +44,5 @@ def generate_name(curr_players: List[str]) -> str:
     count = 1
     while (count == 1 and name in curr_players) or (f"{name}-{count}" in curr_players):
         count += 1
-    return name if count == 1 else f"{name}-{count}"
+    uniqueName = name if count == 1 else f"{name}-{count}"
+    return f"AI {uniqueName.capitalize()}"
