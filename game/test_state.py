@@ -21,11 +21,13 @@ class TileBagTests(unittest.TestCase):
         """Test that drawing single tiles are recorded properly."""
         for i in range(self.num_iterations):
             t = gs.TileBag()
+            draw_order = t.get_draw_order()
             current_collection = t.get_bag_contents()
             num_tiles_left = t.get_num_tiles_left()
             for j in range(self.num_draws):
                 tile_index_drawn = t.draw_tile()
                 self.assertIsNotNone(tile_index_drawn)
+                self.assertEqual(draw_order[j], tile_index_drawn)
                 new_collection = t.get_bag_contents()
                 self.assertEqual(
                     current_collection[tile_index_drawn],
@@ -41,6 +43,7 @@ class TileBagTests(unittest.TestCase):
         starting_num_tiles = t.get_num_tiles_left()
         for i in range(starting_num_tiles):
             _ = t.draw_tile()
+        self.assertEqual(len(t.get_draw_order()), 0)
         self.assertEqual(0, t.get_num_tiles_left())
         self.assertEqual([0] * gi.NUM_TILE_TYPES, t.get_bag_contents())
         self.assertEqual(None, t.draw_tile(log=False))

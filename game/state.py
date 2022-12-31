@@ -15,13 +15,21 @@ class TileBag:
     bag: List[int]
     # total number of tiles left
     num_tiles_left: int
+    # the order that tiles will be drawn, unless a specific tile is requested to be drawn
+    draw_order: List[int]
 
     def __init__(self) -> None:
         self.bag = [gi.tile_starting_num(tile) for tile in gi.TILE_INFO]
         self.num_tiles_left = gi.STARTING_NUM_TILES
+        self.draw_order = []
+        for i in range(len(self.bag)):
+            self.draw_order += [i] * self.bag[i]
+        random.shuffle(self.draw_order)
 
     def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
-        """Remove a random tile for the bag.
+        """Remove a "random" tile for the bag. The tile draw order is randomly determined
+        when the TileBag class is instantiated. If a specific tile is to be drawn, it
+        will take a random occurrence of it from the bag.
 
         Args:
             tile - if specified, remove the tile at this index.
@@ -35,25 +43,16 @@ class TileBag:
                 raise Exception("Bag is empty. Unable to draw tile...")
             return None
 
-        # if no specific tile specified, draw a random one
+        # if no specific tile specified, draw the next one in the draw order
         if tile is None:
-            tile_num = random.randint(1, self.num_tiles_left)
-            for i in range(len(self.bag)):
-                if tile_num <= self.bag[i]:
-                    self.bag[i] -= 1
-                    self.num_tiles_left -= 1
-                    return i
-
-                tile_num -= self.bag[i]
-
-            raise Exception("Error: could not draw random tile from bag...")
+            return self.draw_tile_from_index(0)
 
         # if a tile is specified to be drawn, draw it if possible
         if self.bag[tile] <= 0:
             raise ValueError(f"Bag does not contain tile {tile}")
 
-        self.bag[tile] -= 1
-        self.num_tiles_left -= 1
+        occurrence_to_be_drawn = random.randint(1, self.bag[tile])
+        self.remove_nth_tile_from_draw_order(tile, occurrence_to_be_drawn)
         return tile
 
     def get_bag_contents(self) -> List[int]:
@@ -61,6 +60,12 @@ class TileBag:
 
     def get_num_tiles_left(self) -> int:
         return self.num_tiles_left
+
+    def get_draw_order(self) -> List[int]:
+        """
+        Return the order of tiles that will be drawn.
+        """
+        return self.draw_order[:]
 
     def print_contents_of_bag(self) -> None:
         print(self)
@@ -71,6 +76,47 @@ class TileBag:
             val += f"{gi.index_to_tile_name(i)}: {self.bag[i]} remaining "
             val += f"({gi.index_to_starting_num(i)} initially)\n"
         return val
+
+    def draw_tile_from_index(self, i: int) -> int:
+        """
+        Draw the tile at index i.
+        """
+        assert (
+            i < self.num_tiles_left
+        ), f"Cannot draw tile {i} from draw order because there aren't that many tiles left."
+        assert i >= 0, "Cannot draw negative tile from tile bag."
+        assert (
+            self.num_tiles_left > 0
+        ), "Cannot draw tile from tile bag because there are no tiles left. "
+
+        tile_drawn = self.draw_order.pop(i)
+        self.num_tiles_left -= 1
+        self.bag[tile_drawn] -= 1
+        return tile_drawn
+
+    def remove_nth_tile_from_draw_order(
+        self, tile_index: int, nth_occurrence: int
+    ) -> int:
+        """
+        Removes the nth occurrence of tile "tile_index" from the tile bag's draw order.
+        Throws an exception if there are not that many occurrences found.
+
+        nth_occurence is 1-indexed.
+        """
+        assert (
+            nth_occurrence > 0
+        ), f"Cannot remove the occurrence {nth_occurrence}. Must be > 0."
+
+        occurrences_found = 0
+        for i in range(self.num_tiles_left):
+            if self.draw_order[i] == tile_index:
+                occurrences_found += 1
+                if occurrences_found == nth_occurrence:
+                    return self.draw_tile_from_index(i)
+
+        raise Exception(
+            f"Could not remove the {nth_occurrence} of tile index {tile_index} from tile bag"
+        )
 
 
 class SerializedPlayerState(TypedDict):
