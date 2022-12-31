@@ -1,4 +1,5 @@
 import datetime as datetime_lib
+import enum
 import uuid
 from datetime import datetime
 from typing import (
@@ -20,6 +21,21 @@ from typing_extensions import NotRequired, TypedDict
 from game import info, ra
 
 
+@enum.unique
+class Visibility(enum.Enum):
+    PUBLIC = 1
+    PRIVATE = 2
+
+    @staticmethod
+    def from_str(label: Optional[str]) -> Optional["Visibility"]:
+        if not label:
+            return None
+        label = label.upper()
+        if label in ("PUBLIC", "PRIVATE"):
+            return Visibility[label]
+        return None
+
+
 class RaGame(ra.RaGame, mutable.Mutable):
     """Required so database can update on changes to state."""
 
@@ -30,33 +46,50 @@ class RaGame(ra.RaGame, mutable.Mutable):
             num_players if num_players is not None else len(self._player_names)
         )
         self._initialized: bool = False
-        self._init_game()
+        if len(self._player_names) == self._num_players:
+            self._init_game()
 
-    def _init_game(self) -> bool:
+    def _init_game(self) -> None:
         """Actually initializes the RaGame if all players have joined."""
         if len(self._player_names) != self._num_players:
-            return False
+            raise ValueError("Should never call init w/o the right number of players")
 
         self._kwargs["player_names"] = self._player_names
         super().__init__(**self._kwargs)
         super().init_game()
         self._initialized = True
-        return True
 
-    def add_player(self, username: str) -> bool:
-        if self.is_active():
-            return False
+    def maybe_add_player(self, username: str, allowDup: bool = True) -> Optional[int]:
+        """Maybe adds the player to the game.
+
+        Args:
+            username - The name of the player, should be unique.
+            allowDup - If True and username is already in game, returns the index of the
+                user.
+
+        Returns:
+            The index of the player.
+        """
+        if self.initialized():
+            return self._player_names.index(username) if allowDup else None
 
         if username in self._player_names:
-            return False
+            return self._player_names.index(username) if allowDup else None
         self._player_names.append(username)
         if len(self._player_names) == self._num_players:
-            return self._init_game()
-        return True
+            # Automatically initialize if we've hit max players.
+            self._init_game()
+        return len(self._player_names) - 1
 
-    def is_active(self) -> bool:
-        """Returns true if the game is active and ongoing."""
+    def initialized(self) -> bool:
+        """Returns true if the game has been initialized."""
         return self._initialized
+
+    def get_num_players(self) -> int:
+        return self._num_players
+
+    def get_player_names(self) -> List[str]:
+        return self._player_names
 
     def __getstate__(self) -> Dict[str, str]:
         d = self.__dict__.copy()
@@ -85,6 +118,11 @@ def SuccessMessage(message: str) -> Message:
     return Message(level="success", message=message)
 
 
+class ActionRequest(TypedDict):
+    gameId: NotRequired[str]
+    command: NotRequired[str]
+
+
 class ActionResponse(TypedDict):
     gameAsStr: str
     gameState: ra.SerializedRaGame
@@ -108,8 +146,7 @@ class LoginResponse(Message):
 
 class StartRequest(TypedDict):
     numPlayers: NotRequired[int]
-    # TODO: Remove. This is for backwards compatibility.
-    playerNames: NotRequired[List[str]]
+    visibility: NotRequired[str]
 
 
 class StartResponse(ActionResponse):
@@ -126,22 +163,31 @@ class JoinSessionSuccess(TypedDict):
     playerIdx: NotRequired[int]
 
 
-class ActionRequest(TypedDict):
-    gameId: NotRequired[str]
-    command: NotRequired[str]
-
-
 class DeleteRequest(TypedDict):
     gameId: NotRequired[str]
 
 
+class AddPlayerRequest(TypedDict):
+    gameId: Optional[str]
+
+
 class GameInfo(TypedDict):
+    # Unique identifier for this game.
     id: str
-    players: List[str]
+    # Usernames of the players that have joined.
+    players: NotRequired[List[str]]
+    # Game visibility. Private games are only sent to members of the game.
+    visibility: NotRequired[str]
+    # How many total players this game hosts.
+    numPlayers: NotRequired[int]
+    # When specified, means this game was deleted.
+    deleted: NotRequired[bool]
 
 
 class ListGamesResponse(TypedDict):
-    total: int
+    # When set to true, this response should be treated as a partial
+    # update on whatever data is available to the local client.
+    partial: bool
     games: List[GameInfo]
 
 
@@ -154,13 +200,39 @@ def get_game_repr(game: ra.RaGame) -> str:
     return f"{val}\n\n{prompt}"
 
 
-def list(dbGames: Sequence[Tuple[uuid.UUID, ra.RaGame]]) -> ListGamesResponse:
+def single_game(
+    gameId: str, game: Optional[RaGame] = None, visibility: Optional[Visibility] = None
+) -> ListGamesResponse:
+    if game and visibility:
+        return ListGamesResponse(
+            partial=True,
+            games=[
+                GameInfo(
+                    id=gameId,
+                    players=game.get_player_names(),
+                    visibility=visibility.name,
+                    numPlayers=game.get_num_players(),
+                )
+            ],
+        )
+    return ListGamesResponse(partial=True, games=[GameInfo(id=gameId, deleted=True)])
+
+
+def list(
+    username: str, dbGames: Sequence[Tuple[uuid.UUID, RaGame, Visibility]]
+) -> ListGamesResponse:
     """Generates a response from all available games in the database."""
     return ListGamesResponse(
-        total=len(dbGames),
+        partial=False,
         games=[
-            GameInfo(id=str(gameId), players=game.player_names)
-            for gameId, game in dbGames
+            GameInfo(
+                id=str(gameId),
+                players=game.get_player_names(),
+                visibility=visibility.name,
+                numPlayers=game.get_num_players(),
+            )
+            for gameId, game, visibility in dbGames
+            if visibility == Visibility.PUBLIC or username in game.get_player_names()
         ],
     )
 
@@ -168,8 +240,8 @@ def list(dbGames: Sequence[Tuple[uuid.UUID, ra.RaGame]]) -> ListGamesResponse:
 async def start(
     request: StartRequest,
     username: str,
-    commitGame: Callable[[uuid.UUID, RaGame], Awaitable[None]],
-) -> StartResponse:
+    commitGame: Callable[[uuid.UUID, RaGame, Visibility], Awaitable[None]],
+) -> Tuple[Message, Optional[ListGamesResponse]]:
     """Starts a RaGame.
 
     Args:
@@ -179,25 +251,65 @@ async def start(
     Returns:
         Response to client.
     """
+    if (
+        not (numPlayers := request.get("numPlayers"))
+        or numPlayers < info.MIN_NUM_PLAYERS
+    ):
+        return WarningMessage(f"Cannot start a game with {numPlayers} players."), None
+
     gameId = uuid.uuid4()
-    game = RaGame(player_names=request.get("playerNames", []))
-    await commitGame(gameId, game)
-    return StartResponse(
-        gameId=str(gameId),
-        gameState=game.serialize(),
-        gameAsStr=get_game_repr(game),
-        username=username,
-        action="Start game.",
+    game = RaGame(num_players=numPlayers)
+    if game.maybe_add_player(username) is None:
+        return ErrorMessage("Failed to start game. Internal error."), None
+    visibility = Visibility.from_str(request.get("visibility")) or Visibility.PUBLIC
+    await commitGame(gameId, game, visibility)
+    return SuccessMessage(f"{username} created game: {gameId}."), single_game(
+        str(gameId), game, visibility
     )
 
 
-async def join(
+async def add_player(
+    username: str,
+    gameIdStr: Optional[str],
+    fetchGame: Callable[[uuid.UUID], Awaitable[Optional[Tuple[RaGame, Visibility]]]],
+    saveGame: Callable[[uuid.UUID, RaGame], Awaitable[bool]],
+) -> Tuple[Message, Optional[ListGamesResponse]]:
+    """Attempts to add a player to the indicated game."""
+    if not gameIdStr:
+        return WarningMessage("Must provide gameId to join game."), None
+    try:
+        gameId = uuid.UUID(gameIdStr)
+    except ValueError as e:
+        return ErrorMessage(f"Unparseable gameId: {e}"), None
+    if not (gameInfo := await fetchGame(gameId)):
+        return (
+            WarningMessage(f"Cannot add player to non-existant game: {gameId}."),
+            None,
+        )
+    game, visibility = gameInfo
+    if game.maybe_add_player(username, allowDup=False) is None:
+        return (
+            WarningMessage(f"{username} cannot be added to {gameId}."),
+            None,
+        )
+    if not await saveGame(gameId, game):
+        return (
+            ErrorMessage(f"{username} failed to add {username} to game: {gameId}."),
+            None,
+        )
+
+    return SuccessMessage(f"{username} added to game: {gameId}"), single_game(
+        gameIdStr, game, visibility
+    )
+
+
+async def join_game(
     username: str,
     request: JoinLeaveRequest,
     fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaGame]]],
     saveGame: Callable[[uuid.UUID, RaGame], Awaitable[bool]],
 ) -> Union[JoinSessionSuccess, Message]:
-    """"""
+    """Attempts to add the user to the requested game."""
     if not (gameIdStr := request.get("gameId")):
         return WarningMessage("Must provide gameId to join game.")
     try:
@@ -206,19 +318,9 @@ async def join(
         return ErrorMessage(f"Unparseable gameId: {e}")
     if not (game := await fetchGame(gameId)):
         return WarningMessage(f"Cannot join non-existant game: {gameId}.")
-    idxs = [
-        i
-        for i, (occupied, player) in enumerate(
-            zip(game.player_in_game, game.player_names)
-        )
-        if not occupied and player.lower() == username.lower()
-    ]
-    if not idxs:
+    if (playerIdx := game.maybe_add_player(username)) is None:
+        # Join as spectator.
         return JoinSessionSuccess(gameId=gameIdStr, playerName=username)
-
-    # Take first available index. Must be unique because usernames are unique.
-    playerIdx = idxs[0]
-    game.player_in_game[playerIdx] = True
     if not await saveGame(gameId, game):
         return ErrorMessage(f"{username} failed to join gameId: {gameId}.")
     return JoinSessionSuccess(
@@ -231,20 +333,24 @@ async def delete(
     username: str,
     fetchGame: Callable[[uuid.UUID], Awaitable[Optional[RaGame]]],
     persistDelete: Callable[[uuid.UUID], Awaitable[bool]],
-) -> Message:
+) -> Tuple[Message, Optional[ListGamesResponse]]:
     try:
         gameId = uuid.UUID(gameIdStr)
     except ValueError as err:
-        return ErrorMessage(message=str(err))
+        return ErrorMessage(message=str(err)), None
     if not (game := await fetchGame(gameId)):
-        return WarningMessage(message=f"No game with id {gameId} found.")
-    if username not in game.player_names:
-        return WarningMessage(
-            message=f"Cannot delete game: {gameId} since {username} is not a player."
+        return WarningMessage(message=f"No game with id {gameId} found."), None
+    if username not in game.get_player_names():
+        return (
+            WarningMessage(
+                message=f"Cannot delete game: {gameId} since \
+                {username} is not a player."
+            ),
+            None,
         )
     if not await persistDelete(gameId):
-        return WarningMessage(message=f"No game with id {gameId} found.")
-    return SuccessMessage(message=f"Deleted game: {gameId}")
+        return WarningMessage(message=f"No game with id {gameId} found."), None
+    return SuccessMessage(message=f"Deleted game: {gameId}"), single_game(str(gameId))
 
 
 async def action(
@@ -274,10 +380,14 @@ async def action(
     gameId = uuid.UUID(gameIdStr)
     action = request.get("command")
     if not action:
-        return ErrorMessage(message=f"Must provide action to act on game: {gameIdStr}")
+        return ErrorMessage(message=f"Must provide action to act on game: {gameIdStr}.")
 
     if not (game := await fetchGame(gameId)):
-        return WarningMessage(message=f"No active game with id: {gameId}")
+        return WarningMessage(message=f"No active game with id: {gameId}.")
+    if not game.initialized():
+        return WarningMessage(
+            message=f"Cannot take action on un-initialized games: {gameId}."
+        )
 
     if game.game_state.is_game_ended():
         return ActionResponse(

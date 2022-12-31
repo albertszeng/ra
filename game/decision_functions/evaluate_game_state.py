@@ -74,7 +74,8 @@ def evaluate_game_state_no_auction_tiles(game_state: gs.GameState) -> Dict[str, 
 
     TODO(albertz): If the game has ended, the valuation is simply the end-game points
 
-    TODO(albertz): instead of using unrealized points, actually value their hand by evaluating:
+    TODO(albertz): instead of using unrealized points, actually value their hand by
+    evaluating:
     - Currently held tiles
        - Niles + Floods: need to value for future, based on ras remaining
        - Pharaohs: value based on differential from min and max, compared to expected
@@ -140,8 +141,8 @@ def value_one_players_usable_sun(
     it can be a flat modifier based on how many sun tiles have been drawn compared to
     how many sun you have.
 
-    TODO(albertz): rethink if we need to value usable sun differently if it's the final round,
-    or whether it's already taken into account if we add unrealized points.
+    TODO(albertz): rethink if we need to value usable sun differently if it's the final
+    round, or whether it's already taken into account if we add unrealized points.
     """
     num_usable_sun = len(usable_sun)
     if num_usable_sun == 0:

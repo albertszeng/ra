@@ -8,7 +8,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Awaitable, Callable, Optional, TypeVar, Union, cast
+from typing import Awaitable, Callable, Optional, Tuple, TypeVar, Union, cast
 
 import flask_sqlalchemy
 import jwt
@@ -44,6 +44,11 @@ class Game(db.Model):  # pyre-ignore[11]
     # We use the uuid.hex property, which is 32-char string.
     # pyre-ignore[11]
     id: db.Column = db.Column(db.String(32), primary_key=True)
+
+    # Visibility for the game. Public games are listed to everyone.
+    # Private games must be joined with the gameId.
+    visibility: db.Column = db.Column(db.Enum(routes.Visibility), nullable=False)
+
     # This is a pickle-d version of the game so we can restore state.
     data: db.Column = db.Column(db.PickleType, nullable=False)
 
@@ -187,11 +192,8 @@ async def list_games(username: str, sid: str) -> routes.ListGamesResponse:
     async with app.app_context():
         results = db.session.scalars(expression.select(Game)).all()
     response = routes.list(
-        [
-            (uuid.UUID(result.id), result.data)
-            for result in results
-            if username in result.data.player_names
-        ]
+        username,
+        [(uuid.UUID(result.id), result.data, result.visibility) for result in results],
     )
     await sio.emit("list_games", response, room=sid)
     return response
@@ -201,22 +203,31 @@ async def list_games(username: str, sid: str) -> routes.ListGamesResponse:
 @login_required
 async def start_game(
     username: str, sid: str, data: routes.StartRequest
-) -> routes.StartResponse:
-    async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+) -> Tuple[routes.Message, Optional[routes.ListGamesResponse]]:
+    async def commitGame(
+        gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
+    ) -> None:
         async with app.app_context():
             # Add game to database.
-            dbGame = Game(id=gameId.hex, data=game)  # pyre-ignore[28]
+            dbGame = Game(  # pyre-ignore[28]
+                id=gameId.hex, data=game, visibility=visibility
+            )
             db.session.add(dbGame)
             db.session.commit()
 
-    response = await routes.start(data, username, commitGame=commitGame)
-    await sio.emit("start_game", response, room=sid)
-    return response
+    msg, lstResponse = await routes.start(data, username, commitGame=commitGame)
+    await sio.emit("update", msg, room=sid)
+    if lstResponse:
+        # TODO(luis): Don't do this for private.
+        await sio.emit("list_games", lstResponse)
+    return msg, lstResponse
 
 
 @sio.event  # pyre-ignore[56]
 @login_required
-async def delete(username: str, sid: str, data: routes.DeleteRequest) -> routes.Message:
+async def delete(
+    username: str, sid: str, data: routes.DeleteRequest
+) -> Tuple[routes.Message, Optional[routes.ListGamesResponse]]:
     async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaGame]:
         async with app.app_context():
             if not (dbGame := db.session.get(Game, gameId.hex)):
@@ -232,15 +243,17 @@ async def delete(username: str, sid: str, data: routes.DeleteRequest) -> routes.
         return True
 
     if not (gameIdStr := data.get("gameId")):
-        return routes.ErrorMessage(message="Must provide a gameId with request.")
+        return routes.ErrorMessage(message="Must provide a gameId with request."), None
 
-    response = await routes.delete(
+    msg, lstResponse = await routes.delete(
         gameIdStr, username, fetchGame=fetchGame, persistDelete=persistDelete
     )
     # Update game room as well as sid.
-    await sio.emit("update", response, to=gameIdStr)
-    await sio.emit("delete", response, to=sid)
-    return response
+    await sio.emit("update", msg, to=gameIdStr)
+    await sio.emit("delete", msg, to=sid)
+    if lstResponse:
+        await sio.emit("list_games", lstResponse)
+    return msg, lstResponse
 
 
 @sio.event  # pyre-ignore[56]
@@ -269,6 +282,8 @@ async def act(
         and command.upper() == "LOAD"
         and (game := await fetchGame(uuid.UUID(gameIdStr)))
     ):
+        if not game.initialized():
+            return routes.WarningMessage(f"Cannot load incomplete game: {gameIdStr}.")
 
         async def fetchLocal(
             gameId: uuid.UUID, _game: routes.RaGame = game
@@ -277,13 +292,14 @@ async def act(
             assert _game is not None
             return _game
 
-        resp = await routes.join(
+        resp = await routes.join_game(
             username,
             request=routes.JoinLeaveRequest(gameId=gameIdStr),
             fetchGame=fetchLocal,
             saveGame=saveGame,
         )
         if "message" in resp:
+            await sio.emit("update", resp, room=sid)
             return cast(routes.Message, resp)
         resp = await _join_room(sid, cast(routes.JoinSessionSuccess, resp))
         response = routes.StartResponse(
@@ -300,6 +316,38 @@ async def act(
         )
     await sio.emit("update", response, room=gameIdStr)
     return response
+
+
+@sio.event  # pyre-ignore[56]
+@login_required
+async def add_player(
+    username: str, sid: str, data: routes.AddPlayerRequest
+) -> Tuple[routes.Message, Optional[routes.ListGamesResponse]]:
+    async def fetchGame(
+        gameId: uuid.UUID,
+    ) -> Optional[Tuple[routes.RaGame, routes.Visibility]]:
+        async with app.app_context():
+            if not (dbGame := db.session.get(Game, gameId.hex)):
+                return None
+            return dbGame.data, dbGame.visibility
+
+    async def saveGame(gameId: uuid.UUID, game: routes.RaGame) -> bool:
+        async with app.app_context():
+            if not (dbGame := db.session.get(Game, gameId.hex)):
+                return False
+            dbGame.data = copy.deepcopy(game)
+            db.session.commit()
+            return True
+
+    msg, lst = await routes.add_player(
+        username, data.get("gameId"), fetchGame=fetchGame, saveGame=saveGame
+    )
+    await sio.emit("update", msg, to=sid)
+    if lst:
+        # TODO: respect visibility settings. Currently update is sent to all connected
+        # clients.
+        await sio.emit("list_games", lst)
+    return msg, lst
 
 
 @sio.event  # pyre-ignore[56]
@@ -323,10 +371,11 @@ async def join(
             db.session.commit()
             return True
 
-    resp = await routes.join(
+    resp = await routes.join_game(
         username, request=data, fetchGame=fetchGame, saveGame=saveGame
     )
     if "message" in resp:
+        await sio.emit("update", resp, room=sid)
         return resp
     return await _join_room(sid, cast(routes.JoinSessionSuccess, resp))
 

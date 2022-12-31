@@ -1,6 +1,8 @@
 import { Game } from './game';
 import { WarningLevel } from '../common';
 
+type Visibility = 'PUBLIC' | 'PRIVATE';
+
 type ActionRequest = {
   gameId: string;
   command: string;
@@ -16,7 +18,7 @@ type ActionResponse = {
 
 type StartRequest = {
   numPlayers: number;
-  playerNames: string[];
+  visibility: Visibility;
 };
 type JoinLeaveRequest = {
   gameId: string;
@@ -49,10 +51,19 @@ type LoginSuccess = {
 
 type ListGame = {
   id: string;
+  players?: string[];
+  visibility?: Visibility;
+  numPlayers?: number;
+  deleted?: boolean;
+};
+type ValidatedListGame = {
+  id: string;
   players: string[];
+  visibility: Visibility;
+  numPlayers: number;
 };
 type ListGamesResponse = {
-  total: number;
+  partial: boolean;
   games: ListGame[];
 };
 
@@ -60,8 +71,13 @@ type DeleteRequest = {
   gameId: string;
 };
 
+type AddPlayerRequest = {
+  gameId: string;
+}
+
 export type {
   ActionRequest,
+  AddPlayerRequest,
   ApiResponse,
   DeleteRequest,
   JoinLeaveRequest,
@@ -74,5 +90,7 @@ export type {
   StartRequest,
   StartResponse,
   TokenLoginRequest,
+  ValidatedListGame,
+  Visibility,
   WarningLevel,
 };

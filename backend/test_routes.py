@@ -64,27 +64,52 @@ Possible actions:
         )
 
     def test_list_empty(self) -> None:
-        self.assertEqual(routes.list([]), routes.ListGamesResponse(total=0, games=[]))
+        self.assertEqual(
+            routes.list("user", []), routes.ListGamesResponse(partial=False, games=[])
+        )
+
+    def test_incomplete_game(self) -> None:
+        testId = uuid.uuid4()
+        testGame = routes.RaGame(num_players=4)
+        testGame.maybe_add_player("testPlayer")
+        testVisibility = routes.Visibility.PRIVATE
+        self.assertEqual(
+            routes.list("testPlayer", [(testId, testGame, testVisibility)]),
+            routes.ListGamesResponse(
+                partial=False,
+                games=[
+                    routes.GameInfo(
+                        id=str(testId),
+                        players=["testPlayer"],
+                        visibility=testVisibility.name,
+                        numPlayers=4,
+                    )
+                ],
+            ),
+        )
 
     def test_list_single(self) -> None:
         testId = uuid.uuid4()
         testGame = routes.RaGame(
             randomize_play_order=False, player_names=["Name1", "Name2"]
         )
+        testVisibility = routes.Visibility.PUBLIC
         self.assertEqual(
-            routes.list([(testId, testGame)]),
+            routes.list("user", [(testId, testGame, testVisibility)]),
             routes.ListGamesResponse(
-                total=1,
+                partial=False,
                 games=[
                     routes.GameInfo(
                         id=str(testId),
                         players=["Name1", "Name2"],
+                        visibility=testVisibility.name,
+                        numPlayers=2,
                     )
                 ],
             ),
         )
 
-    def test_list_many(self) -> None:
+    def test_list_many_public(self) -> None:
         testIds = [
             uuid.uuid4(),
             uuid.uuid4(),
@@ -97,18 +122,73 @@ Possible actions:
                 randomize_play_order=False, player_names=["Game20", "Game21"]
             ),
         ]
+        testVisibilites = [routes.Visibility.PUBLIC, routes.Visibility.PUBLIC]
         self.assertEqual(
-            routes.list(list(zip(testIds, testGames))),
+            routes.list("user", list(zip(testIds, testGames, testVisibilites))),
             routes.ListGamesResponse(
-                total=2,
+                partial=False,
                 games=[
                     routes.GameInfo(
                         id=str(testIds[0]),
                         players=["Game10", "Game11"],
+                        visibility=routes.Visibility.PUBLIC.name,
+                        numPlayers=2,
                     ),
                     routes.GameInfo(
                         id=str(testIds[1]),
                         players=["Game20", "Game21"],
+                        visibility=routes.Visibility.PUBLIC.name,
+                        numPlayers=2,
+                    ),
+                ],
+            ),
+        )
+
+    def test_list_many_mixed(self) -> None:
+        testIds = [
+            uuid.uuid4(),
+            uuid.uuid4(),
+        ]
+        testGames = [
+            routes.RaGame(
+                randomize_play_order=False, player_names=["Game10", "Game11"]
+            ),
+            routes.RaGame(
+                randomize_play_order=False, player_names=["Game20", "Game21"]
+            ),
+        ]
+        testVisibilites = [routes.Visibility.PUBLIC, routes.Visibility.PRIVATE]
+        self.assertEqual(
+            routes.list("Game20", list(zip(testIds, testGames, testVisibilites))),
+            routes.ListGamesResponse(
+                partial=False,
+                games=[
+                    routes.GameInfo(
+                        id=str(testIds[0]),
+                        players=["Game10", "Game11"],
+                        visibility=routes.Visibility.PUBLIC.name,
+                        numPlayers=2,
+                    ),
+                    routes.GameInfo(
+                        id=str(testIds[1]),
+                        players=["Game20", "Game21"],
+                        visibility=routes.Visibility.PRIVATE.name,
+                        numPlayers=2,
+                    ),
+                ],
+            ),
+        )
+
+        self.assertEqual(
+            routes.list("Game10", list(zip(testIds, testGames, testVisibilites))),
+            routes.ListGamesResponse(
+                partial=False,
+                games=[
+                    routes.GameInfo(
+                        id=str(testIds[0]),
+                        players=["Game10", "Game11"],
+                        visibility=routes.Visibility.PUBLIC.name,
+                        numPlayers=2,
                     ),
                 ],
             ),
@@ -183,21 +263,21 @@ class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
             return False
 
         validGameId = str(uuid.uuid4())
-        resp = await routes.delete("invalid", "test1", fetchGame, persistDelete)
-        self.assertEqual(resp["level"], "error")
+        msg, _ = await routes.delete("invalid", "test1", fetchGame, persistDelete)
+        self.assertEqual(msg["level"], "error")
 
-        resp = await routes.delete(
+        msg, _ = await routes.delete(
             validGameId, "test1", fetchGame=failFetch, persistDelete=persistDelete
         )
-        self.assertEqual(resp["level"], "warning")
+        self.assertEqual(msg["level"], "warning")
 
-        resp = await routes.delete(validGameId, "invalid", fetchGame, persistDelete)
-        self.assertEqual(resp["level"], "warning")
+        msg, _ = await routes.delete(validGameId, "invalid", fetchGame, persistDelete)
+        self.assertEqual(msg["level"], "warning")
 
-        resp = await routes.delete(
+        msg, _ = await routes.delete(
             validGameId, "test1", fetchGame, persistDelete=failPersist
         )
-        self.assertEqual(resp["level"], "warning")
+        self.assertEqual(msg["level"], "warning")
 
     async def test_delete(self) -> None:
         storage: dict[str, routes.RaGame] = {}
@@ -211,56 +291,77 @@ class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
             return True
 
         gameId = uuid.uuid4()
-        resp = await routes.delete(str(gameId), "test1", fetchGame, persistDelete)
-        self.assertEqual(resp["level"], "success")
+        msg, lst = await routes.delete(str(gameId), "test1", fetchGame, persistDelete)
+        self.assertEqual(msg["level"], "success")
         self.assertEqual(storage, {})
+        self.assertEqual(
+            lst,
+            routes.ListGamesResponse(
+                partial=True, games=[routes.GameInfo(id=str(gameId), deleted=True)]
+            ),
+        )
 
 
 class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
-    async def test_start_no_players(self) -> None:
-        async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+    async def test_start_too_few_players(self) -> None:
+        async def commitGame(
+            gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
+        ) -> None:
             return
 
-        with self.assertRaises(ValueError):
-            await routes.start(
-                routes.StartRequest(playerNames=[]),
-                username="user",
-                commitGame=commitGame,
-            )
-        with self.assertRaises(ValueError):
-            await routes.start(
-                routes.StartRequest(playerNames=["One"]),
-                username="user",
-                commitGame=commitGame,
-            )
+        msg, _ = await routes.start(
+            routes.StartRequest(numPlayers=0),
+            username="user",
+            commitGame=commitGame,
+        )
+        self.assertEqual(msg["level"], "warning")
+
+        msg, _ = await routes.start(
+            routes.StartRequest(numPlayers=1),
+            username="user",
+            commitGame=commitGame,
+        )
+        self.assertEqual(msg["level"], "warning")
 
     async def test_start(self) -> None:
         self.maxDiff = None
         storage: Dict[str, Any] = {}
 
-        async def commitGame(gameId: uuid.UUID, game: routes.RaGame) -> None:
+        async def commitGame(
+            gameId: uuid.UUID, game: routes.RaGame, visibility: routes.Visibility
+        ) -> None:
             storage["gameId"] = gameId
             storage["game"] = game
+            storage["visibility"] = visibility
 
-        response = await routes.start(
+        msg, lst = await routes.start(
             routes.StartRequest(
                 numPlayers=2,
-                playerNames=["Player 1", "Player 2"],
             ),
             username="user",
             commitGame=commitGame,
         )
-        storedGameId, storedGame = storage.get("gameId"), storage.get("game")
+        storedGameId, storedGame, storedVisibility = (
+            storage.get("gameId"),
+            storage.get("game"),
+            storage.get("visibility"),
+        )
         self.assertIsNotNone(storedGameId)
         self.assertIsNotNone(storedGame)
+        self.assertEqual(storedVisibility, routes.Visibility.PUBLIC)
+        self.assertEqual(msg["level"], "success")
         self.assertEqual(
-            response,
-            routes.StartResponse(
-                gameId=str(storedGameId),
-                gameState=storedGame.serialize(),
-                gameAsStr=routes.get_game_repr(storedGame),
-                username="user",
-                action="Start game.",
+            lst,
+            routes.ListGamesResponse(
+                partial=True,
+                games=[
+                    routes.GameInfo(
+                        id=str(storedGameId),
+                        players=["user"],
+                        visibility=routes.Visibility.PUBLIC.name,
+                        numPlayers=2,
+                    )
+                ],
             ),
         )
 
