@@ -31,6 +31,7 @@ class Visibility(enum.Enum):
 
     @staticmethod
     def from_str(label: Optional[str]) -> Optional["Visibility"]:
+        """Creates from the given label if possible."""
         if not label:
             return None
         label = label.upper()
@@ -154,9 +155,11 @@ class RaExecutor(ra.RaGame, mutable.Mutable):
         return self._initialized
 
     def get_num_players(self) -> int:
+        """Returns the max number of players in this game."""
         return self._num_players
 
     def get_player_names(self) -> List[str]:
+        """Returns the names of the currently joined players."""
         return [player.name for player in self._players]
 
     def __getstate__(self) -> Dict[str, str]:
@@ -268,6 +271,10 @@ def single_game(
     game: Optional[RaExecutor] = None,
     visibility: Optional[Visibility] = None,
 ) -> ListGamesResponse:
+    """Creates a partial ListGamesResponse with a single game.
+
+    When either game or visibility is missing, this is assumed to be a deletion.
+    """
     if game and visibility:
         return ListGamesResponse(
             partial=True,
@@ -323,6 +330,7 @@ async def start(
     if (
         not (numPlayers := request.get("numPlayers"))
         or numPlayers + numAIPlayers < info.MIN_NUM_PLAYERS
+        or numPlayers + numAIPlayers > info.MAX_NUM_PLAYERS
         # Cannot start a game with only AIs.
         or numPlayers == 0
     ):

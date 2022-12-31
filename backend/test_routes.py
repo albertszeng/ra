@@ -1,5 +1,5 @@
-# flake8: noqa
 import datetime as datetime_lib
+import random
 import unittest
 import uuid
 from datetime import datetime
@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import jwt
 
-from backend import ai, routes
+from backend import ai, ai_names, routes
 from game import info, ra
 
 
@@ -89,13 +89,46 @@ class TestRaExector(unittest.TestCase):
         self.assertEqual(len(game.logged_moves), 1)
 
         # AI Executes action.
-        self.assertIsNotNone((aiInfo := game.execute_next_ai_action()))
+        assert (aiInfo := game.execute_next_ai_action()) is not None
         name, action = aiInfo
         self.assertEqual(game.get_player_names(), ["human", name])
         self.assertEqual(len(game.logged_moves), 2)
 
 
 class RoutesTest(unittest.TestCase):
+    def test_single_game(self) -> None:
+        self.assertEqual(
+            routes.single_game("1234"),
+            routes.ListGamesResponse(
+                partial=True, games=[routes.GameInfo(id="1234", deleted=True)]
+            ),
+        )
+
+        game = routes.RaExecutor(num_players=2)
+        self.assertEqual(
+            routes.single_game("test", game, routes.Visibility.PUBLIC),
+            routes.ListGamesResponse(
+                partial=True,
+                games=[
+                    routes.GameInfo(
+                        id="test", numPlayers=2, visibility="PUBLIC", players=[]
+                    )
+                ],
+            ),
+        )
+        self.assertIsNotNone(game.maybe_add_player("test"))
+        self.assertEqual(
+            routes.single_game("test", game, routes.Visibility.PUBLIC),
+            routes.ListGamesResponse(
+                partial=True,
+                games=[
+                    routes.GameInfo(
+                        id="test", numPlayers=2, visibility="PUBLIC", players=["test"]
+                    )
+                ],
+            ),
+        )
+
     def test_list_empty(self) -> None:
         self.assertEqual(
             routes.list("user", []), routes.ListGamesResponse(partial=False, games=[])
@@ -336,12 +369,13 @@ class DeleteRouteTest(unittest.IsolatedAsyncioTestCase):
 
 
 class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
-    async def test_start_too_few_players(self) -> None:
+    async def test_start_wrong_players(self) -> None:
         async def commitGame(
             gameId: uuid.UUID, game: routes.RaExecutor, visibility: routes.Visibility
         ) -> None:
             return
 
+        # Too few human.
         msg, _ = await routes.start(
             routes.StartRequest(numPlayers=0),
             username="user",
@@ -349,6 +383,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(msg["level"], "warning")
 
+        # Too few human.
         msg, _ = await routes.start(
             routes.StartRequest(numPlayers=1),
             username="user",
@@ -356,8 +391,45 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(msg["level"], "warning")
 
+        # Too many all human.
+        msg, _ = await routes.start(
+            routes.StartRequest(numPlayers=6),
+            username="user",
+            commitGame=commitGame,
+        )
+        self.assertEqual(msg["level"], "warning")
+
+        # Too few mixed.
+        msg, _ = await routes.start(
+            routes.StartRequest(numPlayers=0, numAIPlayers=1),
+            username="user",
+            commitGame=commitGame,
+        )
+        self.assertEqual(msg["level"], "warning")
+
+        # Can't have all AIs.
+        msg, _ = await routes.start(
+            routes.StartRequest(numPlayers=0, numAIPlayers=2),
+            username="user",
+            commitGame=commitGame,
+        )
+        self.assertEqual(msg["level"], "warning")
+
+        # Too many mixed.
+        msg, _ = await routes.start(
+            routes.StartRequest(numPlayers=1, numAIPlayers=5),
+            username="user",
+            commitGame=commitGame,
+        )
+        self.assertEqual(msg["level"], "warning")
+
+    # AI will be named AI Panda.
+    @patch.object(ai_names, "ALL", new=["panda"])
     async def test_start(self) -> None:
         self.maxDiff = None
+        # Required to maintain shuffle order of players.
+        random.seed(42)
+
         storage: Dict[str, Any] = {}
 
         async def commitGame(
@@ -370,6 +442,9 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         msg, lst = await routes.start(
             routes.StartRequest(
                 numPlayers=2,
+                visibility="PRIVATE",
+                numAIPlayers=1,
+                AILevel="MEDIUM",
             ),
             username="user",
             commitGame=commitGame,
@@ -381,7 +456,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIsNotNone(storedGameId)
         self.assertIsNotNone(storedGame)
-        self.assertEqual(storedVisibility, routes.Visibility.PUBLIC)
+        self.assertEqual(storedVisibility, routes.Visibility.PRIVATE)
         self.assertEqual(msg["level"], "success")
         self.assertEqual(
             lst,
@@ -390,9 +465,9 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
                 games=[
                     routes.GameInfo(
                         id=str(storedGameId),
-                        players=["user"],
-                        visibility=routes.Visibility.PUBLIC.name,
-                        numPlayers=2,
+                        players=["user", "AI Panda"],
+                        visibility=routes.Visibility.PRIVATE.name,
+                        numPlayers=3,
                     )
                 ],
             ),

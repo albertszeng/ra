@@ -744,7 +744,8 @@ class RaGame:
                     )
                     assert (
                         tile_to_be_drawn == tile_actually_drawn
-                    ), f"tile to be drawn {tile_to_be_drawn} does not match tile actually drawn {tile_actually_drawn}"
+                    ), f"tile to be drawn {tile_to_be_drawn} does not match \
+                    tile actually drawn {tile_actually_drawn}"
                     yield f"{gi.DRAW_OPTIONS[0]} {tile_actually_drawn}\n"
 
                 # invalid action given
