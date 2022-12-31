@@ -6,6 +6,7 @@ from typing import List
 
 from game import ra
 from game import state as gs
+from game.decision_functions import oracle as o
 
 AI_PLAYER_NAME = "AI_PLAYER"
 OUTFILE_FOLDER_NAME: str = "move_histories"
@@ -24,23 +25,12 @@ def get_args() -> argparse.Namespace:
         description="Ra Game Instance for a single-player game against an AI"
     )
 
-    # parser.add_argument('--num_players', '-n', type=int, default=2,
-    #                     help='number of players in the game')
-
     parser.add_argument(
         "--player1",
         "--p1",
         default="Player 1",
         help="optional argument for player 1's name",
     )
-    # parser.add_argument('--player2', '--p2', default="Player 2",
-    #                     help="optional argument for player 2's name")
-    # parser.add_argument('--player3', '--p3', default="Player 3",
-    #                     help="optional argument for player 3's name")
-    # parser.add_argument('--player4', '--p4', default="Player 4",
-    #                     help="optional argument for player 4's name")
-    # parser.add_argument('--player5', '--p5', default="Player 5",
-    #                     help="optional argument for player 5's name")
 
     parser.add_argument(
         "--infile",
@@ -73,6 +63,6 @@ if __name__ == "__main__":
         player_names,
         move_history_file=args.infile,
         outfile=args.outfile,
-        ai_player_action_functions={AI_PLAYER_NAME: make_first_move_ai},
+        ai_player_action_functions={AI_PLAYER_NAME: o.oracle_ai_player},
     )
     game.start_game()

@@ -8,27 +8,39 @@ from game import state as gs
 from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
 
+DEFAULT_SEARCH_AUCTION_THRESHOLD = 1
 
-def oracle_search(game_state: gs.GameState) -> Tuple[int, Dict[str, float]]:
+
+def oracle_ai_player(game_state: gs.GameState) -> int:
+    return oracle_search(game_state)[0]
+
+
+def oracle_search(
+    game_state: gs.GameState,
+    num_auctions_allowed: int = DEFAULT_SEARCH_AUCTION_THRESHOLD,
+) -> Tuple[int, Dict[str, float]]:
     """
     Given the current game state, return an action to take and the valuation associated
     with it. Sees future tiles that will be drawn.
     """
     print("Beginning oracle search...")
     start_time = time.time()
-    best_move, best_resulting_valuation = oracle_search_internal(game_state, False)
+    best_move, best_resulting_valuation = oracle_search_internal(
+        game_state, num_auctions_allowed
+    )
     print(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
     return best_move, best_resulting_valuation
 
 
 def oracle_search_internal(
-    game_state: gs.GameState, auction_has_occurred: bool
+    game_state: gs.GameState, num_auctions_left_to_occur: int
 ) -> Tuple[int, Dict[str, float]]:
     """
     Find action to take based on expectimax. Returns the best action and the
     resulting valuation of each player's state.
 
-    Continues until at least 1 auction has occurred and the auction tiles are empty.
+    Search stops when the number of auctions that have occurred drops below 1
+    and the auction tiles are empty.
     """
     legal_actions = ra.get_possible_actions(game_state)
     assert (
@@ -48,46 +60,10 @@ def oracle_search_internal(
             )
             assert tile_drawn is not None, "Oracle_search could not draw tile"
             action_results[action] = value_state(
-                game_state_copy, auction_has_occurred or tile_drawn == gi.INDEX_OF_RA
+                game_state_copy,
+                num_auctions_left_to_occur - (1 if tile_drawn == gi.INDEX_OF_RA else 0),
             )
 
-            # # maps tile index to its resulting valuations
-            # draw_action_results: Dict[int, Dict[str, float]] = {}
-
-            # tile_bag = game_state.get_tile_bag_contents()
-            # tile_bag_size = game_state.get_num_tiles_left()
-            # # simulate draws of each tile type, and save the resulting valuations
-            # for tile_type in gi.TILE_INFO:
-            #     curr_tile_index = tile_type["index"]
-            #     curr_tile_count = tile_bag[curr_tile_index]
-            #     if curr_tile_count > 0:
-            #         game_state_copy = copy.deepcopy(game_state)
-            #         ra.execute_action_internal(
-            #             game_state_copy, action, legal_actions, curr_tile_index
-            #         )
-            #         draw_action_results[curr_tile_index] = value_state(
-            #             game_state_copy,
-            #             auction_has_occurred or curr_tile_index == gi.INDEX_OF_RA,
-            #         )
-
-            # # for each player, calculate what their expected valuation is
-            # expected_player_valuations: Dict[str, float] = {
-            #     name: 0.0 for name in game_state.get_player_names()
-            # }
-            # for tile_idx, resulting_valuations in draw_action_results.items():
-            #     assert len(resulting_valuations) == len(
-            #         list(game_state.get_player_names())
-            #     ), f"{len(resulting_valuations)} players have valuations, but \
-            #         there are {len(game_state.get_player_names())} players in the game"
-            #     for player_name, valuation in resulting_valuations.items():
-            #         assert (
-            #             player_name in expected_player_valuations
-            #         ), f"player {player_name} has a valuation but is not in the game"
-            #         expected_player_valuations[player_name] += (
-            #             valuation * tile_bag[tile_idx] / tile_bag_size
-            #         )
-
-            # action_results[action] = expected_player_valuations
         # TODO(albertz): Allow golden god actions
         elif action in [
             gi.GOD_1,
@@ -104,7 +80,8 @@ def oracle_search_internal(
             game_state_copy = copy.deepcopy(game_state)
             ra.execute_action_internal(game_state_copy, action, legal_actions)
             action_results[action] = value_state(
-                game_state_copy, auction_has_occurred or action == gi.AUCTION
+                game_state_copy,
+                num_auctions_left_to_occur - (1 if action == gi.AUCTION else 0),
             )
 
     assert len(action_results.keys()) == len(
@@ -132,12 +109,12 @@ def oracle_search_internal(
 
 
 def value_state(
-    game_state: gs.GameState, auction_has_occurred: bool
+    game_state: gs.GameState, num_auctions_left_to_occur: int
 ) -> Dict[str, float]:
     """
     Return the score of the current state for each player as a dictionary of
-    [player_name, score]. Search stops when at least 1 auction has occurred and
-    the auction tiles are empty.
+    [player_name, score]. Search stops when the number of auctions that have
+    occurred drops below 1 and the auction tiles are empty.
     If search does not stop, then continue propagation, and the value of the
     current state is the maximum across all possible actions the current player
     can take.
@@ -151,10 +128,10 @@ def value_state(
                 player_state.get_player_name()
             ] = player_state.get_player_points()
         return final_scores
-    elif auction_has_occurred and auction_tiles_are_empty:
+    elif num_auctions_left_to_occur <= 0 and auction_tiles_are_empty:
         return e.evaluate_game_state_no_auction_tiles(game_state)
     else:
         _best_move, resulting_player_state_valuations = oracle_search_internal(
-            game_state, auction_has_occurred
+            game_state, num_auctions_left_to_occur
         )
         return resulting_player_state_valuations
