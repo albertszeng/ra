@@ -1,3 +1,4 @@
+import copy
 import datetime as datetime_lib
 import random
 import unittest
@@ -743,7 +744,6 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
-        game.init_game()
 
         async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
@@ -770,7 +770,6 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
-        game.init_game()
         game.game_state.set_game_ended()
 
         async def fetchGame(gameId: uuid.UUID) -> Optional[routes.RaExecutor]:
@@ -803,7 +802,6 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
-        game.init_game()
 
         async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
@@ -830,7 +828,6 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
-        game.init_game()
 
         async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
@@ -861,7 +858,6 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
-        game.init_game()
 
         async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
@@ -888,7 +884,6 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
-        game.init_game()
 
         async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
@@ -915,7 +910,6 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
-        game.init_game()
 
         async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
@@ -943,7 +937,6 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
         game: routes.RaExecutor = routes.RaExecutor(
             player_names=["Player 1", "Player 2"],
         )
-        game.init_game()
 
         async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
             self.assertEqual(gameId, testId)
@@ -981,5 +974,71 @@ class ActionRoutesTest(unittest.IsolatedAsyncioTestCase):
                     username="user",
                     action=info.DRAW_DESC,
                 )
+            ],
+        )
+
+    async def test_action_success_with_ai(self) -> None:
+        random.seed(42)
+
+        testId: uuid.UUID = uuid.uuid4()
+        game: routes.RaExecutor = routes.RaExecutor(
+            num_players=3, randomize_play_order=False
+        )
+        assert game.maybe_add_player("human") is not None
+        assert game.add_ai_players(levels=[ai.AILevel.EASY] * 2)
+
+        async def fetchGame(gameId: uuid.UUID) -> routes.RaExecutor:
+            self.assertEqual(gameId, testId)
+            return game
+
+        async def saveGame(gameId: uuid.UUID, game: routes.RaExecutor) -> bool:
+            self.assertEqual(gameId, testId)
+            return True
+
+        # We rely on the fact that game play is pre-determined after initialization.
+        # As such, we can copy the state and replicate actions exactly.
+        afterHumanMove = copy.deepcopy(game)
+        afterHumanMove.execute_action(info.DRAW)
+        afterFirstAI = copy.deepcopy(afterHumanMove)
+        firstAI, firstAIAction = cast(
+            Tuple[str, int], afterFirstAI.execute_next_ai_action()
+        )
+        afterSecondAI = copy.deepcopy(afterFirstAI)
+        secondAI, secondAIAction = cast(
+            Tuple[str, int], afterSecondAI.execute_next_ai_action()
+        )
+
+        response = cast(
+            List[routes.ActionResponse],
+            await routes.action(
+                routes.ActionRequest(gameId=testId.hex, command="draw"),
+                playerIdx=0,
+                username="user",
+                fetchGame=fetchGame,
+                saveGame=saveGame,
+            ),
+        )
+
+        self.assertEqual(
+            response,
+            [
+                # After human move.
+                routes.ActionResponse(
+                    gameState=afterHumanMove.serialize(),
+                    username="user",
+                    action=info.DRAW_DESC,
+                ),
+                # After first AI move.
+                routes.ActionResponse(
+                    gameState=afterFirstAI.serialize(),
+                    username=firstAI,
+                    action=info.action_description(firstAIAction),
+                ),
+                # After second AI move.
+                routes.ActionResponse(
+                    gameState=afterSecondAI.serialize(),
+                    username=secondAI,
+                    action=info.action_description(secondAIAction),
+                ),
             ],
         )
