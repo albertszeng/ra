@@ -5,7 +5,6 @@ import React, {
 } from 'react';
 
 import {
-  // Autocomplete,
   ButtonGroup,
   IconButton,
   List,
@@ -37,28 +36,6 @@ import type {
   ListGamesResponse,
   ValidatedListGame,
 } from '../libs/request';
-
-// function isPlayerNames(input: string): boolean {
-//   if (input.includes(',')) {
-//     // Must be player names. Validate at least 2.
-//     const segments = input.split(',');
-//     return segments && segments.length >= 2;
-//   }
-//   return false;
-// }
-
-// function isGameId(input: string): boolean {
-//   // Assume it must be a game id.
-//   let hex = input;
-//   if (input.includes('-')) {
-//     hex = input.replace(/-|\s/g, '');
-//   }
-//   return hex.length === 32;
-// }
-
-// function isValid(input: string): boolean {
-//   return input !== '' && (isPlayerNames(input) || isGameId(input));
-// }
 
 /* Merges two game lists. Identical ids in prev are overriden by update. */
 function merge(
@@ -240,7 +217,7 @@ function GameList({ user, handleLoadGame }: GameListProps): JSX.Element {
               key="join-private"
               alignItems="center"
             >
-              <JoinPrivateDialog onJoin={(_) => { /* no-op */ }} />
+              <JoinPrivateDialog onJoin={handleLoadGame} />
             </ListItem>
           </List>
         </Grid>
