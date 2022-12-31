@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import jwt
 
-from backend import routes
+from backend import ai, routes
 from game import info, ra
 
 
@@ -23,7 +23,7 @@ class TestVisibility(unittest.TestCase):
         )
 
 
-class TestRaExectur(unittest.TestCase):
+class TestRaExector(unittest.TestCase):
     def test_initialized(self) -> None:
         game = routes.RaExecutor(num_players=2, randomize_play_order=False)
         self.assertFalse(game.initialized())
@@ -31,7 +31,7 @@ class TestRaExectur(unittest.TestCase):
         self.assertEqual(game.get_player_names(), [])
 
     def test_add_players(self) -> None:
-        game = routes.RaExecutor(num_players=2)
+        game = routes.RaExecutor(num_players=2, randomize_play_order=False)
         self.assertEqual(game.maybe_add_player("test1"), 0)
         self.assertEqual(game.maybe_add_player("test1"), 0)
         self.assertEqual(game.maybe_add_player("test1", allowDup=False), None)
@@ -49,7 +49,50 @@ class TestRaExectur(unittest.TestCase):
         self.assertEqual(game.maybe_add_player("test2"), 1)
 
     def test_add_ai_players(self) -> None:
-        pass
+        game = routes.RaExecutor(num_players=3, randomize_play_order=False)
+
+        # Can't have game with all AIs.
+        self.assertFalse(game.add_ai_players(levels=[ai.AILevel.EASY] * 3))
+
+        self.assertTrue(game.add_ai_players(levels=[ai.AILevel.EASY]))
+        self.assertFalse(game.add_ai_players(levels=[ai.AILevel.EASY] * 2))
+        self.assertTrue(game.add_ai_players(levels=[ai.AILevel.EASY]))
+        self.assertFalse(game.add_ai_players(levels=[ai.AILevel.EASY]))
+
+        self.assertFalse(game.initialized())
+        self.assertEqual(len(game.get_player_names()), 2)
+
+        self.assertEqual(game.maybe_add_player("human"), 2)
+
+        self.assertTrue(game.initialized())
+        self.assertIn("human", game.get_player_names())
+        self.assertEqual(len(game.get_player_names()), 3)
+
+    def test_add_ai_players_last(self) -> None:
+        game = routes.RaExecutor(num_players=3, randomize_play_order=False)
+
+        self.assertEqual(game.maybe_add_player("human"), 0)
+        self.assertFalse(game.add_ai_players(levels=[ai.AILevel.EASY] * 3))
+        self.assertTrue(game.add_ai_players(levels=[ai.AILevel.EASY] * 2))
+
+        self.assertTrue(game.initialized())
+        self.assertIn("human", game.get_player_names())
+        self.assertEqual(len(game.get_player_names()), 3)
+
+    def test_execute_next_ai_action(self) -> None:
+        game = routes.RaExecutor(num_players=2, randomize_play_order=False)
+        self.assertEqual(game.maybe_add_player("human"), 0)
+        self.assertTrue(game.add_ai_players(levels=[ai.AILevel.EASY]))
+
+        # Human executes a draw.
+        self.assertIsNotNone(game.execute_action(info.DRAW))
+        self.assertEqual(len(game.logged_moves), 1)
+
+        # AI Executes action.
+        self.assertIsNotNone((aiInfo := game.execute_next_ai_action()))
+        name, action = aiInfo
+        self.assertEqual(game.get_player_names(), ["human", name])
+        self.assertEqual(len(game.logged_moves), 2)
 
 
 class RoutesTest(unittest.TestCase):
