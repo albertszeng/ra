@@ -280,14 +280,18 @@ async def act(
         return True
 
     if not (gameIdStr := data.get("gameId")):
-        return routes.ErrorMessage(message="Must provide a gameId with request.")
+        resp = routes.ErrorMessage(message="Must provide a gameId with request.")
+        await sio.emit("update", resp, room=sid)
+        return resp
     if (
         (command := data.get("command"))
         and command.upper() == "LOAD"
         and (game := await fetchGame(uuid.UUID(gameIdStr)))
     ):
         if not game.initialized():
-            return routes.WarningMessage(f"Cannot load incomplete game: {gameIdStr}.")
+            resp = routes.WarningMessage(f"Cannot load incomplete game: {gameIdStr}.")
+            await sio.emit("update", resp, room=sid)
+            return resp
 
         async def fetchLocal(
             gameId: uuid.UUID, _game: routes.RaGame = game
@@ -408,12 +412,16 @@ async def _on_login_success(username: str, sid: str) -> routes.LoginResponse:
 async def register(sid: str, data: routes.RegisterRequest) -> routes.Message:
     username, password = data.get("username"), data.get("password")
     if not (username and password):
-        return routes.WarningMessage("Must provide username and password.")
+        resp = routes.WarningMessage("Must provide username and password.")
+        await sio.emit("update", resp, room=sid)
+        return resp
     async with app.app_context():
         if user := db.session.get(User, username):
-            return routes.WarningMessage(
+            resp = routes.WarningMessage(
                 f"{username} already registered. Please login."
             )
+            await sio.emit("update", resp, room=sid)
+            return resp
     # Register a new user.
     async with app.app_context():
         user = User(username=username)  # pyre-ignore[28]
@@ -443,7 +451,9 @@ async def login(sid: str, data: routes.LoginRequest) -> routes.Message:
         return response
     # Must have set username and password.
     if not (username and password):
-        return routes.WarningMessage("Must provide username and password.")
+        response = routes.WarningMessage("Must provide username and password.")
+        await sio.emit("login", response, room=sid)
+        return response
 
     async with app.app_context():
         user = db.session.get(User, username)

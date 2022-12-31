@@ -26,6 +26,7 @@ import Grid from '@mui/material/Unstable_Grid2';
 
 import { enqueueSnackbar } from 'notistack';
 
+import JoinPrivateDialog from './JoinPrivateDialog';
 import { socket } from '../common';
 import { notEmpty } from '../libs/game';
 import type {
@@ -92,11 +93,28 @@ function clean(games: ListGame[]): ValidatedListGame[] {
     return game as ValidatedListGame;
   }).filter(notEmpty);
 }
+/* Sorts games so those including the user are first.
+    sorted = [gamesWithUser, gamesWithoutUser]
+  Each partition above is then sorted internally players left to start.
+*/
+function smartSort(user: string, games: ValidatedListGame[]): ValidatedListGame[] {
+  const withUser = games.filter(({ players }) => players.includes(user));
+  const withoutUser = games.filter(({ players }) => !players.includes(user));
+  const compareFn = (a: ValidatedListGame, b: ValidatedListGame) => {
+    const aLeft = a.numPlayers - a.players.length;
+    const bLeft = b.numPlayers - b.players.length;
+    return aLeft - bLeft;
+  };
+  withUser.sort(compareFn);
+  withoutUser.sort(compareFn);
+  return withUser.concat(withoutUser);
+}
 
 type GameListProps = {
+  user: string;
   handleLoadGame: (gameId: string) => void;
 };
-function GameList({ handleLoadGame }: GameListProps): JSX.Element {
+function GameList({ user, handleLoadGame }: GameListProps): JSX.Element {
   // const [formValid, setFormValid] = useState(false);
   const [privateGames, setPrivateGames] = useState<ValidatedListGame[]>([]);
   const [publicGames, setPublicGames] = useState<ValidatedListGame[]>([]);
@@ -112,11 +130,13 @@ function GameList({ handleLoadGame }: GameListProps): JSX.Element {
   const onListGames = useCallback(({ games, partial } : ListGamesResponse) => {
     const deleted = games.filter((game) => game.deleted);
     const privateG = clean(games.filter((game) => game.visibility === 'PRIVATE'));
-    setPrivateGames((prev) => ((partial) ? merge(prev, privateG, deleted) : privateG));
+    setPrivateGames((prev) => (
+      smartSort(user, (partial) ? merge(prev, privateG, deleted) : privateG)));
 
     const publicG = clean(games.filter((game) => game.visibility === 'PUBLIC'));
-    setPublicGames((prev) => ((partial) ? merge(prev, publicG, deleted) : publicG));
-  }, []);
+    setPublicGames((prev) => (
+      smartSort(user, (partial) ? merge(prev, publicG, deleted) : publicG)));
+  }, [user]);
   const onDelete = useCallback(({ message, level }: MessageResponse) => {
     enqueueSnackbar(message, { variant: level });
   }, []);
@@ -134,41 +154,44 @@ function GameList({ handleLoadGame }: GameListProps): JSX.Element {
     };
   }, [onDelete]);
 
-  const renderGame = useCallback(({ id, players, numPlayers: count }: ValidatedListGame) => (
-    <ListItem
-      key={`game-${id}`}
-      alignItems="flex-start"
-      secondaryAction={(
-        <ButtonGroup>
+  const renderGame = useCallback(({ id, players, numPlayers: count }: ValidatedListGame) => {
+    const isFull = (players.length === count);
+    const secondaryAction = (
+      <ButtonGroup>
+        {(isFull) ? null : (
           <IconButton
             aria-label="join"
             onClick={() => handleAddPlayer(id)}
           >
             <PersonAdd />
           </IconButton>
-          <IconButton
-            aria-label="delete"
-            onClick={() => handleDeleteGame(id)}
-          >
-            <Delete />
-          </IconButton>
-        </ButtonGroup>
-      )}
-    >
-      <ListItemButton
-        dense
-        onClick={() => handleLoadGame(id)}
+        )}
+        <IconButton
+          aria-label="delete"
+          onClick={() => handleDeleteGame(id)}
+        >
+          <Delete />
+        </IconButton>
+      </ButtonGroup>
+    );
+    return (
+      <ListItem
+        key={`game-${id}`}
+        alignItems="flex-start"
+        secondaryAction={secondaryAction}
       >
-        <ListItemIcon>
-          <VideogameAsset />
-        </ListItemIcon>
-        <ListItemText
-          primary={`Game ID: ${id}`}
-          secondary={`(${players.length}/${count}): ${players.toString()}`}
-        />
-      </ListItemButton>
-    </ListItem>
-  ), [handleAddPlayer, handleDeleteGame, handleLoadGame]);
+        <ListItemButton dense onClick={() => handleLoadGame(id)}>
+          <ListItemIcon>
+            <VideogameAsset />
+          </ListItemIcon>
+          <ListItemText
+            primary={`Game ID: ${id}`}
+            secondary={`(${players.length}/${count}): ${players.toString()}`}
+          />
+        </ListItemButton>
+      </ListItem>
+    );
+  }, [handleAddPlayer, handleDeleteGame, handleLoadGame]);
 
   // const handleChange = useCallback((
   //   e: SyntheticEvent<Element, Event>,
@@ -213,6 +236,12 @@ function GameList({ handleLoadGame }: GameListProps): JSX.Element {
               {`Private (${privateGames.length})`}
             </ListSubheader>
             {privateGames.map(renderGame)}
+            <ListItem
+              key="join-private"
+              alignItems="center"
+            >
+              <JoinPrivateDialog onJoin={(_) => { /* no-op */ }} />
+            </ListItem>
           </List>
         </Grid>
       </Grid>

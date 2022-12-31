@@ -235,7 +235,7 @@ function Game({ playerName }: GameProps): JSX.Element {
           </Grid>
           <Grid xs={12} />
           <Grid xs={12}>
-            <GameList handleLoadGame={handleLoadGame} />
+            <GameList user={playerName} handleLoadGame={handleLoadGame} />
           </Grid>
         </Grid>
       )}
