@@ -502,10 +502,7 @@ async def connect(sid: str, environ, auth) -> None:  # pyre-ignore[2]
 @sio.event  # pyre-ignore[56]
 @debuggable
 async def disconnect(sid: str) -> None:
-    session = await sio.get_session(sid)
-    for room in sio.rooms(sid):
-        if room != sid:
-            await _leave_room(sid, room, session.get("username"))
+    pass
 
 
 # pyre-ignore[11]
