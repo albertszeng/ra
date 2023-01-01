@@ -271,7 +271,7 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
           </Grid>
         </Grid>
       )}
-      <Backdrop open={loading} onClick={() => setLoading(false); }>
+      <Backdrop open={loading} onClick={() => setLoading(false)}>
         <CircularProgress color="inherit" />
       </Backdrop>
     </Container>
