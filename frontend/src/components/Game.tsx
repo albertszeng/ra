@@ -51,19 +51,23 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
 
   const handleLoadGame = useCallback((requestedId: string) => {
     const request: ActionRequest = { gameId: requestedId, command: 'LOAD' };
+    setLoading(true);
     socket.emit('act', request);
   }, []);
   const handleDraw = useCallback(() => {
     const request: ActionRequest = { gameId, command: 'DRAW' };
+    setLoading(true);
     socket.emit('act', request);
   }, [gameId]);
   const handleAuction = useCallback(() => {
     const request: ActionRequest = { gameId, command: 'AUCTION' };
+    setLoading(true);
     socket.emit('act', request);
   }, [gameId]);
   const handleBidAction = useCallback((idx: number) => {
     // 1-indexed. 0 corresponds to passing in which case idx === -1.
     const request: ActionRequest = { gameId, command: `B${idx + 1}` };
+    setLoading(true);
     socket.emit('act', request);
   }, [gameId]);
   const handleSelectCardFromGrid = useCallback((idx: number, { name: tileName }: Tile) => {
@@ -74,6 +78,7 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
     }
     setSwapInfo([false, -1]);
     const request: ActionRequest = { gameId, command: `G${idx + 1}` };
+    setLoading(true);
     socket.emit('act', request);
   }, [gameId, goldenGodSelected]);
   const resetSelectCardFromGrid = useCallback(() => {
@@ -99,6 +104,7 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
       action = `G${swapIdx + 1}`;
     }
     const request: ActionRequest = { gameId, command: action };
+    setLoading(true);
     socket.emit('act', request);
   }, [gameId, swapInfo, goldenGodSelected]);
 
@@ -151,6 +157,7 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
     }
   }, [setIsPlaying]);
   const onUpdateGame = useCallback((resp: ApiResponse | ApiResponse[]) => {
+    setLoading(false);
     if (!Array.isArray(resp)) {
       updateGame(resp);
       return;

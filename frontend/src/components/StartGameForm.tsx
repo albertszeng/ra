@@ -64,6 +64,7 @@ function StartGameForm(): JSX.Element {
                 (n) => n + numAIPlayers >= 2 && n + numAIPlayers <= 5,
               ).map((nPlayers: number) => (
                 <FormControlLabel
+                  key={`nPlayers-${nPlayers}`}
                   value={nPlayers}
                   control={<Radio />}
                   label={nPlayers}
@@ -89,6 +90,7 @@ function StartGameForm(): JSX.Element {
                 (n) => n + numPlayers >= 2 && n + numPlayers <= 5,
               ).map((nAIs: number) => (
                 <FormControlLabel
+                  key={`nAIs-${nAIs}`}
                   value={nAIs}
                   control={<Radio />}
                   label={nAIs}

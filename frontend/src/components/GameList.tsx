@@ -180,27 +180,8 @@ function GameList({ user, handleLoadGame }: GameListProps): JSX.Element {
     );
   }, [handleAddPlayer, handleDeleteGame, handleLoadGame]);
 
-  // const handleChange = useCallback((
-  //   e: SyntheticEvent<Element, Event>,
-  //   value: string | null,
-  // ): void => {
-  //   if (!value) {
-  //     return;
-  //   }
-  //   setFormValid(isValid(value));
-  //   setGameOrPlayers(value);
-  // }, []);
-  // const handleDelete = useCallback(() => {
-  //   if (!isGameId(gameOrPlayers)) {
-  //     enqueueSnackbar('Invalid game id.', { variant: 'warning' });
-  //     return;
-  //   }
-  //   handleDeleteGame(gameOrPlayers);
-  // }, [gameOrPlayers, handleDeleteGame]);
-  // const tooltipText = 'Enter comma-seperated list of players or the Game ID
-  // of an existing game.';
   return (
-    <Paper variant="outlined" elevation={1}>
+    <Paper elevation={1}>
       <Grid container spacing={2} columns={{ xs: 4, sm: 8, md: 12 }}>
         <Grid xs={12} display="flex" justifyContent="center" alignItems="center">
           <Typography variant="h4">
