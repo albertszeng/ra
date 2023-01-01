@@ -540,7 +540,9 @@ def gen_exp() -> float:
     return (datetime.utcnow() + datetime_lib.timedelta(days=2)).timestamp()
 
 
-def authenticate_token(token: Optional[str], secret: str) -> Optional[LoginResponse]:
+async def authenticate_token(
+    token: Optional[str], secret: str, isRegistered: Callable[[str], Awaitable[bool]]
+) -> Optional[LoginResponse]:
     """Authenticates the provided token. On success, returns a LongReponse"""
     if not token:
         return
@@ -550,8 +552,12 @@ def authenticate_token(token: Optional[str], secret: str) -> Optional[LoginRespo
         # Invalid or expired token.
         return
 
-    # Token is valid - refresh deadline, and send along.
+    # Token is valid. Validate user is registered and refresh token if so.
     username = payload.get("username")
+    if not username:
+        return
+    if not await isRegistered(username):
+        return
     refreshedToken = jwt.encode(
         {
             "username": username,

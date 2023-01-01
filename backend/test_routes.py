@@ -270,29 +270,37 @@ class RoutesTest(unittest.TestCase):
     def test_gen_exp(self) -> None:
         self.assertIsNotNone(routes.gen_exp())
 
-    def test_authenticate_invalid_or_expired_token(self) -> None:
-        self.assertIsNone(routes.authenticate_token(None, "secret"))
+
+class AuthRouteTest(unittest.IsolatedAsyncioTestCase):
+    async def test_authenticate_invalid_or_expired_token(self) -> None:
+        async def isRegistered(user: str) -> bool:
+            return user == "testUser"
+
+        self.assertIsNone(await routes.authenticate_token(None, "secret", isRegistered))
 
         invalidToken = jwt.encode(
-            {"username": "user", "_exp": 100}, "bad", algorithm="HS256"
+            {"username": "testUser", "_exp": 100}, "bad", algorithm="HS256"
         )
-        self.assertIsNone(routes.authenticate_token(invalidToken, "secret"))
+        self.assertIsNone(
+            await routes.authenticate_token(invalidToken, "secret", isRegistered)
+        )
 
         expiredToken = jwt.encode(
             {
-                "username": "user",
+                "username": "testUser",
                 # Experied 1-hour ago.
                 "exp": (datetime.utcnow() - datetime_lib.timedelta(days=1)).timestamp(),
             },
             "secret",
             algorithm="HS256",
         )
-        self.assertIsNone(routes.authenticate_token(expiredToken, "secret"))
+        self.assertIsNone(
+            await routes.authenticate_token(expiredToken, "secret", isRegistered)
+        )
 
-    def test_authenticate_and_refresh_valid_token(self) -> None:
         validToken = jwt.encode(
             {
-                "username": "user",
+                "username": "unregisteredUser",
                 # Will expire in 1-hour from now.
                 "_exp": (
                     datetime.utcnow() + datetime_lib.timedelta(hours=1)
@@ -301,14 +309,33 @@ class RoutesTest(unittest.TestCase):
             "secret",
             algorithm="HS256",
         )
-        response = routes.authenticate_token(validToken, "secret")
+        self.assertIsNone(
+            await routes.authenticate_token(validToken, "secret", isRegistered)
+        )
+
+    async def test_authenticate_and_refresh_valid_token(self) -> None:
+        async def isRegistered(user: str) -> bool:
+            return user == "testUser"
+
+        validToken = jwt.encode(
+            {
+                "username": "testUser",
+                # Will expire in 1-hour from now.
+                "_exp": (
+                    datetime.utcnow() + datetime_lib.timedelta(hours=1)
+                ).timestamp(),
+            },
+            "secret",
+            algorithm="HS256",
+        )
+        response = await routes.authenticate_token(validToken, "secret", isRegistered)
         assert response is not None
         token = response.get("token")
         self.assertIsNotNone(token)
         self.assertNotEqual(token, validToken)
         # Decode response and validate it's been refreshed correctly.
         payload = jwt.decode(token, "secret", algorithms=["HS256"])
-        self.assertEqual(payload.get("username"), "user")
+        self.assertEqual(payload.get("username"), "testUser")
         self.assertGreater(
             payload.get("exp"),
             (datetime.utcnow() + datetime_lib.timedelta(hours=1)).timestamp(),

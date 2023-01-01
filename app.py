@@ -79,6 +79,13 @@ async def setup() -> None:
         if _C.RESET_DATABASE:
             logger.info("DROPPING TABLES")
             db.drop_all()
+        if not _C.RESET_DATABASE and _C.RESET_GAMES:
+            Game.__table__.drop(db.engine)  # pyre-ignore[16]
+            logger.info("DROPPING GAMES")
+        if not _C.RESET_DATABASE and _C.RESET_USERS:
+            User.__table__.drop(db.engine)  # pyre-ignore[16]
+            logger.info("DROPPING USERS")
+
         db.create_all()
 
 
@@ -441,8 +448,18 @@ async def login(sid: str, data: routes.LoginRequest) -> routes.Message:
         data.get("token"),
     )
 
+    async def fetchUser(userId: str) -> User:
+        async with app.app_context():
+            return db.session.get(User, userId)
+
+    async def isRegistered(userId: str) -> bool:
+        """Checks if the given userId is a registered user."""
+        return True if (await fetchUser(userId)) else False
+
     if util.use_token(data) and (
-        response := routes.authenticate_token(oldToken, _C.SECRET_KEY)
+        response := await routes.authenticate_token(
+            oldToken, _C.SECRET_KEY, isRegistered
+        )
     ):
         async with sio.session(sid) as session:
             session["loggedIn"] = True
@@ -455,10 +472,7 @@ async def login(sid: str, data: routes.LoginRequest) -> routes.Message:
         await sio.emit("login", response, room=sid)
         return response
 
-    async with app.app_context():
-        user = db.session.get(User, username)
-
-    if not user:
+    if not (user := await fetchUser(username)):
         response = routes.WarningMessage(f"{username} not registered.")
         await sio.emit("login", response, room=sid)
         return response
