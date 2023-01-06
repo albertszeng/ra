@@ -180,6 +180,12 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
   }, []);
 
   useEffect(() => {
+    // When we stop playing, reset the game.
+    if (!isPlaying) {
+      onReset();
+    }
+  }, [isPlaying, onReset]);
+  useEffect(() => {
     socket.on('connect', onConnect);
     return () => {
       socket.off('connect', onConnect);
