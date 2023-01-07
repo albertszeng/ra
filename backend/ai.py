@@ -34,7 +34,7 @@ def get() -> Mapping[AILevel, AIFunc]:
         _AIs = {
             AILevel.EASY: ai.first_move,
             AILevel.MEDIUM: ai.random,
-            AILevel.HARD: ai.oracle,
+            AILevel.HARD: ai.oracle_ai,
         }
     return _AIs
 
