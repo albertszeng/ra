@@ -108,8 +108,9 @@ class OracleSearchTest(unittest.TestCase):
         assert 2 in game_state.get_player_usable_sun(0)  # P1 has 2,5,6,9
         assert 3 in game_state.get_player_usable_sun(1)  # P2 has 3,4,7,8
 
-        print("Searching for 2 auctions...")
-        best_move, resulting_valuations = o.oracle_search(game_state, 2)
+        auctionsToSearch = 10
+        print(f"Searching for {auctionsToSearch} auctions...")
+        best_move, resulting_valuations = o.oracle_search(game_state, auctionsToSearch)
         # print("best_move:", best_move)
         # print("resulting_valuations:", resulting_valuations)
         # print("draw order:", game_state.get_tile_bag().get_draw_order())

@@ -18,17 +18,39 @@ class TileBag:
     # the order that tiles will be drawn, unless a specific tile is requested
     # to be drawn
     draw_order: List[int]
+    _draw_order_hash: int
 
     def __init__(self, draw_order: Optional[List[int]] = None) -> None:
         if draw_order is None:
-            self.bag = [gi.tile_starting_num(tile) for tile in gi.TILE_INFO]
-            self.num_tiles_left = gi.STARTING_NUM_TILES
-            self.draw_order = []
-            for i in range(len(self.bag)):
-                self.draw_order += [i] * self.bag[i]
-            random.shuffle(self.draw_order)
-        else:
-            self.set_draw_order(draw_order)
+            draw_order = []
+            for i, tile in enumerate(gi.TILE_INFO):
+                draw_order += [i] * gi.tile_starting_num(tile)
+            random.shuffle(draw_order)
+
+        self._set_draw_order(draw_order)
+
+    def _set_draw_order(self, draw_order: List[int]) -> None:
+        """
+        Set the draw order of the tile bag (and consequently, the bag contents too).
+        """
+        self.draw_order = draw_order
+        self.num_tiles_left = len(draw_order)
+        self.bag = [0] * gi.NUM_TILE_TYPES
+        for tile_index in draw_order:
+            self.bag[tile_index] += 1
+
+        self._draw_order_hash = hash(tuple(draw_order))
+
+    def __key(self) -> tuple[int, int]:
+        return (self._draw_order_hash, self.num_tiles_left)
+
+    def __hash__(self) -> int:
+        return hash(self.__key())
+
+    def __eq__(self, other: "TileBag") -> bool:
+        if isinstance(other, TileBag):
+            return self.__key() == other.__key()
+        return NotImplemented
 
     def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
         """Remove a "random" tile for the bag. The tile draw order is randomly
@@ -93,16 +115,6 @@ class TileBag:
         self.draw_order.insert(first_occurrence_of_tile, next_draw)
         self.draw_order.insert(0, tile)
         return next_draw
-
-    def set_draw_order(self, draw_order: List[int]) -> None:
-        """
-        Set the draw order of the tile bag (and consequently, the bag contents too).
-        """
-        self.draw_order = draw_order
-        self.num_tiles_left = len(self.draw_order)
-        self.bag = [0] * gi.NUM_TILE_TYPES
-        for tile_index in self.draw_order:
-            self.bag[tile_index] += 1
 
     def print_contents_of_bag(self) -> None:
         print(self)
@@ -192,6 +204,23 @@ class PlayerState:
         self.usable_sun = starting_sun[:]
         self.usable_sun.sort()
         self.unusable_sun = []
+
+    def __key(self) -> tuple[int, ...]:
+        return (
+            hash(tuple(self.collection)),
+            self.points,
+            hash(self.player_name),
+            hash(tuple(self.usable_sun)),
+            hash(tuple(self.unusable_sun)),
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.__key())
+
+    def __eq__(self, other: "PlayerState") -> bool:
+        if isinstance(other, PlayerState):
+            return self.__key() == other.__key()
+        return NotImplemented
 
     def serialize(self) -> SerializedPlayerState:
         return SerializedPlayerState(
@@ -430,6 +459,39 @@ class GameState:
         ]
 
         self.game_ended = False
+
+    def __key(
+        self,
+    ) -> tuple[int, ...]:
+        return (
+            self.total_rounds,
+            self.num_ras_this_round,
+            self.num_players,
+            self.max_auction_tiles,
+            hash(self.tile_bag),
+            self.current_round,
+            hash(tuple(self.active_players)),
+            self.center_sun,
+            hash(tuple(sorted(self.auction_tiles))),
+            hash(tuple(self.auction_suns)),
+            hash(self.auction_started),
+            hash(self.auction_forced),
+            hash(self.auction_start_player),
+            self.current_player,
+            self.num_mons_to_discard,
+            self.num_civs_to_discard,
+            hash(self.auction_winning_player),
+            hash(hash(player) for player in self.player_states),
+            hash(self.game_ended),
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.__key())
+
+    def __eq__(self, other: "GameState") -> bool:
+        if isinstance(other, GameState):
+            return self.__key() == other.__key()
+        return NotImplemented
 
     def serialize(self) -> SerializedGameState:
         return SerializedGameState(

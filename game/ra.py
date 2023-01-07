@@ -769,7 +769,7 @@ class RaGame:
             file_lines = [action.split(" ") for action in f.readlines()]
 
             tile_bag_draw_order = file_lines[1]
-            self.game_state.get_tile_bag().set_draw_order(
+            self.game_state.get_tile_bag()._set_draw_order(
                 [int(tile) for tile in tile_bag_draw_order]
             )
 
