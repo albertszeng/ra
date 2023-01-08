@@ -2,7 +2,6 @@ import pprint
 import time
 from typing import Callable, Dict, Generic, List, Mapping, TypedDict, TypeVar
 
-import faas_cache_dict  # pyre-ignore[21]
 from typing_extensions import ParamSpec
 
 from game import copy
@@ -163,9 +162,7 @@ P = ParamSpec("P")
 
 class CacheGames(Generic[T]):
     def __init__(self, func: Callable[[gs.GameState, Metrics, ...], T]) -> None:
-        self.cache = faas_cache_dict.FaaSCacheDict(  # pyre-ignore[4]
-            max_size_bytes="10M"
-        )
+        self.cache: Dict[int, T] = {}
         self.func: Callable[[gs.GameState, Metrics, ...], T] = func
 
     def __call__(
@@ -176,12 +173,13 @@ class CacheGames(Generic[T]):
         **kwargs: P.kwargs,
     ) -> T:
         metrics["numCalls"] += 1
-        if gameState not in self.cache:
+        gameHash = hash(gameState)
+        if gameHash not in self.cache:
             metrics["cacheMiss"] += 1
-            self.cache[gameState] = self.func(gameState, metrics, *args, **kwargs)
+            self.cache[gameHash] = self.func(gameState, metrics, *args, **kwargs)
         else:
             metrics["cacheHit"] += 1
-        return self.cache[gameState]
+        return self.cache[gameHash]
 
 
 def oracle_search_internal(
