@@ -483,7 +483,7 @@ class GameState:
             self.current_round,
             hash(tuple(self.active_players)),
             self.center_sun,
-            hash(tuple(list(sorted(self.auction_tiles)))),
+            hash(tuple(sorted(self.auction_tiles))),
             hash(tuple(self.auction_suns)),
             hash(self.auction_started),
             hash(self.auction_forced),
@@ -492,7 +492,7 @@ class GameState:
             self.num_mons_to_discard,
             self.num_civs_to_discard,
             hash(self.auction_winning_player),
-            hash(tuple([hash(player) for player in self.player_states])),
+            hash(tuple(hash(player) for player in self.player_states)),
             hash(self.game_ended),
         )
 

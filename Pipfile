@@ -12,6 +12,7 @@ python-socketio = "*"
 quart-cors = "*"
 quart = {editable = true, git = "https://github.com/kandluis/quart.git"}
 pyjwt = "*"
+faas-cache-dict = "*"
 
 [dev-packages]
 pyre-check = "*"

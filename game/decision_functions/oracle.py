@@ -2,6 +2,7 @@ import pprint
 import time
 from typing import Callable, Dict, Generic, List, Mapping, TypedDict, TypeVar
 
+import faas_cache_dict  # pyre-ignore[21]
 from typing_extensions import ParamSpec
 
 from game import copy
@@ -162,7 +163,9 @@ P = ParamSpec("P")
 
 class CacheGames(Generic[T]):
     def __init__(self, func: Callable[[gs.GameState, Metrics, ...], T]) -> None:
-        self.cache: Dict[gs.GameState, T] = {}
+        self.cache = faas_cache_dict.FaaSCacheDict(  # pyre-ignore[4]
+            max_size_bytes="10M"
+        )
         self.func: Callable[[gs.GameState, Metrics, ...], T] = func
 
     def __call__(

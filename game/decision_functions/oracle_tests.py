@@ -118,6 +118,7 @@ class OracleSearchTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # import cProfile
-    # cProfile.run('unittest.main()')
-    unittest.main()
+    import cProfile
+
+    cProfile.run("unittest.main()")
+    # unittest.main()
