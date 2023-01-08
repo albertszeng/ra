@@ -209,7 +209,6 @@ class PlayerState:
         return (
             hash(tuple(self.collection)),
             self.points,
-            hash(self.player_name),
             hash(tuple(self.usable_sun)),
             hash(tuple(self.unusable_sun)),
         )
@@ -481,7 +480,7 @@ class GameState:
             self.num_mons_to_discard,
             self.num_civs_to_discard,
             hash(self.auction_winning_player),
-            hash(hash(player) for player in self.player_states),
+            hash(tuple(hash(player) for player in self.player_states)),
             hash(self.game_ended),
         )
 

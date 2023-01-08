@@ -1,10 +1,10 @@
-import copy
 import pprint
 import time
 from typing import Callable, Dict, Generic, List, Mapping, TypedDict, TypeVar
 
 from typing_extensions import ParamSpec
 
+from game import copy
 from game import info as gi
 from game import ra
 from game import state as gs
