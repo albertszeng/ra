@@ -62,7 +62,7 @@ def get_possible_actions(game_state: gs.GameState) -> Optional[List[int]]:  # no
         auction_suns = game_state.get_auction_suns()
         max_auction_sun = float("-inf")
         if sum(1 for el in auction_suns if el is not None) > 0:
-            max_auction_sun = max([el for el in auction_suns if el is not None])
+            max_auction_sun = max(el for el in auction_suns if el is not None)
 
         # add a legal action for every player sun greater than the max
         # bid sun
@@ -252,7 +252,7 @@ def execute_action_internal(  # noqa: C901
         auction_suns = game_state.get_auction_suns()
         max_sun = None
         if sum(1 for el in auction_suns if el is not None) > 0:
-            max_sun = max([el for el in auction_suns if el is not None])
+            max_sun = max(el for el in auction_suns if el is not None)
 
         # if no suns were bid and the auction tiles are full, clear
         # the tiles
@@ -275,7 +275,7 @@ def execute_action_internal(  # noqa: C901
             game_state.clear_auction_tiles()
             game_state.give_tiles_to_player(
                 winning_player,
-                [tile for tile in auction_tiles if gi.index_is_collectible(tile)],
+                (tile for tile in auction_tiles if gi.index_is_collectible(tile)),
             )
 
             winning_player_collection = game_state.get_player_collection(winning_player)
