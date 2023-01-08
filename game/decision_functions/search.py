@@ -131,7 +131,7 @@ def value_state(
     current state is the maximum across all possible actions the current player
     can take.
     """
-    auction_tiles_are_empty = len(game_state.get_auction_tiles()) == 0
+    auction_tiles_are_empty = game_state.get_num_auction_tiles() == 0
 
     if game_state.is_game_ended():
         final_scores = {}

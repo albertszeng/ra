@@ -1,4 +1,4 @@
-from typing import Dict, List, Mapping
+from typing import Dict, Iterable, Mapping, Sequence
 
 from game import info as gi
 from game import scoring_utils as scoring
@@ -131,7 +131,7 @@ def value_of_usable_sun(game_state: gs.GameState) -> Dict[str, float]:
 
 
 def value_one_players_usable_sun(
-    usable_sun: List[int], num_players: int, num_ras_so_far: int
+    usable_sun: Sequence[int], num_players: int, num_ras_so_far: int
 ) -> float:
     """
     TODO(albertz): this needs to be much more complex, factoring in both how many
@@ -188,6 +188,8 @@ def value_of_unusable_sun(game_state: gs.GameState) -> Dict[str, float]:
     return unusable_sun_valuations
 
 
-def value_one_players_unusable_sun(unusable_sun: List[int], num_players: int) -> float:
+def value_one_players_unusable_sun(
+    unusable_sun: Iterable[int], num_players: int
+) -> float:
     sun_modifiers = SUN_MODIFIER_MAPPING[num_players]
-    return sum([sun_modifiers[sun] for sun in unusable_sun])
+    return sum(sun_modifiers[sun] for sun in unusable_sun)

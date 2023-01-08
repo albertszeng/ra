@@ -1,5 +1,5 @@
 import enum
-from typing import Dict, List, Mapping, Tuple, TypedDict
+from typing import Dict, List, Mapping, Sequence, Tuple, TypedDict
 
 # Game Constants
 
@@ -350,11 +350,11 @@ def list_of_temporary_collectible_indexes() -> List[int]:
     return temp_collectibles
 
 
-def get_civs_from_collection(collection: List[int]) -> List[int]:
+def get_civs_from_collection(collection: Sequence[int]) -> Sequence[int]:
     return collection[STARTING_INDEX_OF_CIVS : (STARTING_INDEX_OF_CIVS + NUM_CIVS)]
 
 
-def get_monuments_from_collection(collection: List[int]) -> List[int]:
+def get_monuments_from_collection(collection: Sequence[int]) -> Sequence[int]:
     return collection[
         STARTING_INDEX_OF_MONUMENTS : (STARTING_INDEX_OF_MONUMENTS + NUM_MONUMENTS)
     ]

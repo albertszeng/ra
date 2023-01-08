@@ -22,13 +22,13 @@ class TileBagTests(unittest.TestCase):
         for i in range(self.num_iterations):
             t = gs.TileBag()
             draw_order = t.get_draw_order()
-            current_collection = t.get_bag_contents()
+            current_collection = t.get_bag_contents()[:]
             num_tiles_left = t.get_num_tiles_left()
             for j in range(self.num_draws):
                 tile_index_drawn = t.draw_tile()
                 self.assertIsNotNone(tile_index_drawn)
                 self.assertEqual(draw_order[j], tile_index_drawn)
-                new_collection = t.get_bag_contents()
+                new_collection = t.get_bag_contents()[:]
                 self.assertEqual(
                     current_collection[tile_index_drawn],
                     new_collection[tile_index_drawn] + 1,
@@ -50,7 +50,7 @@ class TileBagTests(unittest.TestCase):
 
     def test_set_next_tile_to_be_drawn(self) -> None:
         t = gs.TileBag()
-        draw_order = t.get_draw_order()
+        draw_order = t.get_draw_order()[:]
         initial_num_tiles = t.get_num_tiles_left()
         initial_bag_contents = t.get_bag_contents()
 
@@ -58,7 +58,7 @@ class TileBagTests(unittest.TestCase):
             gi.INDEX_OF_PHAR if draw_order[0] != gi.INDEX_OF_PHAR else gi.INDEX_OF_RA
         )
         t.set_next_tile_to_be_drawn(tile_to_be_set)
-        new_draw_order = t.get_draw_order()
+        new_draw_order = t.get_draw_order()[:]
         self.assertEqual(initial_num_tiles, t.get_num_tiles_left())
         self.assertEqual(initial_bag_contents, t.get_bag_contents())
         self.assertNotEqual(draw_order, new_draw_order)
@@ -161,6 +161,7 @@ class PlayerStateTests(unittest.TestCase):
     def test_add_tiles(self) -> None:
         p_state = gs.PlayerState("Test Player", [1, 2, 3])
         current_collection = p_state.get_player_collection()
+        expectedCollection = list(current_collection[:])
 
         # assert that collection starts empty
         self.assertEqual(sum(current_collection), 0)
@@ -168,20 +169,20 @@ class PlayerStateTests(unittest.TestCase):
         # check that adding tiles one at a time works
         for _i in range(self.num_adds):
             random_indx = random.randint(0, len(current_collection) - 1)
-            current_collection[random_indx] += 1
             p_state.add_tiles([random_indx])
-            self.assertEqual(current_collection, p_state.get_player_collection())
+            expectedCollection[random_indx] += 1
+            self.assertEqual(expectedCollection, p_state.get_player_collection())
 
         # check that adding tiles 3 at at ime works
         for _i in range(self.num_adds):
             random_indx_1 = random.randint(0, len(current_collection) - 1)
             random_indx_2 = random.randint(0, len(current_collection) - 1)
             random_indx_3 = random.randint(0, len(current_collection) - 1)
-            current_collection[random_indx_1] += 1
-            current_collection[random_indx_2] += 1
-            current_collection[random_indx_3] += 1
+            expectedCollection[random_indx_1] += 1
+            expectedCollection[random_indx_2] += 1
+            expectedCollection[random_indx_3] += 1
             p_state.add_tiles([random_indx_1, random_indx_2, random_indx_3])
-            self.assertEqual(current_collection, p_state.get_player_collection())
+            self.assertEqual(expectedCollection, p_state.get_player_collection())
 
     def test_remove_single_tiles_by_index(self) -> None:
         p_state = gs.PlayerState("Test Player", [1, 2, 3])
@@ -191,6 +192,7 @@ class PlayerStateTests(unittest.TestCase):
             added_tile_indexes.append(random_indx)
         p_state.add_tiles(added_tile_indexes)
         current_collection = p_state.get_player_collection()
+        expectedCollection = list(current_collection[:])
 
         # sanity check that tiles were added correctly
         self.assertEqual(sum(current_collection), self.num_adds)
@@ -198,8 +200,8 @@ class PlayerStateTests(unittest.TestCase):
         # check that removing tiles one at a time works
         for added_tile in added_tile_indexes:
             p_state.remove_single_tiles_by_index([added_tile], log=False)
-            current_collection[added_tile] -= 1
-            self.assertEqual(current_collection, p_state.get_player_collection())
+            expectedCollection[added_tile] -= 1
+            self.assertEqual(expectedCollection, p_state.get_player_collection())
 
         # check that removing tiles all at once works
         p_state.add_tiles(added_tile_indexes)
@@ -221,6 +223,7 @@ class PlayerStateTests(unittest.TestCase):
             added_tile_indexes.append(random_indx)
         p_state.add_tiles(added_tile_indexes)
         current_collection = p_state.get_player_collection()
+        expectedCollection = list(current_collection[:])
 
         # sanity check that tiles were added correctly
         self.assertEqual(sum(current_collection), self.num_adds)
@@ -228,8 +231,8 @@ class PlayerStateTests(unittest.TestCase):
         # check that removing tiles one at a time works properly
         for added_tile in added_tile_indexes:
             p_state.remove_all_tiles_by_index([added_tile], log=False)
-            current_collection[added_tile] = 0
-            self.assertEqual(current_collection, p_state.get_player_collection())
+            expectedCollection[added_tile] = 0
+            self.assertEqual(expectedCollection, p_state.get_player_collection())
 
         # check that removing tiles all at once works
         p_state.add_tiles(added_tile_indexes)
@@ -267,7 +270,9 @@ class PlayerStateTests(unittest.TestCase):
             removed_sun.append(old_sun)
             added_sun.append(new_sun)
 
-            self.assertEqual(sorted(p_state.get_usable_sun() + removed_sun), test_sun)
+            self.assertEqual(
+                sorted(list(p_state.get_usable_sun()) + removed_sun), test_sun
+            )
             self.assertEqual(p_state.get_unusable_sun(), sorted(added_sun))
 
     def test_make_all_suns_usable(self) -> None:
@@ -430,12 +435,12 @@ class GameStateTests(unittest.TestCase):
         # test that drawing single tiles are recorded properly
         for i in range(self.num_iterations):
             g_state = gs.GameState(["Test Player 1", "Test Player 2"])
-            current_collection = g_state.get_tile_bag_contents()
+            current_collection = g_state.get_tile_bag_contents()[:]
             num_tiles_left = g_state.get_num_tiles_left()
             for j in range(self.num_draws):
                 tile_index_drawn = g_state.draw_tile()
                 self.assertIsNotNone(tile_index_drawn)
-                new_collection = g_state.get_tile_bag_contents()
+                new_collection = g_state.get_tile_bag_contents()[:]
                 self.assertEqual(
                     current_collection[tile_index_drawn],
                     new_collection[tile_index_drawn] + 1,
@@ -560,7 +565,7 @@ class GameStateTests(unittest.TestCase):
                     auction_tiles.append(t)
 
             player_index = random.randint(0, 1)
-            old_player_collection = g_state.get_player_collection(player_index)
+            old_player_collection = g_state.get_player_collection(player_index)[:]
 
             g_state.give_tiles_to_player(player_index, auction_tiles)
 

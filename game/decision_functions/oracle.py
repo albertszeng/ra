@@ -274,7 +274,7 @@ def value_state(
     if game_state.is_auction_started():
         metrics["numAuctionStarted"] += 1
 
-    auction_tiles_are_empty = len(game_state.get_auction_tiles()) == 0
+    auction_tiles_are_empty = game_state.get_num_auction_tiles() == 0
     if game_state.is_game_ended():
         metrics["numEnded"] += 1
         final_scores = {}
