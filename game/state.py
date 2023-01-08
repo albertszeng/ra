@@ -56,7 +56,7 @@ class TileBag:
             return self.__key() == other.__key()
         return NotImplemented
 
-    def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
+    def draw_tile(self, tile: Optional[int] = None, log: bool = False) -> Optional[int]:
         """Remove a "random" tile for the bag. The tile draw order is randomly
         determined when the TileBag class is instantiated. If a specific tile is
         to be drawn, it will take a random occurrence of it from the bag.
@@ -248,7 +248,7 @@ class PlayerState:
             self.collection[index] += 1
 
     def remove_single_tiles_by_index(
-        self, lst_of_indexes: Iterable[int], log: bool = True
+        self, lst_of_indexes: Iterable[int], log: bool = False
     ) -> None:
         """Remove a list of tile indexes from the player's collection."""
         for index in lst_of_indexes:
@@ -268,7 +268,7 @@ class PlayerState:
                     )
 
     def remove_all_tiles_by_index(
-        self, lst_of_indexes: Iterable[int], log: bool = True
+        self, lst_of_indexes: Iterable[int], log: bool = False
     ) -> None:
         """Remove all tiles whose indexes are in lst_of_indexes."""
         for index in lst_of_indexes:
@@ -533,7 +533,7 @@ class GameState:
             )
         self.current_round += 1
 
-    def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
+    def draw_tile(self, tile: Optional[int] = None, log: bool = False) -> Optional[int]:
         """Draw a tile from the game bag and return the tile index."""
         return self.tile_bag.draw_tile(tile=tile, log=log)
 
@@ -582,7 +582,7 @@ class GameState:
         self.player_states[player_index].add_tiles(tile_list)
 
     def remove_single_tiles_from_current_player(
-        self, tile_indexes: Iterable[int], log: bool = True
+        self, tile_indexes: Iterable[int], log: bool = False
     ) -> None:
         """Remove a list of tiles from the current player."""
         self.player_states[self.current_player].remove_single_tiles_by_index(
@@ -590,7 +590,7 @@ class GameState:
         )
 
     def remove_single_tiles_from_player(
-        self, tile_indexes: Iterable[int], player_index: int, log: bool = True
+        self, tile_indexes: Iterable[int], player_index: int, log: bool = False
     ) -> None:
         """Remove a list of tiles from the specified player."""
         self.player_states[player_index].remove_single_tiles_by_index(
@@ -598,7 +598,7 @@ class GameState:
         )
 
     def remove_all_tiles_by_index_from_current_player(
-        self, tile_indexes: Iterable[int], log: bool = True
+        self, tile_indexes: Iterable[int], log: bool = False
     ) -> None:
         """Remove all tiles in the list of indexes from the current player."""
         self.player_states[self.current_player].remove_all_tiles_by_index(
@@ -606,7 +606,7 @@ class GameState:
         )
 
     def remove_all_tiles_by_index_from_player(
-        self, tile_indexes: Iterable[int], player_index: int, log: bool = True
+        self, tile_indexes: Iterable[int], player_index: int, log: bool = False
     ) -> None:
         """Remove all tiles in the list of indexes from the current player."""
         self.player_states[player_index].remove_all_tiles_by_index(
