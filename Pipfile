@@ -21,6 +21,7 @@ black = "*"
 pre-commit = "*"
 isort = "*"
 autoflake = "*"
+memray = "*"
 
 [requires]
 python_version = "3.9"
