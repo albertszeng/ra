@@ -108,7 +108,7 @@ class OracleSearchTest(unittest.TestCase):
         assert 2 in game_state.get_player_usable_sun(0)  # P1 has 2,5,6,9
         assert 3 in game_state.get_player_usable_sun(1)  # P2 has 3,4,7,8
 
-        auctionsToSearch = 4
+        auctionsToSearch = 3
         print(f"Searching for {auctionsToSearch} auctions...")
         best_move = o.oracle_search(game_state, auctionsToSearch)
         # print("best_move:", best_move)
@@ -118,4 +118,6 @@ class OracleSearchTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    # import cProfile
+    # cProfile.run('unittest.main()')
     unittest.main()

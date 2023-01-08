@@ -29,6 +29,10 @@ class TileBag:
 
         self._set_draw_order(draw_order)
 
+    @classmethod
+    def shallow(cls) -> "TileBag":
+        return cls.__new__(cls)
+
     def _set_draw_order(self, draw_order: List[int]) -> None:
         """
         Set the draw order of the tile bag (and consequently, the bag contents too).
@@ -139,7 +143,7 @@ class TileBag:
             self.num_tiles_left > 0
         ), "Cannot draw tile from tile bag because there are no tiles left. "
 
-        tile_drawn = self.draw_order.pop(i)
+        tile_drawn = self.draw_order[-self.num_tiles_left + i]
         self.num_tiles_left -= 1
         self.bag[tile_drawn] -= 1
         return tile_drawn
@@ -204,6 +208,10 @@ class PlayerState:
         self.usable_sun = starting_sun[:]
         self.usable_sun.sort()
         self.unusable_sun = []
+
+    @classmethod
+    def shallow(cls) -> "PlayerState":
+        return cls.__new__(cls)
 
     def __key(self) -> tuple[int, ...]:
         return (
@@ -459,6 +467,10 @@ class GameState:
 
         self.game_ended = False
 
+    @classmethod
+    def shallow(cls) -> "GameState":
+        return cls.__new__(cls)
+
     def __key(
         self,
     ) -> tuple[int, ...]:
@@ -471,7 +483,7 @@ class GameState:
             self.current_round,
             hash(tuple(self.active_players)),
             self.center_sun,
-            hash(tuple(sorted(self.auction_tiles))),
+            hash(tuple(list(sorted(self.auction_tiles)))),
             hash(tuple(self.auction_suns)),
             hash(self.auction_started),
             hash(self.auction_forced),
@@ -480,7 +492,7 @@ class GameState:
             self.num_mons_to_discard,
             self.num_civs_to_discard,
             hash(self.auction_winning_player),
-            hash(tuple(hash(player) for player in self.player_states)),
+            hash(tuple([hash(player) for player in self.player_states])),
             hash(self.game_ended),
         )
 

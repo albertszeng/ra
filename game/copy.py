@@ -1,10 +1,15 @@
-import copy
+from typing import Callable, Mapping, Type, TypeVar
 
 from game import state
 
+K = TypeVar("K")
+V = TypeVar("V")
+T = TypeVar("T")
+TDispatcher = Mapping[Type[T], Callable[[T, V], T]]
 
-def _copy_list(l, dispatch):
-    ret = l.copy()
+
+def _copy_list(t: list[T], dispatch: TDispatcher) -> list[T]:
+    ret = t.copy()
     for idx, item in enumerate(ret):
         cp = dispatch.get(type(item))
         if cp is not None:
@@ -12,7 +17,7 @@ def _copy_list(l, dispatch):
     return ret
 
 
-def _copy_dict(d, dispatch):
+def _copy_dict(d: dict[K, V], dispatch: TDispatcher) -> dict[K, V]:
     ret = d.copy()
     for key, value in ret.items():
         cp = dispatch.get(type(value))
@@ -22,9 +27,10 @@ def _copy_dict(d, dispatch):
     return ret
 
 
-def _copy_object(d, dispatch):
+def _copy_player(d: state.PlayerState, dispatch: TDispatcher) -> state.PlayerState:
     # Start with a shallow copy.
-    ret = copy.copy(d)
+    ret = state.PlayerState.shallow()
+    ret.__dict__.update(d.__dict__)
     for key, value in vars(d).items():
         cp = dispatch.get(type(value))
         if cp is not None:
@@ -32,16 +38,41 @@ def _copy_object(d, dispatch):
     return ret
 
 
-_dispatcher = {
+def _copy_game(d: state.GameState, dispatch: TDispatcher) -> state.GameState:
+    # Start with a shallow copy.
+    ret = state.GameState.shallow()
+    ret.__dict__.update(d.__dict__)
+    for key, value in vars(d).items():
+        cp = dispatch.get(type(value))
+        if cp is not None:
+            setattr(ret, key, cp(value, dispatch))
+    return ret
+
+
+def _copy_tile_bag(d: state.TileBag, dispatch: TDispatcher) -> state.TileBag:
+    # Start with a shallow copy.
+    ret = state.TileBag.shallow()
+    ret.__dict__.update(d.__dict__)
+    for key, value in vars(d).items():
+        if key == "draw_order":
+            # Shallow copy draw order, assuming it doesn't change.
+            continue
+        cp = dispatch.get(type(value))
+        if cp is not None:
+            setattr(ret, key, cp(value, dispatch))
+    return ret
+
+
+_dispatcher: TDispatcher = {
     list: _copy_list,
     dict: _copy_dict,
-    state.GameState: _copy_object,
-    state.PlayerState: _copy_object,
-    state.TileBag: _copy_object,
+    state.GameState: _copy_game,
+    state.PlayerState: _copy_player,
+    state.TileBag: _copy_tile_bag,
 }
 
 
-def deepcopy(sth):
+def deepcopy(sth: T) -> T:
     cp = _dispatcher.get(type(sth))
     if cp is None:
         return sth
