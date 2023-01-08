@@ -1,6 +1,6 @@
 import copy
 import time
-from typing import Dict, Tuple
+from typing import Dict, Mapping, Tuple
 
 from game import info as gi
 from game import ra
@@ -150,7 +150,7 @@ def value_state(
 
 
 def calculate_state_score_for_player(
-    player_name: str, player_state_valuations: Dict[str, float]
+    player_name: str, player_state_valuations: Mapping[str, float]
 ) -> float:
     """
     Given the valuations of each player's state, calculate a "state score" for
