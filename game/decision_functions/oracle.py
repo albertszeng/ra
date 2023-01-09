@@ -107,6 +107,7 @@ def default_metrics() -> Metrics:
 def oracle_search(
     game_state: gs.GameState,
     num_auctions_allowed: int = DEFAULT_SEARCH_AUCTION_THRESHOLD,
+    optimize: bool = False,
 ) -> TAction:
     """
     Given the current game state, return an action to take and the valuation associated
@@ -116,7 +117,8 @@ def oracle_search(
     value_state.cache = {}
     start_time = time.time()
     metrics = default_metrics()
-    action_values = oracle_search_internal(
+    internal_search_fn = oracle_search_stack if optimize else oracle_search_internal
+    action_values = internal_search_fn(
         game_state,
         metrics,
         num_auctions_allowed,
@@ -182,6 +184,112 @@ class CacheGames(Generic[T]):
         return self.cache[gameHash]
 
 
+def _is_unsearchable(action: TAction) -> bool:
+    # TODO(albertz): Allow golden god actions
+    return action in [
+        gi.GOD_1,
+        gi.GOD_2,
+        gi.GOD_3,
+        gi.GOD_4,
+        gi.GOD_5,
+        gi.GOD_6,
+        gi.GOD_7,
+        gi.GOD_8,
+    ]
+
+
+def oracle_search_stack(
+    start_state: gs.GameState, metrics: Metrics, max_auctions: int, depth: int
+) -> Dict[TAction, Dict[TPlayer, TScore]]:
+    # same as internam search, but uses a stack to avoid recursive calls.
+
+    # (game, depth, auctionsLeft)
+    rootNode = (start_state, depth, max_auctions)
+    stack: List[tuple[gs.GameState, int, int]] = [rootNode]
+    cache: Dict[int, Dict[TPlayer, TScore]] = {}
+
+    # We post-order traverse. Eg, process all children first, then the
+    # parant game state.
+    childValues: Dict[TAction, Dict[TPlayer, TScore]] = {}
+    while stack:
+        game_state, depth, auctionsLeft = stack[-1]
+        metrics["maxDepth"] = max(depth, metrics["maxDepth"])
+        gameHash = hash(game_state)
+        # These are the terminal states.
+        if game_state.is_game_ended():
+            metrics["numCalls"] += 1
+            metrics["cacheMiss"] += 1
+            metrics["numInRound"][game_state.current_round - 1] += 1
+            metrics["numEnded"] += 1
+            final_scores = {}
+            for player_state in game_state.player_states:
+                final_scores[
+                    player_state.get_player_name()
+                ] = player_state.get_player_points()
+            cache[gameHash] = final_scores
+            stack.pop()
+            continue
+        elif auctionsLeft <= 0 and game_state.get_num_auction_tiles() == 0:
+            metrics["numCalls"] += 1
+            metrics["cacheMiss"] += 1
+            metrics["numInRound"][game_state.current_round - 1] += 1
+            metrics["numEstimated"] += 1
+            cache[gameHash] = e.evaluate_game_state_no_auction_tiles(game_state)
+            stack.pop()
+            continue
+
+        # We're in a non-terminal state, so continue the search.
+        legal_actions = ra.get_possible_actions(game_state)
+        assert (
+            legal_actions is not None and len(legal_actions) > 0
+        ), "Cannot perform oracle_search_stack because no legal actions"
+
+        childValues = {}
+        allChildrenProcessed = True
+        for action in reversed(legal_actions):
+            if _is_unsearchable(action):
+                continue
+
+            game_state_copy = copy.deepcopy(game_state)
+            tile_drawn = ra.execute_action_internal(
+                game_state_copy, action, legal_actions
+            )
+            nextStateHash = hash(game_state_copy)
+            if nextStateHash in cache:
+                childValues[action] = cache[nextStateHash]
+                metrics["cacheHit"] += 1
+                continue
+
+            if action == gi.DRAW:
+                assert tile_drawn is not None, "Oracle_search could not draw tile"
+            auctionStarted = tile_drawn == gi.INDEX_OF_RA or action == gi.AUCTION
+            allChildrenProcessed = False
+            stack.append(
+                (
+                    game_state_copy,
+                    depth + 1,
+                    auctionsLeft - (1 if auctionStarted else 0),
+                )
+            )
+
+        if allChildrenProcessed:
+            # We finished one non-terminal state.
+            metrics["numCalls"] += 1
+            metrics["cacheMiss"] += 1
+            metrics["numInRound"][game_state.current_round - 1] += 1
+            metrics["numIntermediate"] += 1
+            if game_state.is_auction_started():
+                metrics["numAuctionStarted"] += 1
+            cache[gameHash] = childValues[
+                _get_best_action(game_state.get_current_player_name(), childValues)
+            ]
+            stack.pop()
+            continue
+
+    # The very last one processed is the root, so childValues.
+    return childValues
+
+
 def oracle_search_internal(
     game_state: gs.GameState,
     metrics: Metrics,
@@ -215,17 +323,7 @@ def oracle_search_internal(
 
     # Simulate each legal action and find their resulting valuations
     for action in legal_actions:
-        # TODO(albertz): Allow golden god actions
-        if action in [
-            gi.GOD_1,
-            gi.GOD_2,
-            gi.GOD_3,
-            gi.GOD_4,
-            gi.GOD_5,
-            gi.GOD_6,
-            gi.GOD_7,
-            gi.GOD_8,
-        ]:
+        if _is_unsearchable(action):
             continue
 
         game_state_copy = copy.deepcopy(game_state)
