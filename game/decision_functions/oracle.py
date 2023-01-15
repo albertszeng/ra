@@ -8,7 +8,7 @@ from game import state as gs
 from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
 
-DEFAULT_SEARCH_AUCTION_THRESHOLD = 1
+DEFAULT_SEARCH_AUCTION_THRESHOLD = 2
 
 
 def oracle_ai_player(game_state: gs.GameState) -> int:
