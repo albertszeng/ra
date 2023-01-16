@@ -61,8 +61,8 @@ def get_possible_actions(game_state: gs.GameState) -> Optional[List[int]]:  # no
         # find max auction sun
         auction_suns = game_state.get_auction_suns()
         max_auction_sun = float("-inf")
-        if len([el for el in auction_suns if el is not None]) > 0:
-            max_auction_sun = max([el for el in auction_suns if el is not None])
+        if sum(1 for el in auction_suns if el is not None) > 0:
+            max_auction_sun = max(el for el in auction_suns if el is not None)
 
         # add a legal action for every player sun greater than the max
         # bid sun
@@ -251,8 +251,8 @@ def execute_action_internal(  # noqa: C901
         """
         auction_suns = game_state.get_auction_suns()
         max_sun = None
-        if len([el for el in auction_suns if el is not None]) > 0:
-            max_sun = max([el for el in auction_suns if el is not None])
+        if sum(1 for el in auction_suns if el is not None) > 0:
+            max_sun = max(el for el in auction_suns if el is not None)
 
         # if no suns were bid and the auction tiles are full, clear
         # the tiles
@@ -275,14 +275,14 @@ def execute_action_internal(  # noqa: C901
             game_state.clear_auction_tiles()
             game_state.give_tiles_to_player(
                 winning_player,
-                [tile for tile in auction_tiles if gi.index_is_collectible(tile)],
+                (tile for tile in auction_tiles if gi.index_is_collectible(tile)),
             )
 
             winning_player_collection = game_state.get_player_collection(winning_player)
 
             # resolve pharoah disasters
-            num_phars_to_discard = gi.NUM_DISCARDS_PER_DISASTER * len(
-                [tile for tile in auction_tiles if tile == gi.INDEX_OF_DIS_PHAR]
+            num_phars_to_discard = gi.NUM_DISCARDS_PER_DISASTER * sum(
+                1 for tile in auction_tiles if tile == gi.INDEX_OF_DIS_PHAR
             )
             if num_phars_to_discard > 0:
                 num_phars_owned = winning_player_collection[gi.INDEX_OF_PHAR]
@@ -292,8 +292,8 @@ def execute_action_internal(  # noqa: C901
                 )
 
             # resolve nile disasters
-            num_niles_to_discard = gi.NUM_DISCARDS_PER_DISASTER * len(
-                [tile for tile in auction_tiles if tile == gi.INDEX_OF_DIS_NILE]
+            num_niles_to_discard = gi.NUM_DISCARDS_PER_DISASTER * sum(
+                1 for tile in auction_tiles if tile == gi.INDEX_OF_DIS_NILE
             )
             if num_niles_to_discard > 0:
                 num_floods_owned = winning_player_collection[gi.INDEX_OF_FLOOD]
@@ -311,8 +311,8 @@ def execute_action_internal(  # noqa: C901
                 )
 
             # resolve civ disasters
-            num_civs_to_discard = gi.NUM_DISCARDS_PER_DISASTER * len(
-                [tile for tile in auction_tiles if tile == gi.INDEX_OF_DIS_CIV]
+            num_civs_to_discard = gi.NUM_DISCARDS_PER_DISASTER * sum(
+                1 for tile in auction_tiles if tile == gi.INDEX_OF_DIS_CIV
             )
             if num_civs_to_discard > 0:
                 num_civs_owned = sum(
@@ -331,8 +331,8 @@ def execute_action_internal(  # noqa: C901
                     game_state.set_auction_winning_player(winning_player)
 
             # resolve monument disasters
-            num_mons_to_discard = gi.NUM_DISCARDS_PER_DISASTER * len(
-                [tile for tile in auction_tiles if tile == gi.INDEX_OF_DIS_MON]
+            num_mons_to_discard = gi.NUM_DISCARDS_PER_DISASTER * sum(
+                1 for tile in auction_tiles if tile == gi.INDEX_OF_DIS_MON
             )
             if num_mons_to_discard > 0:
                 num_mons_owned = sum(
@@ -769,7 +769,7 @@ class RaGame:
             file_lines = [action.split(" ") for action in f.readlines()]
 
             tile_bag_draw_order = file_lines[1]
-            self.game_state.get_tile_bag().set_draw_order(
+            self.game_state.get_tile_bag()._set_draw_order(
                 [int(tile) for tile in tile_bag_draw_order]
             )
 

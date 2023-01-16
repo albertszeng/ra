@@ -162,9 +162,13 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
       updateGame(resp);
       return;
     }
+    if (resp.length === 1) {
+      updateGame(resp[0]);
+      return;
+    }
     setLoading(true);
     resp.forEach((item: ApiResponse, idx: number) => {
-      if (idx > 0 || idx < resp.length - 1) {
+      if (idx < resp.length - 1) {
         setTimeout(() => updateGame(item), idx * AIUIDelayMs);
       }
     });

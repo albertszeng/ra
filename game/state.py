@@ -1,7 +1,7 @@
 import logging
 import random
 import textwrap
-from typing import Dict, Iterable, List, Optional, TypedDict, cast
+from typing import Dict, Iterable, List, Optional, Sequence, TypedDict, cast
 
 from game import info as gi
 
@@ -18,19 +18,45 @@ class TileBag:
     # the order that tiles will be drawn, unless a specific tile is requested
     # to be drawn
     draw_order: List[int]
+    _draw_order_hash: int
 
     def __init__(self, draw_order: Optional[List[int]] = None) -> None:
         if draw_order is None:
-            self.bag = [gi.tile_starting_num(tile) for tile in gi.TILE_INFO]
-            self.num_tiles_left = gi.STARTING_NUM_TILES
-            self.draw_order = []
-            for i in range(len(self.bag)):
-                self.draw_order += [i] * self.bag[i]
-            random.shuffle(self.draw_order)
-        else:
-            self.set_draw_order(draw_order)
+            draw_order = []
+            for i, tile in enumerate(gi.TILE_INFO):
+                draw_order += [i] * gi.tile_starting_num(tile)
+            random.shuffle(draw_order)
 
-    def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
+        self._set_draw_order(draw_order)
+
+    @classmethod
+    def shallow(cls) -> "TileBag":
+        return cls.__new__(cls)
+
+    def _set_draw_order(self, draw_order: List[int]) -> None:
+        """
+        Set the draw order of the tile bag (and consequently, the bag contents too).
+        """
+        self.draw_order = draw_order
+        self.num_tiles_left = len(draw_order)
+        self.bag = [0] * gi.NUM_TILE_TYPES
+        for tile_index in draw_order:
+            self.bag[tile_index] += 1
+
+        self._draw_order_hash = hash(tuple(draw_order))
+
+    def __key(self) -> tuple[int, int]:
+        return (self._draw_order_hash, self.num_tiles_left)
+
+    def __hash__(self) -> int:
+        return hash(self.__key())
+
+    def __eq__(self, other: "TileBag") -> bool:
+        if isinstance(other, TileBag):
+            return self.__key() == other.__key()
+        return NotImplemented
+
+    def draw_tile(self, tile: Optional[int] = None, log: bool = False) -> Optional[int]:
         """Remove a "random" tile for the bag. The tile draw order is randomly
         determined when the TileBag class is instantiated. If a specific tile is
         to be drawn, it will take a random occurrence of it from the bag.
@@ -59,17 +85,17 @@ class TileBag:
         self.remove_nth_tile_from_draw_order(tile, occurrence_to_be_drawn)
         return tile
 
-    def get_bag_contents(self) -> List[int]:
-        return self.bag[:]
+    def get_bag_contents(self) -> Sequence[int]:
+        return self.bag
 
     def get_num_tiles_left(self) -> int:
         return self.num_tiles_left
 
-    def get_draw_order(self) -> List[int]:
+    def get_draw_order(self) -> Sequence[int]:
         """
         Return the order of tiles that will be drawn.
         """
-        return self.draw_order[:]
+        return self.draw_order
 
     def set_next_tile_to_be_drawn(self, tile: int) -> int:
         """
@@ -94,16 +120,6 @@ class TileBag:
         self.draw_order.insert(0, tile)
         return next_draw
 
-    def set_draw_order(self, draw_order: List[int]) -> None:
-        """
-        Set the draw order of the tile bag (and consequently, the bag contents too).
-        """
-        self.draw_order = draw_order
-        self.num_tiles_left = len(self.draw_order)
-        self.bag = [0] * gi.NUM_TILE_TYPES
-        for tile_index in self.draw_order:
-            self.bag[tile_index] += 1
-
     def print_contents_of_bag(self) -> None:
         print(self)
 
@@ -127,7 +143,7 @@ class TileBag:
             self.num_tiles_left > 0
         ), "Cannot draw tile from tile bag because there are no tiles left. "
 
-        tile_drawn = self.draw_order.pop(i)
+        tile_drawn = self.draw_order[-self.num_tiles_left + i]
         self.num_tiles_left -= 1
         self.bag[tile_drawn] -= 1
         return tile_drawn
@@ -193,6 +209,26 @@ class PlayerState:
         self.usable_sun.sort()
         self.unusable_sun = []
 
+    @classmethod
+    def shallow(cls) -> "PlayerState":
+        return cls.__new__(cls)
+
+    def __key(self) -> tuple[int, ...]:
+        return (
+            hash(tuple(self.collection)),
+            self.points,
+            hash(tuple(self.usable_sun)),
+            hash(tuple(self.unusable_sun)),
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.__key())
+
+    def __eq__(self, other: "PlayerState") -> bool:
+        if isinstance(other, PlayerState):
+            return self.__key() == other.__key()
+        return NotImplemented
+
     def serialize(self) -> SerializedPlayerState:
         return SerializedPlayerState(
             playerName=self.player_name,
@@ -212,7 +248,7 @@ class PlayerState:
             self.collection[index] += 1
 
     def remove_single_tiles_by_index(
-        self, lst_of_indexes: Iterable[int], log: bool = True
+        self, lst_of_indexes: Iterable[int], log: bool = False
     ) -> None:
         """Remove a list of tile indexes from the player's collection."""
         for index in lst_of_indexes:
@@ -232,7 +268,7 @@ class PlayerState:
                     )
 
     def remove_all_tiles_by_index(
-        self, lst_of_indexes: Iterable[int], log: bool = True
+        self, lst_of_indexes: Iterable[int], log: bool = False
     ) -> None:
         """Remove all tiles whose indexes are in lst_of_indexes."""
         for index in lst_of_indexes:
@@ -261,17 +297,17 @@ class PlayerState:
     def get_player_points(self) -> int:
         return self.points
 
-    def get_player_collection(self) -> List[int]:
-        return self.collection[:]
+    def get_player_collection(self) -> Sequence[int]:
+        return self.collection
 
     def get_player_name(self) -> str:
         return self.player_name
 
-    def get_usable_sun(self) -> List[int]:
-        return self.usable_sun[:]
+    def get_usable_sun(self) -> Sequence[int]:
+        return self.usable_sun
 
-    def get_unusable_sun(self) -> List[int]:
-        return self.unusable_sun[:]
+    def get_unusable_sun(self) -> Sequence[int]:
+        return self.unusable_sun
 
     def get_all_sun(self) -> List[int]:
         return self.usable_sun + self.unusable_sun
@@ -417,7 +453,7 @@ class GameState:
 
         # player states
         self.player_states = []
-        starting_sun_sets = gi.STARTING_SUN[num_players][:]
+        starting_sun_sets = gi.STARTING_SUN[num_players]
         tmp_sets = starting_sun_sets[1:]
         random.shuffle(tmp_sets)
         starting_sun_sets[1:] = tmp_sets
@@ -430,6 +466,43 @@ class GameState:
         ]
 
         self.game_ended = False
+
+    @classmethod
+    def shallow(cls) -> "GameState":
+        return cls.__new__(cls)
+
+    def __key(
+        self,
+    ) -> tuple[int, ...]:
+        return (
+            self.total_rounds,
+            self.num_ras_this_round,
+            self.num_players,
+            self.max_auction_tiles,
+            hash(self.tile_bag),
+            self.current_round,
+            hash(tuple(self.active_players)),
+            self.center_sun,
+            hash(tuple(sorted(self.auction_tiles))),
+            hash(tuple(self.auction_suns)),
+            hash(self.auction_started),
+            hash(self.auction_forced),
+            hash(self.auction_start_player),
+            self.current_player,
+            self.num_mons_to_discard,
+            self.num_civs_to_discard,
+            hash(self.auction_winning_player),
+            hash(tuple(hash(player) for player in self.player_states)),
+            hash(self.game_ended),
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.__key())
+
+    def __eq__(self, other: "GameState") -> bool:
+        if isinstance(other, GameState):
+            return self.__key() == other.__key()
+        return NotImplemented
 
     def serialize(self) -> SerializedGameState:
         return SerializedGameState(
@@ -460,7 +533,7 @@ class GameState:
             )
         self.current_round += 1
 
-    def draw_tile(self, tile: Optional[int] = None, log: bool = True) -> Optional[int]:
+    def draw_tile(self, tile: Optional[int] = None, log: bool = False) -> Optional[int]:
         """Draw a tile from the game bag and return the tile index."""
         return self.tile_bag.draw_tile(tile=tile, log=log)
 
@@ -509,7 +582,7 @@ class GameState:
         self.player_states[player_index].add_tiles(tile_list)
 
     def remove_single_tiles_from_current_player(
-        self, tile_indexes: Iterable[int], log: bool = True
+        self, tile_indexes: Iterable[int], log: bool = False
     ) -> None:
         """Remove a list of tiles from the current player."""
         self.player_states[self.current_player].remove_single_tiles_by_index(
@@ -517,7 +590,7 @@ class GameState:
         )
 
     def remove_single_tiles_from_player(
-        self, tile_indexes: Iterable[int], player_index: int, log: bool = True
+        self, tile_indexes: Iterable[int], player_index: int, log: bool = False
     ) -> None:
         """Remove a list of tiles from the specified player."""
         self.player_states[player_index].remove_single_tiles_by_index(
@@ -525,7 +598,7 @@ class GameState:
         )
 
     def remove_all_tiles_by_index_from_current_player(
-        self, tile_indexes: Iterable[int], log: bool = True
+        self, tile_indexes: Iterable[int], log: bool = False
     ) -> None:
         """Remove all tiles in the list of indexes from the current player."""
         self.player_states[self.current_player].remove_all_tiles_by_index(
@@ -533,7 +606,7 @@ class GameState:
         )
 
     def remove_all_tiles_by_index_from_player(
-        self, tile_indexes: Iterable[int], player_index: int, log: bool = True
+        self, tile_indexes: Iterable[int], player_index: int, log: bool = False
     ) -> None:
         """Remove all tiles in the list of indexes from the current player."""
         self.player_states[player_index].remove_all_tiles_by_index(
@@ -693,7 +766,7 @@ class GameState:
     def get_num_tiles_left(self) -> int:
         return self.tile_bag.get_num_tiles_left()
 
-    def get_tile_bag_contents(self) -> List[int]:
+    def get_tile_bag_contents(self) -> Sequence[int]:
         return self.tile_bag.get_bag_contents()
 
     def get_current_num_ras(self) -> int:
@@ -708,17 +781,17 @@ class GameState:
     # def get_player_states(self):
     #   return self.player_states  # does this need to be deep copied?
 
-    def get_current_player_collection(self) -> List[int]:
+    def get_current_player_collection(self) -> Sequence[int]:
         return self.player_states[self.current_player].get_player_collection()
 
-    def get_player_collection(self, player_index: int) -> List[int]:
+    def get_player_collection(self, player_index: int) -> Sequence[int]:
         return self.player_states[player_index].get_player_collection()
 
     def get_max_auction_tiles(self) -> int:
         return self.max_auction_tiles
 
-    def get_auction_tiles(self) -> List[int]:
-        return self.auction_tiles[:]
+    def get_auction_tiles(self) -> Sequence[int]:
+        return self.auction_tiles
 
     def get_num_auction_tiles(self) -> int:
         return len(self.auction_tiles)
@@ -726,8 +799,8 @@ class GameState:
     def get_center_sun(self) -> int:
         return self.center_sun
 
-    def get_auction_suns(self) -> List[Optional[int]]:
-        return self.auction_suns[:]
+    def get_auction_suns(self) -> Sequence[Optional[int]]:
+        return self.auction_suns
 
     def get_num_auction_suns(self) -> int:
         return sum([1 for sun in self.auction_suns if sun is not None])
@@ -735,16 +808,16 @@ class GameState:
     def get_current_player(self) -> int:
         return self.current_player
 
-    def get_player_names(self) -> Iterable[str]:
-        return self.player_names[:]
+    def get_player_names(self) -> Sequence[str]:
+        return self.player_names
 
     def get_current_player_name(self) -> str:
         return self.player_names[self.current_player]
 
-    def get_current_player_usable_sun(self) -> List[int]:
+    def get_current_player_usable_sun(self) -> Sequence[int]:
         return self.player_states[self.current_player].get_usable_sun()
 
-    def get_player_usable_sun(self, player_index: int) -> List[int]:
+    def get_player_usable_sun(self, player_index: int) -> Sequence[int]:
         return self.player_states[player_index].get_usable_sun()
 
     def get_auction_start_player(self) -> int:
