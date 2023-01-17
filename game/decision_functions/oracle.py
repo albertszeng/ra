@@ -142,7 +142,9 @@ def oracle_search(
     with it. Sees future tiles that will be drawn.
     """
     print("Beginning oracle search...")
-    value_state.cache = {}
+    cache_size = scoring_utils.get_size(value_state.cache)
+    print(f"Total unique states already explored: {len(value_state.cache)}")
+    print(f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)}")
     start_time = time.time()
     metrics = default_metrics()
     internal_search_fn = oracle_search_stack if optimize else oracle_search_internal
@@ -154,6 +156,9 @@ def oracle_search(
     )
     action = _get_best_action(game_state.get_current_player(), action_values)
     cache_size = scoring_utils.get_size(value_state.cache)
+    if cache_size > 256 * 1e6:
+        # Reset the cache to empty when above threshold.
+        value_state.cache = {}
     print(f"Total unique states explored: {len(value_state.cache)}")
     print(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
     print(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
@@ -195,7 +200,8 @@ P = ParamSpec("P")
 
 class CacheGames(Generic[T]):
     def __init__(self, func: Callable[[gs.GameState, Metrics, ...], T]) -> None:
-        self.cache: Dict[int, T] = {}
+        # We store data in cache across requests?
+        self.cache = {}
         self.func: Callable[[gs.GameState, Metrics, ...], T] = func
 
     def __call__(
@@ -205,10 +211,6 @@ class CacheGames(Generic[T]):
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> T:
-        if metrics["numCalls"] == 0:
-            # Reset on first call.
-            self.cache = {}
-
         metrics["numCalls"] += 1
         gameHash = hash(gameState)
         if gameHash not in self.cache:
