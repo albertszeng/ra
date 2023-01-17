@@ -21,7 +21,7 @@ from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
 from game.proxy import copy
 
-DEFAULT_SEARCH_AUCTION_THRESHOLD = 3
+DEFAULT_SEARCH_AUCTION_THRESHOLD = 2
 
 
 def oracle_ai_player(game_state: gs.GameState) -> int:
