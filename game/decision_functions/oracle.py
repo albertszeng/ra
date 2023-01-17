@@ -194,6 +194,10 @@ class CacheGames(Generic[T]):
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> T:
+        if metrics["numCalls"] == 0:
+            # Reset on first call.
+            self.cache = {}
+
         metrics["numCalls"] += 1
         gameHash = hash(gameState)
         if gameHash not in self.cache:
