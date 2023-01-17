@@ -11,6 +11,8 @@ from game import info as gi
 class TileBag:
     """Holds all tiles currently available for draw."""
 
+    __slots__ = ("bag", "num_tiles_left", "draw_order", "_draw_order_hash")
+
     # keeps track of how many of each tile are left
     bag: List[int]
     # total number of tiles left
@@ -31,6 +33,7 @@ class TileBag:
 
     @classmethod
     def shallow(cls) -> "TileBag":
+        """Returns a deep copy with some non-used values missing."""
         return cls.__new__(cls)
 
     def _set_draw_order(self, draw_order: List[int]) -> None:
@@ -190,6 +193,8 @@ class SerializedPlayerState(TypedDict):
 
 
 class PlayerState:
+    __slots__ = ("collection", "points", "player_name", "usable_sun", "unusable_sun")
+
     collection: List[int]
     points: int
     player_name: str
@@ -388,6 +393,29 @@ class SerializedGameState(TypedDict):
 
 
 class GameState:
+    __slots__ = (
+        "total_rounds",
+        "num_ras_per_round",
+        "num_players",
+        "max_auction_tiles",
+        "tile_bag",
+        "current_round",
+        "active_players",
+        "num_ras_this_round",
+        "center_sun",
+        "auction_tiles",
+        "auction_suns",
+        "auction_forced",
+        "auction_started",
+        "auction_start_player",
+        "current_player",
+        "num_mons_to_discard",
+        "num_civs_to_discard",
+        "auction_winning_player",
+        "player_states",
+        "player_names",
+        "game_ended",
+    )
     total_rounds: int
     num_ras_per_round: int
     num_players: int
@@ -411,7 +439,7 @@ class GameState:
     auction_winning_player: Optional[int]
 
     # player states
-    player_states: List[PlayerState] = []
+    player_states: List[PlayerState]
     player_names: List[str]
 
     game_ended: bool

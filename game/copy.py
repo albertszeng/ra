@@ -30,39 +30,42 @@ def _copy_dict(d: dict[K, V], dispatch: TDispatcher) -> dict[K, V]:
 def _copy_player(d: state.PlayerState, dispatch: TDispatcher) -> state.PlayerState:
     # Start with a shallow copy.
     ret = state.PlayerState.shallow()
-    ret.__dict__.update(d.__dict__)
-    for key, value in vars(d).items():
+    for key in state.PlayerState.__slots__:
+        value = getattr(d, key)
         cp = dispatch.get(type(value))
         if cp is not None:
-            setattr(ret, key, cp(value, dispatch))
+            value = cp(value, dispatch)
+        setattr(ret, key, value)
     return ret
 
 
 def _copy_game(d: state.GameState, dispatch: TDispatcher) -> state.GameState:
     # Start with a shallow copy.
     ret = state.GameState.shallow()
-    ret.__dict__.update(d.__dict__)
-    for key, value in vars(d).items():
+    for key in state.GameState.__slots__:
+        value = getattr(d, key)
         if key == "player_names":
             # Shallow copy player names since they never change.
-            continue
+            setattr(ret, key, value)
         cp = dispatch.get(type(value))
         if cp is not None:
-            setattr(ret, key, cp(value, dispatch))
+            value = cp(value, dispatch)
+        setattr(ret, key, value)
     return ret
 
 
 def _copy_tile_bag(d: state.TileBag, dispatch: TDispatcher) -> state.TileBag:
     # Start with a shallow copy.
     ret = state.TileBag.shallow()
-    ret.__dict__.update(d.__dict__)
-    for key, value in vars(d).items():
+    for key in state.TileBag.__slots__:
+        value = getattr(d, key)
         if key == "draw_order":
-            # Shallow copy draw order, assuming it doesn't change.
-            continue
+            # This is a list, but we shallow copy to share across instances.
+            setattr(ret, key, value)
         cp = dispatch.get(type(value))
         if cp is not None:
-            setattr(ret, key, cp(value, dispatch))
+            value = cp(value, dispatch)
+        setattr(ret, key, value)
     return ret
 
 

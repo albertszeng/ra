@@ -24,6 +24,24 @@ TScore = float
 
 
 class Metrics(TypedDict):
+    __slots__ = (
+        "maxDepth",
+        "cacheHit",
+        "hitRate",
+        "cacheMiss",
+        "missRate",
+        "numEnded",
+        "percentEnded",
+        "numEstimated",
+        "percentEstimated",
+        "numIntermediate",
+        "percentIntermediate",
+        "numAuctionStarted",
+        "percentAuctionStarted",
+        "numInRound",
+        "percentInRound",
+        "numCalls",
+    )
     # Tracks the maximum search depth.
     maxDepth: int
 
