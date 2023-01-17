@@ -144,7 +144,7 @@ def oracle_search(
     print("Beginning oracle search...")
     cache_size = scoring_utils.get_size(value_state.cache)
     print(f"Total unique states already explored: {len(value_state.cache)}")
-    print(f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)}")
+    print(f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})")
     start_time = time.time()
     metrics = default_metrics()
     internal_search_fn = oracle_search_stack if optimize else oracle_search_internal
@@ -162,7 +162,7 @@ def oracle_search(
     print(f"Total unique states explored: {len(value_state.cache)}")
     print(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
     print(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
-    print(f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)}")
+    print(f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})")
     return action
 
 
@@ -201,7 +201,7 @@ P = ParamSpec("P")
 class CacheGames(Generic[T]):
     def __init__(self, func: Callable[[gs.GameState, Metrics, ...], T]) -> None:
         # We store data in cache across requests?
-        self.cache = {}
+        self.cache: Dict[int, T] = {}
         self.func: Callable[[gs.GameState, Metrics, ...], T] = func
 
     def __call__(
