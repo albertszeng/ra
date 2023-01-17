@@ -4,12 +4,12 @@ from typing import Callable, Dict, Generic, List, Mapping, TypedDict, TypeVar
 
 from typing_extensions import ParamSpec
 
-from game import copy
 from game import info as gi
 from game import ra
 from game import state as gs
 from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
+from game.proxy import copy
 
 DEFAULT_SEARCH_AUCTION_THRESHOLD = 2
 
