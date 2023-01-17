@@ -1,7 +1,8 @@
 import copy as sys_copy
 import unittest
 
-from game import copy, state
+from game import state
+from game.proxy import copy
 
 
 class CopyTests(unittest.TestCase):

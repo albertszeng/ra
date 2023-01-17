@@ -1,8 +1,40 @@
+import sys
 from copy import deepcopy
-from typing import Iterable, Mapping, Optional, Tuple
+from typing import Iterable, Mapping, Optional, Tuple, TypeVar
 
 from game import info as gi
 from game import state as gs
+
+T = TypeVar("T")
+
+
+def sizeof_fmt(num: int, suffix: str = "B") -> str:
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Yi{suffix}"
+
+
+def get_size(obj: T, seen: Optional[set[int]] = None) -> int:
+    """Recursively finds size of objects"""
+    size = sys.getsizeof(obj)
+    if seen is None:
+        seen = set()
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0
+    # Important mark as seen *before* entering recursion to gracefully handle
+    # self-referential objects
+    seen.add(obj_id)
+    if isinstance(obj, dict):
+        size += sum([get_size(v, seen) for v in obj.values()])
+        size += sum([get_size(k, seen) for k in obj.keys()])
+    elif hasattr(obj, "__dict__"):
+        size += get_size(obj.__dict__, seen)
+    elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
+        size += sum([get_size(i, seen) for i in obj])  # pyre-ignore[16]
+    return size
 
 
 def calculate_round_end_points_gained(

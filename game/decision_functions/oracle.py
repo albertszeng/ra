@@ -5,7 +5,7 @@ from typing import Callable, Dict, Generic, List, Mapping, TypedDict, TypeVar
 from typing_extensions import ParamSpec
 
 from game import info as gi
-from game import ra
+from game import ra, scoring_utils
 from game import state as gs
 from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
@@ -143,9 +143,11 @@ def oracle_search(
         depth=0,
     )
     action = _get_best_action(game_state.get_current_player_name(), action_values)
+    cache_size = scoring_utils.get_size(value_state.cache)
     print(f"Total unique states explored: {len(value_state.cache)}")
     print(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
     print(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
+    print(f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)}")
     return action
 
 
