@@ -199,7 +199,7 @@ P = ParamSpec("P")
 
 
 class CacheGames(Generic[T]):
-    def __init__(self, func: Callable[[gs.GameState, Metrics, ...], T]) -> None:
+    def __init__(self, func: Callable[[gs.GameState, Metrics, int, ...], T]) -> None:
         # We store data in cache across requests?
         self.cache: Dict[int, T] = {}
         self.func: Callable[[gs.GameState, Metrics, ...], T] = func
@@ -208,14 +208,17 @@ class CacheGames(Generic[T]):
         self,
         gameState: gs.GameState,
         metrics: Metrics,
+        max_auctions: int,
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> T:
         metrics["numCalls"] += 1
-        gameHash = hash(gameState)
+        gameHash = hash((hash(gameState), max_auctions))
         if gameHash not in self.cache:
             metrics["cacheMiss"] += 1
-            self.cache[gameHash] = self.func(gameState, metrics, *args, **kwargs)
+            self.cache[gameHash] = self.func(
+                gameState, metrics, max_auctions, *args, **kwargs
+            )
         else:
             metrics["cacheHit"] += 1
         return self.cache[gameHash]
