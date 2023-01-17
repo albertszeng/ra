@@ -1,6 +1,16 @@
 import pprint
 import time
-from typing import Callable, Dict, Generic, List, Mapping, TypedDict, TypeVar
+from typing import (
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    TypedDict,
+    TypeVar,
+)
 
 from typing_extensions import ParamSpec
 
@@ -11,7 +21,7 @@ from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
 from game.proxy import copy
 
-DEFAULT_SEARCH_AUCTION_THRESHOLD = 2
+DEFAULT_SEARCH_AUCTION_THRESHOLD = 3
 
 
 def oracle_ai_player(game_state: gs.GameState) -> int:
@@ -223,6 +233,18 @@ def _is_unsearchable(action: TAction) -> bool:
     ]
 
 
+def _is_bid(action: int) -> bool:
+    return action in [gi.BID_1, gi.BID_2, gi.BID_3, gi.BID_4]
+
+
+def filter_actions(actions: Iterable[int]) -> Iterator[int]:
+    # Only ever return two actions.
+    for action in actions:
+        if _is_unsearchable(action):
+            continue
+        yield action
+
+
 def oracle_search_stack(
     start_state: gs.GameState, metrics: Metrics, max_auctions: int, depth: int
 ) -> Dict[TAction, list[TScore]]:
@@ -273,10 +295,7 @@ def oracle_search_stack(
 
         childValues = {}
         allChildrenProcessed = True
-        for action in reversed(legal_actions):
-            if _is_unsearchable(action):
-                continue
-
+        for action in filter_actions(legal_actions):
             game_state_copy = copy.deepcopy(game_state)
             tile_drawn = ra.execute_action_internal(
                 game_state_copy, action, legal_actions
@@ -349,10 +368,7 @@ def oracle_search_internal(
     action_results: Dict[TAction, list[TScore]] = {}
 
     # Simulate each legal action and find their resulting valuations
-    for action in legal_actions:
-        if _is_unsearchable(action):
-            continue
-
+    for action in filter_actions(legal_actions):
         game_state_copy = copy.deepcopy(game_state)
         tile_drawn = ra.execute_action_internal(game_state_copy, action, legal_actions)
         if action == gi.DRAW:
