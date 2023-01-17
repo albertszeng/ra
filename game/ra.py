@@ -572,12 +572,18 @@ class RaGame:
             playerNames=self.player_names,
             gameState=self.game_state.serialize(),
             gameLog=self.logged_moves,
-            unrealizedPoints=scoring_utils.calculate_unrealized_points(
-                self.game_state.player_states, self.game_state.is_final_round()
-            ),
-            auctionTileValues=scoring_utils.calculate_value_of_auction_tiles(
-                self.game_state.get_auction_tiles(), self.game_state.player_states
-            ),
+            unrealizedPoints={
+                self.player_names[idx]: points
+                for idx, points in scoring_utils.calculate_unrealized_points(
+                    self.game_state.player_states, self.game_state.is_final_round()
+                ).items()
+            },
+            auctionTileValues={
+                self.player_names[idx]: points
+                for idx, points in scoring_utils.calculate_value_of_auction_tiles(
+                    self.game_state.get_auction_tiles(), self.game_state.player_states
+                ).items()
+            },
         )
 
     def is_valid_num_players(self, num_players: int) -> bool:

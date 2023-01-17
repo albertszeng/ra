@@ -21,7 +21,7 @@ def search(game_state: gs.GameState) -> int:
 
 def search_internal(
     game_state: gs.GameState, auction_has_occurred: bool
-) -> Tuple[int, Dict[str, float]]:
+) -> Tuple[int, Dict[int, float]]:
     """
     Find action to take based on expectimax. Returns the best action and the
     resulting valuation of each player's state.
@@ -33,15 +33,15 @@ def search_internal(
         legal_actions is not None and len(legal_actions) > 0
     ), "Cannot perform search_internal because no legal actions"
 
-    current_player_name = game_state.get_current_player_name()
+    current_player = game_state.get_current_player()
     # maps action to its resulting valuations
-    action_results: Dict[int, Dict[str, float]] = {}
+    action_results: Dict[int, Dict[int, float]] = {}
 
     # Simulate each legal action and find their resulting valuations
     for action in legal_actions:
         if action == gi.DRAW:
             # maps tile index to its resulting valuations
-            draw_action_results: Dict[int, Dict[str, float]] = {}
+            draw_action_results: Dict[int, Dict[int, float]] = {}
 
             tile_bag = game_state.get_tile_bag_contents()
             tile_bag_size = game_state.get_num_tiles_left()
@@ -60,8 +60,8 @@ def search_internal(
                     )
 
             # for each player, calculate what their expected valuation is
-            expected_player_valuations: Dict[str, float] = {
-                name: 0.0 for name in game_state.get_player_names()
+            expected_player_valuations: Dict[int, float] = {
+                idx: 0.0 for idx, _ in enumerate(game_state.get_player_names())
             }
             for tile_idx, resulting_valuations in draw_action_results.items():
                 assert len(resulting_valuations) == len(
@@ -107,7 +107,7 @@ def search_internal(
     best_state_score = float("-inf")
     for action, resulting_valuations in action_results.items():
         curr_player_state_score = calculate_state_score_for_player(
-            current_player_name, resulting_valuations
+            current_player, resulting_valuations
         )
         if curr_player_state_score > best_state_score:
             best_state_score = curr_player_state_score
@@ -122,7 +122,7 @@ def search_internal(
 
 def value_state(
     game_state: gs.GameState, auction_has_occurred: bool
-) -> Dict[str, float]:
+) -> Dict[int, float]:
     """
     Return the score of the current state for each player as a dictionary of
     [player_name, score]. Search stops when at least 1 auction has occurred and
@@ -150,7 +150,7 @@ def value_state(
 
 
 def calculate_state_score_for_player(
-    player_name: str, player_state_valuations: Mapping[str, float]
+    player_idx: int, player_state_valuations: Mapping[int, float]
 ) -> float:
     """
     Given the valuations of each player's state, calculate a "state score" for
@@ -159,12 +159,12 @@ def calculate_state_score_for_player(
     Currently, this is calculated to be how far ahead the player is, or how far
     behind #1 the player is.
     """
-    player_valuation = player_state_valuations[player_name]
+    player_valuation = player_state_valuations[player_idx]
     max_other_player_valuation = max(
         [
             valuation
-            for name, valuation in player_state_valuations.items()
-            if name != player_name
+            for idx, valuation in player_state_valuations.items()
+            if idx != player_idx
         ]
     )
     return player_valuation - max_other_player_valuation

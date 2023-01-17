@@ -19,7 +19,7 @@ def oracle_ai_player(game_state: gs.GameState) -> int:
 
 
 TAction = int
-TPlayer = str
+TPlayer = int
 TScore = float
 
 
@@ -142,7 +142,7 @@ def oracle_search(
         num_auctions_allowed,
         depth=0,
     )
-    action = _get_best_action(game_state.get_current_player_name(), action_values)
+    action = _get_best_action(game_state.get_current_player(), action_values)
     cache_size = scoring_utils.get_size(value_state.cache)
     print(f"Total unique states explored: {len(value_state.cache)}")
     print(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
@@ -152,7 +152,7 @@ def oracle_search(
 
 
 def _get_best_action(
-    current_player: str, action_values: Mapping[TAction, Mapping[TPlayer, TScore]]
+    current_player: int, action_values: Mapping[TAction, Mapping[TPlayer, TScore]]
 ) -> TAction:
     """Returns the best action
 
@@ -305,7 +305,7 @@ def oracle_search_stack(
             if game_state.is_auction_started():
                 metrics["numAuctionStarted"] += 1
             cache[gameHash] = childValues[
-                _get_best_action(game_state.get_current_player_name(), childValues)
+                _get_best_action(game_state.get_current_player(), childValues)
             ]
             stack.pop()
             continue
@@ -419,6 +419,6 @@ def value_state(
         )
         return resulting_player_state_valuations[
             _get_best_action(
-                game_state.get_current_player_name(), resulting_player_state_valuations
+                game_state.get_current_player(), resulting_player_state_valuations
             )
         ]

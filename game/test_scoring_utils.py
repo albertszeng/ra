@@ -7,15 +7,19 @@ from game import state as gs
 
 class RaTest(unittest.TestCase):
     def test_calculate_value_of_auction_tiles(self) -> None:
-        player1_state = gs.PlayerState("P1", gi.STARTING_SUN[2][:][0])
-        player2_state = gs.PlayerState("P2", gi.STARTING_SUN[2][:][1])
+        player1_state = gs.PlayerState(
+            "P1", player_idx=0, starting_sun=gi.STARTING_SUN[2][:][0]
+        )
+        player2_state = gs.PlayerState(
+            "P2", player_idx=1, starting_sun=gi.STARTING_SUN[2][:][1]
+        )
         # dummy_ra_game = ra.RaGame(['P1', 'P2'])  # create a dummy ra game
 
         values0 = scoring_utils.calculate_value_of_auction_tiles(
             [], [player1_state, player2_state]
         )
-        self.assertTrue(values0["P1"] == 0)
-        self.assertTrue(values0["P2"] == 0)
+        self.assertTrue(values0[0] == 0)
+        self.assertTrue(values0[1] == 0)
 
         auction_tiles = [
             gi.INDEX_OF_GOD,
@@ -30,15 +34,15 @@ class RaTest(unittest.TestCase):
         values1 = scoring_utils.calculate_value_of_auction_tiles(
             auction_tiles, [player1_state, player2_state]
         )
-        self.assertTrue(values1["P1"] == 15)
-        self.assertTrue(values1["P2"] == 15)
+        self.assertTrue(values1[0] == 15)
+        self.assertTrue(values1[1] == 15)
 
         player1_state.add_tiles(auction_tiles)
         values2 = scoring_utils.calculate_value_of_auction_tiles(
             auction_tiles, [player1_state, player2_state]
         )
-        self.assertTrue(values2["P1"] == 7)
-        self.assertTrue(values2["P2"] == 18)
+        self.assertTrue(values2[0] == 7)
+        self.assertTrue(values2[1] == 18)
 
         auction_tiles_2 = [
             gi.INDEX_OF_PHAR,
@@ -51,18 +55,22 @@ class RaTest(unittest.TestCase):
         values3 = scoring_utils.calculate_value_of_auction_tiles(
             auction_tiles_2, [player1_state, player2_state]
         )
-        self.assertTrue(values3["P1"] == 7)
-        self.assertTrue(values3["P2"] == 8)
+        self.assertTrue(values3[0] == 7)
+        self.assertTrue(values3[1] == 8)
 
     def test_calculate_unrealized_points(self) -> None:
-        player1_state = gs.PlayerState("P1", gi.STARTING_SUN[2][:][0])
-        player2_state = gs.PlayerState("P2", gi.STARTING_SUN[2][:][1])
+        player1_state = gs.PlayerState(
+            "P1", player_idx=0, starting_sun=gi.STARTING_SUN[2][:][0]
+        )
+        player2_state = gs.PlayerState(
+            "P2", player_idx=1, starting_sun=gi.STARTING_SUN[2][:][1]
+        )
 
         unrealized_points = scoring_utils.calculate_unrealized_points(
             [player1_state, player2_state], False
         )  # Not final round
-        self.assertTrue(unrealized_points["P1"] == -2)
-        self.assertTrue(unrealized_points["P2"] == -2)
+        self.assertTrue(unrealized_points[0] == -2)
+        self.assertTrue(unrealized_points[1] == -2)
 
         tiles = [
             gi.INDEX_OF_GOD,
@@ -81,14 +89,14 @@ class RaTest(unittest.TestCase):
         unrealized_points2 = scoring_utils.calculate_unrealized_points(
             [player1_state, player2_state], False
         )  # Not final round
-        self.assertTrue(unrealized_points2["P1"] == 12)
-        self.assertTrue(unrealized_points2["P2"] == -7)
+        self.assertTrue(unrealized_points2[0] == 12)
+        self.assertTrue(unrealized_points2[1] == -7)
 
         unrealized_points3 = scoring_utils.calculate_unrealized_points(
             [player1_state, player2_state], True
         )  # Is final round
-        self.assertTrue(unrealized_points3["P1"] == 8)
-        self.assertTrue(unrealized_points3["P2"] == -2)
+        self.assertTrue(unrealized_points3[0] == 8)
+        self.assertTrue(unrealized_points3[1] == -2)
 
 
 if __name__ == "__main__":

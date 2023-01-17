@@ -12,7 +12,7 @@ class CopyTests(unittest.TestCase):
         self.assertEqual(copy.deepcopy(tileBag), sys_copy.deepcopy(tileBag))
 
     def test_copy_player(self) -> None:
-        player = state.PlayerState("test", [1, 3, 4])
+        player = state.PlayerState("test", player_idx=0, starting_sun=[1, 3, 4])
         self.assertEqual(player, copy.deepcopy(player))
         self.assertEqual(copy.deepcopy(player), sys_copy.deepcopy(player))
 

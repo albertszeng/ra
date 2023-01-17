@@ -95,7 +95,7 @@ class PlayerStateTests(unittest.TestCase):
 
     def test_serialize(self) -> None:
         self.maxDiff = None
-        player = gs.PlayerState("Test Player", starting_sun=[1, 2, 3])
+        player = gs.PlayerState("Test Player", player_idx=0, starting_sun=[1, 2, 3])
         serialized = player.serialize()
 
         self.assertEqual(
@@ -159,7 +159,7 @@ class PlayerStateTests(unittest.TestCase):
         self.assertCountEqual(player.serialize()["unusableSun"], [4, 9, 13])
 
     def test_add_tiles(self) -> None:
-        p_state = gs.PlayerState("Test Player", [1, 2, 3])
+        p_state = gs.PlayerState("Test Player", player_idx=0, starting_sun=[1, 2, 3])
         current_collection = p_state.get_player_collection()
         expectedCollection = list(current_collection[:])
 
@@ -185,7 +185,7 @@ class PlayerStateTests(unittest.TestCase):
             self.assertEqual(expectedCollection, p_state.get_player_collection())
 
     def test_remove_single_tiles_by_index(self) -> None:
-        p_state = gs.PlayerState("Test Player", [1, 2, 3])
+        p_state = gs.PlayerState("Test Player", player_idx=0, starting_sun=[1, 2, 3])
         added_tile_indexes = []
         for _i in range(self.num_adds):
             random_indx = random.randint(0, len(p_state.get_player_collection()) - 1)
@@ -216,7 +216,7 @@ class PlayerStateTests(unittest.TestCase):
             self.assertEqual(empty_collection, p_state.get_player_collection())
 
     def test_remove_all_tiles_by_index(self) -> None:
-        p_state = gs.PlayerState("Test Player", [1, 2, 3])
+        p_state = gs.PlayerState("Test Player", player_idx=0, starting_sun=[1, 2, 3])
         added_tile_indexes = []
         for _i in range(self.num_adds):
             random_indx = random.randint(0, len(p_state.get_player_collection()) - 1)
@@ -253,7 +253,7 @@ class PlayerStateTests(unittest.TestCase):
             test_sun.append(random.randint(self.min_sun, self.max_sun))
         test_sun.sort()
 
-        p_state = gs.PlayerState("Test Player", test_sun)
+        p_state = gs.PlayerState("Test Player", player_idx=0, starting_sun=test_sun)
 
         # check that starting sun is correct and unusable sun is empty
         self.assertEqual(p_state.get_usable_sun(), test_sun)
@@ -281,7 +281,7 @@ class PlayerStateTests(unittest.TestCase):
             test_sun.append(random.randint(self.min_sun, self.max_sun))
         test_sun.sort()
 
-        p_state = gs.PlayerState("Test Player", test_sun)
+        p_state = gs.PlayerState("Test Player", player_idx=0, starting_sun=test_sun)
 
         # make all sun unusable
         added_suns = []
@@ -301,7 +301,7 @@ class PlayerStateTests(unittest.TestCase):
         self.assertEqual(sum(p_state.get_unusable_sun()), 0)
 
     def test_add_points(self) -> None:
-        p_state = gs.PlayerState("Test Player", [1, 2, 3])
+        p_state = gs.PlayerState("Test Player", player_idx=0, starting_sun=[1, 2, 3])
         current_points = p_state.get_player_points()
 
         # check num_iterations times that adding points works properly

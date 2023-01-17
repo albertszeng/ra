@@ -62,7 +62,7 @@ SUN_MODIFIER_MAPPING: Mapping[int, Mapping[int, float]] = {
 }
 
 
-def evaluate_game_state_no_auction_tiles(game_state: gs.GameState) -> Dict[str, float]:
+def evaluate_game_state_no_auction_tiles(game_state: gs.GameState) -> Dict[int, float]:
     """
     Given a gamestate, provide a "valuation" for each player's state. Does NOT factor in
     auction tiles into evaluation, so this should only be called if there are no
@@ -104,24 +104,24 @@ def evaluate_game_state_no_auction_tiles(game_state: gs.GameState) -> Dict[str, 
     # - value of unusable sun
     player_state_valuations = {}
     for player_state in game_state.player_states:
-        player_name = player_state.get_player_name()
-        player_state_valuations[player_name] = (
+        player_idx = player_state.get_player_idx()
+        player_state_valuations[player_idx] = (
             player_state.get_player_points()
-            + unrealized_points[player_name]
-            + usable_sun_valuations[player_name]
-            + unusable_sun_valuations[player_name]
+            + unrealized_points[player_idx]
+            + usable_sun_valuations[player_idx]
+            + unusable_sun_valuations[player_idx]
         )
     return player_state_valuations
 
 
-def value_of_usable_sun(game_state: gs.GameState) -> Dict[str, float]:
+def value_of_usable_sun(game_state: gs.GameState) -> Dict[int, float]:
     """
     Returns the valuation of each player's remaining sun.
     """
-    usable_sun_valuations: Dict[str, float] = {}
+    usable_sun_valuations: Dict[int, float] = {}
     for player_state in game_state.player_states:
         usable_sun_valuations[
-            player_state.get_player_name()
+            player_state.get_player_idx()
         ] = value_one_players_usable_sun(
             player_state.get_usable_sun(),
             game_state.get_num_players(),
@@ -168,7 +168,7 @@ def value_one_players_usable_sun(
     )
 
 
-def value_of_unusable_sun(game_state: gs.GameState) -> Dict[str, float]:
+def value_of_unusable_sun(game_state: gs.GameState) -> Dict[int, float]:
     """
     Returns the valuation of each player's remaining sun. Does NOT
     give a value to unusable suns in the final round.
@@ -176,12 +176,12 @@ def value_of_unusable_sun(game_state: gs.GameState) -> Dict[str, float]:
     if game_state.is_final_round():
         # if final round, do not factor in unusable sun, because it's already taken into
         # account by the unrealized points
-        return {name: 0.0 for name in game_state.get_player_names()}
+        return {idx: 0.0 for idx in range(game_state.get_num_players())}
 
-    unusable_sun_valuations: Dict[str, float] = {}
+    unusable_sun_valuations: Dict[int, float] = {}
     for player_state in game_state.player_states:
         unusable_sun_valuations[
-            player_state.get_player_name()
+            player_state.get_player_idx()
         ] = value_one_players_unusable_sun(
             player_state.get_unusable_sun(), game_state.get_num_players()
         )

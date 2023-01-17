@@ -15,33 +15,33 @@ from game.decision_functions import search as s
 class SearchTest(unittest.TestCase):
     def test_calculate_state_score_for_player(self) -> None:
         state_valuations_1 = {
-            "P1": 20.0,
-            "P2": 10.0,
+            0: 20.0,
+            1: 10.0,
         }
         self.assertEqual(
-            s.calculate_state_score_for_player("P1", state_valuations_1), 10.0
+            s.calculate_state_score_for_player(0, state_valuations_1), 10.0
         )
         self.assertEqual(
-            s.calculate_state_score_for_player("P2", state_valuations_1), -10.0
+            s.calculate_state_score_for_player(1, state_valuations_1), -10.0
         )
 
         state_valuations_2 = {
-            "P1": 20.0,
-            "P2": 10.0,
-            "P3": 5.0,
-            "P4": -10.0,
+            0: 20.0,
+            1: 10.0,
+            2: 5.0,
+            3: -10.0,
         }
         self.assertEqual(
-            s.calculate_state_score_for_player("P1", state_valuations_2), 10.0
+            s.calculate_state_score_for_player(0, state_valuations_2), 10.0
         )
         self.assertEqual(
-            s.calculate_state_score_for_player("P2", state_valuations_2), -10.0
+            s.calculate_state_score_for_player(1, state_valuations_2), -10.0
         )
         self.assertEqual(
-            s.calculate_state_score_for_player("P3", state_valuations_2), -15.0
+            s.calculate_state_score_for_player(2, state_valuations_2), -15.0
         )
         self.assertEqual(
-            s.calculate_state_score_for_player("P4", state_valuations_2), -30.0
+            s.calculate_state_score_for_player(3, state_valuations_2), -30.0
         )
 
     def test_search_internal_full_tiles(self) -> None:

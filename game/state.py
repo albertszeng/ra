@@ -193,23 +193,33 @@ class SerializedPlayerState(TypedDict):
 
 
 class PlayerState:
-    __slots__ = ("collection", "points", "player_name", "usable_sun", "unusable_sun")
+    __slots__ = (
+        "collection",
+        "points",
+        "player_name",
+        "player_idx",
+        "usable_sun",
+        "unusable_sun",
+    )
 
     collection: List[int]
     points: int
     player_name: str
+    player_idx: int
     usable_sun: List[int]
     unusable_sun: List[int]
 
     def __init__(
         self,
         player_name: str,
+        player_idx: int,
         starting_sun: List[int],
         starting_points: int = gi.STARTING_PLAYER_POINTS,
     ) -> None:
         self.collection = [0] * gi.NUM_COLLECTIBLE_TILE_TYPES
         self.points = starting_points
         self.player_name = player_name
+        self.player_idx = player_idx
         self.usable_sun = starting_sun[:]
         self.usable_sun.sort()
         self.unusable_sun = []
@@ -307,6 +317,9 @@ class PlayerState:
 
     def get_player_name(self) -> str:
         return self.player_name
+
+    def get_player_idx(self) -> int:
+        return self.player_idx
 
     def get_usable_sun(self) -> Sequence[int]:
         return self.usable_sun
@@ -485,9 +498,9 @@ class GameState:
         tmp_sets = starting_sun_sets[1:]
         random.shuffle(tmp_sets)
         starting_sun_sets[1:] = tmp_sets
-        for i in range(num_players):
+        for idx in range(num_players):
             self.player_states.append(
-                PlayerState(player_names[i], starting_sun_sets[i])
+                PlayerState(player_names[idx], idx, starting_sun_sets[idx])
             )
         self.player_names = [
             player_state.get_player_name() for player_state in self.player_states
