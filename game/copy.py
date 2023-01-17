@@ -43,6 +43,9 @@ def _copy_game(d: state.GameState, dispatch: TDispatcher) -> state.GameState:
     ret = state.GameState.shallow()
     ret.__dict__.update(d.__dict__)
     for key, value in vars(d).items():
+        if key == "player_names":
+            # Shallow copy player names since they never change.
+            continue
         cp = dispatch.get(type(value))
         if cp is not None:
             setattr(ret, key, cp(value, dispatch))
