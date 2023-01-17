@@ -202,7 +202,7 @@ class CacheGames(Generic[T]):
     def __init__(self, func: Callable[[gs.GameState, Metrics, int, ...], T]) -> None:
         # We store data in cache across requests?
         self.cache: Dict[int, T] = {}
-        self.func: Callable[[gs.GameState, Metrics, ...], T] = func
+        self.func: Callable[[gs.GameState, Metrics, int, ...], T] = func
 
     def __call__(
         self,
