@@ -156,7 +156,7 @@ def oracle_search(
     )
     action = _get_best_action(game_state.get_current_player(), action_values)
     cache_size = scoring_utils.get_size(value_state.cache)
-    if cache_size > 256 * 1e6:
+    if cache_size > 48 * 1e6:
         # Reset the cache to empty when above threshold.
         value_state.cache = {}
     print(f"Total unique states explored: {len(value_state.cache)}")
