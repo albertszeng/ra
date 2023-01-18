@@ -67,6 +67,18 @@ function Login({ onLoginSuccess }: LoginProps): JSX.Element {
       socket.off('login', onLogin);
     };
   }, [onLogin]);
+  const upHandler = useCallback((e: KeyboardEvent) => {
+    if (isValidForm(user, password) && e.keyCode === 13) {
+      handleSubmit('login');
+    }
+  }, [handleSubmit, password, user]);
+  // Add 'Enter' key event press.
+  useEffect(() => {
+    window.addEventListener('keyup', upHandler);
+    return () => {
+      window.removeEventListener('keyup', upHandler);
+    };
+  }, [upHandler]);
   return (
     <form>
       <Container disableGutters>
