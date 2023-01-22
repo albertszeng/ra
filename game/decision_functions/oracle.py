@@ -22,8 +22,8 @@ from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
 from game.proxy import copy
 
-DEFAULT_SEARCH_AUCTION_THRESHOLD = 2
-_MAX_RAS = max(gi.NUM_RAS_PER_ROUND.values())
+DEFAULT_SEARCH_AUCTION_THRESHOLD: int = 2
+_MAX_RAS: int = max(gi.NUM_RAS_PER_ROUND.values())
 
 
 def oracle_ai_player(game_state: gs.GameState) -> int:
@@ -139,9 +139,9 @@ def default_metrics() -> Metrics:
         numAuctionStarted=0,
         percentAuctionStarted=0,
         numInRound=[0] * gi.NUM_ROUNDS,
-        percentInRound=[0] * gi.NUM_ROUNDS,
+        percentInRound=[0.0] * gi.NUM_ROUNDS,
         numRas=[0] * _MAX_RAS,
-        percentRas=[0] * _MAX_RAS,
+        percentRas=[0.0] * _MAX_RAS,
     )
 
 
