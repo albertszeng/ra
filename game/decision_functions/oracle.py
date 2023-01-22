@@ -25,7 +25,7 @@ from game.proxy import copy
 
 logger: logging.Logger = logging.getLogger("uvicorn.info")
 
-DEFAULT_SEARCH_AUCTION_THRESHOLD: int = 3
+DEFAULT_SEARCH_AUCTION_THRESHOLD: int = 2
 _MAX_RAS: int = max(gi.NUM_RAS_PER_ROUND.values())
 
 
