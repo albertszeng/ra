@@ -14,6 +14,7 @@ from typing import (
 
 from typing_extensions import ParamSpec
 
+from game import encoding
 from game import info as gi
 from game import ra, scoring_utils
 from game import state as gs
@@ -167,7 +168,7 @@ def oracle_search(
 
 
 def _get_best_action(
-    current_player: int, action_values: Mapping[TAction, list[TScore]]
+    current_player: int, action_values: Mapping[TAction, tuple[TScore]]
 ) -> TAction:
     """Returns the best action
 
@@ -216,12 +217,12 @@ class CacheGames(Generic[T]):
         gameHash = hash((hash(gameState), max_auctions))
         if gameHash not in self.cache:
             metrics["cacheMiss"] += 1
-            self.cache[gameHash] = self.func(
-                gameState, metrics, max_auctions, *args, **kwargs
-            )
+            val = self.func(gameState, metrics, max_auctions, *args, **kwargs)
+            self.cache[gameHash] = encoding.compress(val)
         else:
             metrics["cacheHit"] += 1
-        return self.cache[gameHash]
+        val = encoding.decompress(self.cache[gameHash])
+        return val
 
 
 def _is_unsearchable(action: TAction) -> bool:
@@ -252,17 +253,17 @@ def filter_actions(actions: Iterable[int]) -> Iterator[int]:
 
 def oracle_search_stack(
     start_state: gs.GameState, metrics: Metrics, max_auctions: int, depth: int
-) -> Dict[TAction, list[TScore]]:
+) -> Dict[TAction, tuple[TScore]]:
     # same as internam search, but uses a stack to avoid recursive calls.
 
     # (game, depth, auctionsLeft)
     rootNode = (start_state, depth, max_auctions)
     stack: List[tuple[gs.GameState, int, int]] = [rootNode]
-    cache: Dict[int, list[TScore]] = {}
+    cache: Dict[int, tuple[TScore]] = {}
 
     # We post-order traverse. Eg, process all children first, then the
     # parant game state.
-    childValues: Dict[TAction, list[TScore]] = {}
+    childValues: Dict[TAction, tuple[TScore]] = {}
     while stack:
         game_state, depth, auctionsLeft = stack[-1]
         metrics["maxDepth"] = max(depth, metrics["maxDepth"])
@@ -273,10 +274,10 @@ def oracle_search_stack(
             metrics["cacheMiss"] += 1
             metrics["numInRound"][game_state.current_round - 1] += 1
             metrics["numEnded"] += 1
-            cache[gameHash] = [
+            cache[gameHash] = tuple(
                 player_state.get_player_points()
                 for player_state in game_state.player_states
-            ]
+            )
             stack.pop()
             continue
         elif auctionsLeft <= 0 and game_state.get_num_auction_tiles() == 0:
@@ -288,7 +289,7 @@ def oracle_search_stack(
             result = [0.0] * len(ret)
             for idx, score in ret.items():
                 result[idx] = score
-            cache[gameHash] = result
+            cache[gameHash] = tuple(result)
             stack.pop()
             continue
 
@@ -346,7 +347,7 @@ def oracle_search_internal(
     metrics: Metrics,
     max_auctions: int,
     depth: int,
-) -> Dict[TAction, list[TScore]]:
+) -> Dict[TAction, tuple[TScore]]:
     """Find action to take.
 
     Algorithm is based on minimax.
@@ -370,7 +371,7 @@ def oracle_search_internal(
     ), "Cannot perform oracle_search_internal because no legal actions"
 
     # maps action to its resulting valuations
-    action_results: Dict[TAction, list[TScore]] = {}
+    action_results: Dict[TAction, tuple[TScore]] = {}
 
     # Simulate each legal action and find their resulting valuations
     for action in filter_actions(legal_actions):
@@ -400,7 +401,7 @@ def value_state(
     metrics: Metrics,
     max_auctions: int,
     depth: int,
-) -> list[TScore]:
+) -> tuple[TScore]:
     """Computes the value of the state for each player.
 
     The value of the current state is the maximum across all possible actions
@@ -429,14 +430,14 @@ def value_state(
             final_scores[player_state.get_player_idx()] = float(
                 player_state.get_player_points()
             )
-        return final_scores
+        return tuple(final_scores)
     elif max_auctions <= 0 and auction_tiles_are_empty:
         metrics["numEstimated"] += 1
         ret = e.evaluate_game_state_no_auction_tiles(game_state)
         scores = [0.0] * len(ret)
         for idx, score in ret.items():
             scores[idx] = score
-        return scores
+        return tuple(scores)
     else:
         metrics["numIntermediate"] += 1
         resulting_player_state_valuations = oracle_search_internal(
