@@ -1,3 +1,4 @@
+import logging
 import pprint
 import time
 from typing import (
@@ -21,6 +22,8 @@ from game import state as gs
 from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
 from game.proxy import copy
+
+logger: logging.Logger = logging.getLogger("uvicorn.info")
 
 DEFAULT_SEARCH_AUCTION_THRESHOLD: int = 3
 _MAX_RAS: int = max(gi.NUM_RAS_PER_ROUND.values())
@@ -149,15 +152,20 @@ def oracle_search(
     game_state: gs.GameState,
     num_auctions_allowed: int = DEFAULT_SEARCH_AUCTION_THRESHOLD,
     optimize: bool = False,
+    debug: bool = False,
 ) -> TAction:
     """
     Given the current game state, return an action to take and the valuation associated
     with it. Sees future tiles that will be drawn.
     """
-    print("Beginning oracle search...")
-    cache_size = scoring_utils.get_size(value_state.cache)
-    print(f"Total unique states already explored: {len(value_state.cache)}")
-    print(f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})")
+    if debug:
+        logger.info("Beginning oracle search...")
+    if debug:
+        cache_size = scoring_utils.get_size(value_state.cache)
+        logger.info(f"Total unique states already explored: {len(value_state.cache)}")
+        logger.info(
+            f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})"
+        )
     start_time = time.time()
     metrics = default_metrics()
     internal_search_fn = oracle_search_stack if optimize else oracle_search_internal
@@ -169,10 +177,12 @@ def oracle_search(
     )
     action = _get_best_action(game_state.get_current_player(), action_values)
     cache_size = scoring_utils.get_size(value_state.cache)
-    print(f"Total unique states explored: {len(value_state.cache)}")
-    print(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
-    print(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
-    print(f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})")
+    logger.info(f"Total unique states explored: {len(value_state.cache)}")
+    logger.info(f"Collected metrics: {pprint.info.pformat(finalizeMetrics(metrics))}")
+    logger.info(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
+    logger.info(
+        f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})"
+    )
     if cache_size > 48 * 1e6:
         # Reset the cache to empty when above threshold.
         value_state.cache = {}
