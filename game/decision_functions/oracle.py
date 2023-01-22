@@ -178,7 +178,7 @@ def oracle_search(
     action = _get_best_action(game_state.get_current_player(), action_values)
     cache_size = scoring_utils.get_size(value_state.cache)
     logger.info(f"Total unique states explored: {len(value_state.cache)}")
-    logger.info(f"Collected metrics: {pprint.info.pformat(finalizeMetrics(metrics))}")
+    logger.info(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
     logger.info(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
     logger.info(
         f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})"
