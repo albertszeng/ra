@@ -22,7 +22,7 @@ from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
 from game.proxy import copy
 
-DEFAULT_SEARCH_AUCTION_THRESHOLD: int = 2
+DEFAULT_SEARCH_AUCTION_THRESHOLD: int = 3
 _MAX_RAS: int = max(gi.NUM_RAS_PER_ROUND.values())
 
 

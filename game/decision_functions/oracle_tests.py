@@ -109,7 +109,7 @@ class OracleSearchTest(unittest.TestCase):
         assert 3 in game_state.get_player_usable_sun(1)  # P2 has 3,4,7,8
 
         optimize = False
-        auctionsToSearch = 4
+        auctionsToSearch = 3
         print(f"Searching for {auctionsToSearch} auctions with optimize={optimize}...")
         best_move = o.oracle_search(game_state, auctionsToSearch, optimize=optimize)
         # print("best_move:", best_move)
