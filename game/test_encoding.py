@@ -19,7 +19,7 @@ class EncodingTest(unittest.TestCase):
         )
 
     def test_compress_and_decompress(self) -> None:
-        def id_fn(x):
+        def id_fn(x: tuple[float, ...]) -> tuple[float, ...]:
             return encoding.decompress(encoding.compress(x))
 
         self.assertEqual((1.0, 0.0, 0.0, 0.0, 0.0), id_fn((1.0,)))

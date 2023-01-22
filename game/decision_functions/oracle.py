@@ -6,10 +6,10 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
-    List,
     Mapping,
     TypedDict,
     TypeVar,
+    cast,
 )
 
 from typing_extensions import ParamSpec
@@ -23,6 +23,7 @@ from game.decision_functions import search as s
 from game.proxy import copy
 
 DEFAULT_SEARCH_AUCTION_THRESHOLD = 2
+_MAX_RAS = max(gi.NUM_RAS_PER_ROUND.values())
 
 
 def oracle_ai_player(game_state: gs.GameState) -> int:
@@ -52,6 +53,8 @@ class Metrics(TypedDict):
         "numInRound",
         "percentInRound",
         "numCalls",
+        "numRas",
+        "percentRas",
     )
     # Tracks the maximum search depth.
     maxDepth: int
@@ -83,8 +86,12 @@ class Metrics(TypedDict):
     percentAuctionStarted: float
 
     # numInRound[i] is number of unique states in round i + 1.
-    numInRound: List[int]
-    percentInRound: List[float]
+    numInRound: list[int]
+    percentInRound: list[float]
+
+    # numRas[i] is the number of unique states with i + 1 Ra's revealed.
+    numRas: list[int]
+    percentRas: list[float]
 
     # The number of times the function is called.
     numCalls: int
@@ -107,6 +114,9 @@ def finalizeMetrics(metrics: Metrics) -> Metrics:
     metrics["percentInRound"] = [
         100 * (num / max(1, metrics["cacheMiss"])) for num in metrics["numInRound"]
     ]
+    metrics["percentRas"] = [
+        100 * (num / max(1, metrics["cacheMiss"])) for num in metrics["numRas"]
+    ]
 
     return metrics
 
@@ -128,8 +138,10 @@ def default_metrics() -> Metrics:
         percentIntermediate=0,
         numAuctionStarted=0,
         percentAuctionStarted=0,
-        numInRound=[0, 0, 0],
-        percentInRound=[0, 0, 0],
+        numInRound=[0] * gi.NUM_ROUNDS,
+        percentInRound=[0] * gi.NUM_ROUNDS,
+        numRas=[0] * _MAX_RAS,
+        percentRas=[0] * _MAX_RAS,
     )
 
 
@@ -157,13 +169,13 @@ def oracle_search(
     )
     action = _get_best_action(game_state.get_current_player(), action_values)
     cache_size = scoring_utils.get_size(value_state.cache)
-    if cache_size > 48 * 1e6:
-        # Reset the cache to empty when above threshold.
-        value_state.cache = {}
     print(f"Total unique states explored: {len(value_state.cache)}")
     print(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
     print(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
     print(f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})")
+    if cache_size > 48 * 1e6:
+        # Reset the cache to empty when above threshold.
+        value_state.cache = {}
     return action
 
 
@@ -202,7 +214,7 @@ P = ParamSpec("P")
 class CacheGames(Generic[T]):
     def __init__(self, func: Callable[[gs.GameState, Metrics, int, ...], T]) -> None:
         # We store data in cache across requests?
-        self.cache: Dict[int, T] = {}
+        self.cache: Dict[int, int] = {}
         self.func: Callable[[gs.GameState, Metrics, int, ...], T] = func
 
     def __call__(
@@ -221,7 +233,7 @@ class CacheGames(Generic[T]):
             self.cache[gameHash] = encoding.compress(val)
         else:
             metrics["cacheHit"] += 1
-        val = encoding.decompress(self.cache[gameHash])
+        val = cast(T, encoding.decompress(self.cache[gameHash]))
         return val
 
 
@@ -258,7 +270,7 @@ def oracle_search_stack(
 
     # (game, depth, auctionsLeft)
     rootNode = (start_state, depth, max_auctions)
-    stack: List[tuple[gs.GameState, int, int]] = [rootNode]
+    stack: list[tuple[gs.GameState, int, int]] = [rootNode]
     cache: Dict[int, tuple[TScore]] = {}
 
     # We post-order traverse. Eg, process all children first, then the
@@ -419,6 +431,7 @@ def value_state(
     """
     metrics["maxDepth"] = max(metrics["maxDepth"], depth)
     metrics["numInRound"][game_state.current_round - 1] += 1
+    metrics["numRas"][game_state.num_ras_this_round] += 1
     if game_state.is_auction_started():
         metrics["numAuctionStarted"] += 1
 
