@@ -65,7 +65,7 @@ function merge(
 }
 function clean(games: ListGame[]): ValidatedListGame[] {
   return games.map((game: ListGame) => {
-    if (game.deleted || !game.players || !game.visibility || !game.numPlayers) {
+    if (game.deleted || !game.players || !game.visibility || !game.numPlayers || !game.status) {
       return null;
     }
     return game as ValidatedListGame;
@@ -132,27 +132,30 @@ function GameList({ user, handleLoadGame }: GameListProps): JSX.Element {
     };
   }, [onDelete]);
 
-  const renderGame = useCallback(({ id, players, numPlayers: count }: ValidatedListGame) => {
-    const isFull = (players.length === count);
+  const renderGame = useCallback(({
+    id, status, players, numPlayers: count,
+  }: ValidatedListGame) => {
     const secondaryAction = (
       <ButtonGroup>
-        {(isFull) ? null : (
+        {(status === 'WAITING') ? (
           <IconButton
             aria-label="join"
             onClick={() => handleAddPlayer(id)}
           >
             <PersonAdd />
           </IconButton>
-        )}
-        <IconButton
-          aria-label="share"
-          onClick={async () => {
-            await navigator.clipboard.writeText(id);
-            enqueueSnackbar('Copied to clipboard', { variant: 'info' });
-          }}
-        >
-          <ContentCopy />
-        </IconButton>
+        ) : null}
+        {(status === 'WAITING') ? (
+          <IconButton
+            aria-label="share"
+            onClick={async () => {
+              await navigator.clipboard.writeText(id);
+              enqueueSnackbar('Copied to clipboard', { variant: 'info' });
+            }}
+          >
+            <ContentCopy />
+          </IconButton>
+        ) : null}
         <IconButton
           aria-label="delete"
           onClick={() => handleDeleteGame(id)}
@@ -172,7 +175,7 @@ function GameList({ user, handleLoadGame }: GameListProps): JSX.Element {
             <VideogameAsset />
           </ListItemIcon>
           <ListItemText
-            primary={`Game ID: ${id}`}
+            primary={`[${status}] Game: ${id}`}
             secondary={`(${players.length}/${count}): ${players.toString()}`}
           />
         </ListItemButton>

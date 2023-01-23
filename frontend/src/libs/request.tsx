@@ -2,6 +2,7 @@ import { Game } from './game';
 import { WarningLevel } from '../common';
 
 type Visibility = 'PUBLIC' | 'PRIVATE';
+type Status = 'WAITING' | 'ONGOING' | 'FINISHED';
 
 type ActionRequest = {
   gameId: string;
@@ -57,12 +58,14 @@ type ListGame = {
   id: string;
   players?: string[];
   visibility?: Visibility;
+  status?: Status;
   numPlayers?: number;
   deleted?: boolean;
 };
 type ValidatedListGame = {
   id: string;
   players: string[];
+  status: Status;
   visibility: Visibility;
   numPlayers: number;
 };
