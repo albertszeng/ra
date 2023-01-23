@@ -112,7 +112,11 @@ class RoutesTest(unittest.TestCase):
                 partial=True,
                 games=[
                     routes.GameInfo(
-                        id="test", numPlayers=2, visibility="PUBLIC", players=[]
+                        id="test",
+                        numPlayers=2,
+                        status=routes.Status.WAITING.name,
+                        visibility=routes.Visibility.PUBLIC.name,
+                        players=[],
                     )
                 ],
             ),
@@ -124,7 +128,11 @@ class RoutesTest(unittest.TestCase):
                 partial=True,
                 games=[
                     routes.GameInfo(
-                        id="test", numPlayers=2, visibility="PUBLIC", players=["test"]
+                        id="test",
+                        numPlayers=2,
+                        status=routes.Status.WAITING.name,
+                        visibility=routes.Visibility.PUBLIC.name,
+                        players=["test"],
                     )
                 ],
             ),
@@ -148,6 +156,7 @@ class RoutesTest(unittest.TestCase):
                     routes.GameInfo(
                         id=str(testId),
                         players=["testPlayer"],
+                        status=routes.Status.WAITING.name,
                         visibility=testVisibility.name,
                         numPlayers=4,
                     )
@@ -169,6 +178,30 @@ class RoutesTest(unittest.TestCase):
                     routes.GameInfo(
                         id=str(testId),
                         players=["Name1", "Name2"],
+                        status=routes.Status.ONGOING.name,
+                        visibility=testVisibility.name,
+                        numPlayers=2,
+                    )
+                ],
+            ),
+        )
+
+    def test_list_single_ended(self) -> None:
+        testId = uuid.uuid4()
+        testGame = routes.RaExecutor(
+            randomize_play_order=False, player_names=["Name1", "Name2"]
+        )
+        testGame.game_state.set_game_ended()
+        testVisibility = routes.Visibility.PUBLIC
+        self.assertEqual(
+            routes.list("user", [(testId, testGame, testVisibility)]),
+            routes.ListGamesResponse(
+                partial=False,
+                games=[
+                    routes.GameInfo(
+                        id=str(testId),
+                        players=["Name1", "Name2"],
+                        status=routes.Status.FINISHED.name,
                         visibility=testVisibility.name,
                         numPlayers=2,
                     )
@@ -198,12 +231,14 @@ class RoutesTest(unittest.TestCase):
                     routes.GameInfo(
                         id=str(testIds[0]),
                         players=["Game10", "Game11"],
+                        status=routes.Status.ONGOING.name,
                         visibility=routes.Visibility.PUBLIC.name,
                         numPlayers=2,
                     ),
                     routes.GameInfo(
                         id=str(testIds[1]),
                         players=["Game20", "Game21"],
+                        status=routes.Status.ONGOING.name,
                         visibility=routes.Visibility.PUBLIC.name,
                         numPlayers=2,
                     ),
@@ -233,12 +268,14 @@ class RoutesTest(unittest.TestCase):
                     routes.GameInfo(
                         id=str(testIds[0]),
                         players=["Game10", "Game11"],
+                        status=routes.Status.ONGOING.name,
                         visibility=routes.Visibility.PUBLIC.name,
                         numPlayers=2,
                     ),
                     routes.GameInfo(
                         id=str(testIds[1]),
                         players=["Game20", "Game21"],
+                        status=routes.Status.ONGOING.name,
                         visibility=routes.Visibility.PRIVATE.name,
                         numPlayers=2,
                     ),
@@ -254,6 +291,7 @@ class RoutesTest(unittest.TestCase):
                     routes.GameInfo(
                         id=str(testIds[0]),
                         players=["Game10", "Game11"],
+                        status=routes.Status.ONGOING.name,
                         visibility=routes.Visibility.PUBLIC.name,
                         numPlayers=2,
                     ),
@@ -494,6 +532,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
                     routes.GameInfo(
                         id=str(storedGameId),
                         players=["user", "AI Panda"],
+                        status=routes.Status.WAITING.name,
                         visibility=routes.Visibility.PRIVATE.name,
                         numPlayers=3,
                     )
@@ -564,6 +603,7 @@ class AddPlayerRoutesTest(unittest.IsolatedAsyncioTestCase):
                     routes.GameInfo(
                         id=str(gameId),
                         visibility=routes.Visibility.PUBLIC.name,
+                        status=routes.Status.WAITING.name,
                         numPlayers=2,
                         players=["user"],
                     )

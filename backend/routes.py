@@ -169,6 +169,32 @@ class RaExecutor(ra.RaGame, mutable.Mutable):
         return d
 
 
+@enum.unique
+class Status(enum.Enum):
+    # The game is still waiting for more players to join.
+    WAITING = 1
+    ONGOING = 2
+    FINISHED = 3
+
+    @staticmethod
+    def from_str(label: Optional[str]) -> Optional["Status"]:
+        """Creates from the given label if possible."""
+        if not label:
+            return None
+        label = label.upper()
+        if label in ("WAITING", "ONGOING", "FINISHED"):
+            return Status[label]
+        return None
+
+    @staticmethod
+    def from_game(game: RaExecutor) -> "Status":
+        if not game.initialized():
+            return Status.WAITING
+        if not game.game_state.is_game_ended():
+            return Status.ONGOING
+        return Status.FINISHED
+
+
 class Message(TypedDict):
     level: str
     message: str
@@ -253,9 +279,13 @@ class GameInfo(TypedDict):
     # Usernames of the players that have joined.
     players: NotRequired[List[str]]
     # Game visibility. Private games are only sent to members of the game.
+    # See Visibility enum.
     visibility: NotRequired[str]
     # How many total players this game hosts.
     numPlayers: NotRequired[int]
+    # Specifies the status of the game.
+    # See Status enum.
+    status: NotRequired[str]
     # When specified, means this game was deleted.
     deleted: NotRequired[bool]
 
@@ -283,6 +313,7 @@ def single_game(
                 GameInfo(
                     id=gameId,
                     players=game.get_player_names(),
+                    status=Status.from_game(game).name,
                     visibility=visibility.name,
                     numPlayers=game.get_num_players(),
                 )
@@ -302,6 +333,7 @@ def list(
                 id=str(gameId),
                 players=game.get_player_names(),
                 visibility=visibility.name,
+                status=Status.from_game(game).name,
                 numPlayers=game.get_num_players(),
             )
             for gameId, game, visibility in dbGames
