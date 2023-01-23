@@ -39,11 +39,11 @@ def get() -> Mapping[AILevel, AIFunc]:
     return _AIs
 
 
-def generate_name(curr_players: List[str]) -> str:
+def generate_name(level: AILevel, curr_players: List[str]) -> str:
     selectedName = " ".join(
         part.capitalize() for part in random.choice(ai_names.ALL).split(" ")
     )
-    name = f"AI {selectedName}"
+    name = f"{level.name.capitalize()} {selectedName}"
     count = 0
     while (count == 0 and name in curr_players) or (f"{name}-{count}" in curr_players):
         count += 1

@@ -531,7 +531,7 @@ class StartRoutesTest(unittest.IsolatedAsyncioTestCase):
                 games=[
                     routes.GameInfo(
                         id=str(storedGameId),
-                        players=["user", "AI Panda"],
+                        players=["user", "Medium Panda"],
                         status=routes.Status.WAITING.name,
                         visibility=routes.Visibility.PRIVATE.name,
                         numPlayers=3,

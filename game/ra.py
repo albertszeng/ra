@@ -10,6 +10,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     TypedDict,
     Union,
@@ -43,7 +44,7 @@ class SerializedRaGame(TypedDict):
 
     # The players and their respective play-order.
     playerNames: List[str]
-    gameLog: List[Union[Tuple[str, Optional[int]], int]]
+    gameLog: List[str]
     gameState: gs.SerializedGameState
     unrealizedPoints: Mapping[str, int]
     auctionTileValues: Mapping[str, int]
@@ -510,6 +511,18 @@ def execute_action_internal(  # noqa: C901
         execute_monument_discard(gi.INDEX_OF_SPH)
 
 
+def _log_entry(player: str, move: Union[Tuple[str, int], int]) -> str:
+    if isinstance(move, tuple):
+        return f"[{player}] Draw {gi.index_to_tile_name(move[1])}."
+    return f"[{player}] {gi.action_description(move)}."
+
+
+def _serialize_log(
+    players: Sequence[str], log: Iterable[Union[Tuple[str, int], int]]
+) -> List[str]:
+    return [_log_entry(players[i % len(players)], move) for i, move in enumerate(log)]
+
+
 class RaGame:
     """
     Core logic for a game of Ra. Essentially just a class that allows the  game
@@ -521,7 +534,7 @@ class RaGame:
     move_history_file: Optional[str]
     player_names: List[str]
     game_state: gs.GameState
-    logged_moves: List[Union[Tuple[str, Optional[int]], int]]
+    logged_moves: List[Union[Tuple[str, int], int]]
     MAX_ACTION_ATTEMPTS: Final[int] = 10
 
     def __init__(
@@ -571,7 +584,7 @@ class RaGame:
         return SerializedRaGame(
             playerNames=self.player_names,
             gameState=self.game_state.serialize(),
-            gameLog=self.logged_moves,
+            gameLog=_serialize_log(self.player_names, self.logged_moves),
             unrealizedPoints={
                 self.player_names[idx]: points
                 for idx, points in scoring_utils.calculate_unrealized_points(
@@ -687,6 +700,7 @@ class RaGame:
             self.game_state, action, legal_actions, tile_to_draw
         )
         if action == gi.DRAW:
+            assert t is not None
             self.logged_moves.append((gi.DRAW_OPTIONS[0], t))
             return t
         else:

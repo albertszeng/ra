@@ -114,7 +114,7 @@ class RaExecutor(ra.RaGame, mutable.Mutable):
             return False
 
         for level in levels:
-            name = ai.generate_name([player.name for player in self._players])
+            name = ai.generate_name(level, [player.name for player in self._players])
             self._players.append(PlayerInfo(name=name, quality=level))
         if len(self._players) == self._num_players:
             # Automatically initialize if
