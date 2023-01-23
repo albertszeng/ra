@@ -164,7 +164,7 @@ def oracle_search(
         cache_size = scoring_utils.get_size(value_state.cache)
         logger.info(f"Total unique states already explored: {len(value_state.cache)}")
         logger.info(
-            f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})"
+            f"Size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})"
         )
     start_time = time.time()
     metrics = default_metrics()
@@ -180,9 +180,7 @@ def oracle_search(
     logger.info(f"Total unique states explored: {len(value_state.cache)}")
     logger.info(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
     logger.info(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
-    logger.info(
-        f"Total size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})"
-    )
+    logger.info(f"Size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})")
     if cache_size > 48 * 1e6:
         # Reset the cache to empty when above threshold.
         value_state.cache = {}
