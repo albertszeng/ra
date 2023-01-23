@@ -11,6 +11,9 @@ import {
   Badge,
   Box,
   Card,
+  List,
+  ListItem,
+  ListItemText,
   Tab,
   useMediaQuery,
 } from '@mui/material';
@@ -41,11 +44,13 @@ type PlayersInfoProps = {
   // Called when a player selects a tile in their bag.
   selectTile: (player: Player, tile: Tile) => void;
   actionsProps: ActionsProps;
+  // Log of all actions during the game. Passed here only for easy display.
+  gameLog: string[];
 };
 
 function PlayersInfo({
   localName, players, active, current, auctionStarted, bidWithSun, selectTile,
-  centerSun, auctionSuns, playerPointsIfWin, playerEstimatedDelta, goldenGodSelected,
+  centerSun, auctionSuns, playerPointsIfWin, playerEstimatedDelta, goldenGodSelected, gameLog,
   actionsProps: {
     disabled: actionsDisabled, onDraw, onAuction,
   },
@@ -99,9 +104,10 @@ function PlayersInfo({
               );
             })}
             <Tab
-              disabled
               iconPosition="end"
               label="Center Sun"
+              key="gameLog"
+              value={players.length.toString()}
               icon={(
                 <Badge badgeContent={centerSun} color="secondary">
                   <WbSunny fontSize="large" color="action" />
@@ -138,6 +144,25 @@ function PlayersInfo({
             </Card>
           </TabPanel>
         ))}
+        <TabPanel key="gameLog" value={players.length.toString()}>
+          <List
+            dense
+            sx={{
+              width: '100%',
+              bgcolor: 'background.paper',
+              position: 'relative',
+              overflow: 'auto',
+              maxHeight: 300,
+              '& ul': { padding: 0 },
+            }}
+          >
+            {gameLog.map((entry: string) => (
+              <ListItem>
+                <ListItemText primary={entry} />
+              </ListItem>
+            )).reverse()}
+          </List>
+        </TabPanel>
       </TabContext>
     </Box>
   );

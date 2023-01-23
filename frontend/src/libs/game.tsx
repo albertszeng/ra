@@ -109,7 +109,7 @@ type PointMapping = {
 };
 type Game = {
   playerNames: string[];
-  gameLog: ([string, number | null] | number)[],
+  gameLog: string[],
   gameState: GameState;
   // Mapping from player names to unrealized points.
   unrealizedPoints: PointMapping;

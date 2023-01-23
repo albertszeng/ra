@@ -220,7 +220,9 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
     };
   }, [onSpectate]);
 
-  const { auctionTileValues, unrealizedPoints, gameState } = game;
+  const {
+    auctionTileValues, unrealizedPoints, gameState, gameLog,
+  } = game;
   const {
     centerSun, gameEnded, playerStates, activePlayers, currentPlayer,
     auctionStarted, auctionSuns,
@@ -266,6 +268,7 @@ function Game({ playerName, isPlaying, setIsPlaying }: GameProps): JSX.Element {
                   disabled: gameEnded || !isPlaying,
                   pointsIfWin: null,
                 }}
+                gameLog={gameLog}
               />
             </Paper>
           </Grid>
