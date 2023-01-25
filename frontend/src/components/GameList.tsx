@@ -156,12 +156,14 @@ function GameList({ user, handleLoadGame }: GameListProps): JSX.Element {
             <ContentCopy />
           </IconButton>
         ) : null}
-        <IconButton
-          aria-label="delete"
-          onClick={() => handleDeleteGame(id)}
-        >
-          <Delete />
-        </IconButton>
+        {(players.includes(user)) ? (
+          <IconButton
+            aria-label="delete"
+            onClick={() => handleDeleteGame(id)}
+          >
+            <Delete />
+          </IconButton>
+        ) : null}
       </ButtonGroup>
     );
     return (
@@ -181,7 +183,7 @@ function GameList({ user, handleLoadGame }: GameListProps): JSX.Element {
         </ListItemButton>
       </ListItem>
     );
-  }, [handleAddPlayer, handleDeleteGame, handleLoadGame]);
+  }, [handleAddPlayer, handleDeleteGame, handleLoadGame, user]);
 
   return (
     <Paper elevation={1}>
