@@ -177,8 +177,8 @@ function GameList({ user, handleLoadGame }: GameListProps): JSX.Element {
             <VideogameAsset />
           </ListItemIcon>
           <ListItemText
-            primary={`[${status}] Game: ${id}`}
-            secondary={`(${players.length}/${count}): ${players.toString()}`}
+            primary={`[${status}]: ${players.toString()}`}
+            secondary={`(${players.length}/${count}) Game: ${id}`}
           />
         </ListItemButton>
       </ListItem>

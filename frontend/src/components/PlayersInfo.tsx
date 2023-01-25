@@ -5,7 +5,12 @@ import React, {
   SyntheticEvent,
 } from 'react';
 
-import { Leaderboard, WbSunny } from '@mui/icons-material';
+import {
+  Leaderboard,
+  ManageSearch,
+  Update,
+  WbSunny,
+} from '@mui/icons-material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import {
   Badge,
@@ -13,6 +18,7 @@ import {
   Card,
   List,
   ListItem,
+  ListItemIcon,
   ListItemText,
   Tab,
   useMediaQuery,
@@ -146,7 +152,6 @@ function PlayersInfo({
         ))}
         <TabPanel key="gameLog" value={players.length.toString()}>
           <List
-            dense
             sx={{
               width: '100%',
               bgcolor: 'background.paper',
@@ -156,8 +161,18 @@ function PlayersInfo({
               '& ul': { padding: 0 },
             }}
           >
-            {gameLog.map((entry: string) => (
-              <ListItem>
+            {gameLog.map((entry: string, idx: number) => (
+              <ListItem
+                key={entry}
+                secondaryAction={(
+                  <Badge badgeContent={idx + 1} color="primary" max={999}>
+                    <Update color="action" />
+                  </Badge>
+                )}
+              >
+                <ListItemIcon>
+                  <ManageSearch />
+                </ListItemIcon>
                 <ListItemText primary={entry} />
               </ListItem>
             )).reverse()}
