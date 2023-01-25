@@ -20,7 +20,9 @@ type ActionResponse = {
 const AILevels = ['EASY', 'MEDIUM', 'HARD'] as const;
 type AILevel = typeof AILevels[number];
 type StartRequest = {
+  // The number of *human* players.
   numPlayers: number;
+  // The number of *AI* players.
   numAIPlayers: number;
   AILevel: AILevel;
   visibility: Visibility;

@@ -26,13 +26,16 @@ import type {
 } from '../libs/request';
 
 function StartGameForm(): JSX.Element {
+  // Total number of players (including AI players)
   const [numPlayers, setNumPlayers] = useState<number>(2);
-  const [numAIPlayers, setNumAIPlayers] = useState<number>(0);
-  const [aiLevelIdx, setAILevelIdx] = useState<number>(0);
+  // Number of AI players. numPlayers - numAIPlayers is the number of human players.
+  const [numAIPlayers, setNumAIPlayers] = useState<number>(1);
+  // The difficulty. Rough mapping is 0 => Easy, 1 => Medium, 2 => Hard.
+  const [aiLevelIdx, setAILevelIdx] = useState<number>(2);
 
   const handleNewGame = useCallback((visibility: Visibility) => {
     const request: StartRequest = {
-      numPlayers,
+      numPlayers: numPlayers - numAIPlayers,
       visibility,
       numAIPlayers,
       AILevel: AILevels[aiLevelIdx],
@@ -50,7 +53,7 @@ function StartGameForm(): JSX.Element {
         </Grid>
         <Grid xs={4} display="flex" justifyContent="center" alignItems="center">
           <FormControl>
-            <FormLabel id="player-label">Human Players</FormLabel>
+            <FormLabel id="player-label">Total Players</FormLabel>
             <RadioGroup
               row
               aria-labelledby="player-label"
@@ -60,9 +63,7 @@ function StartGameForm(): JSX.Element {
                 setNumPlayers(Number(event.target.value));
               }}
             >
-              {[1, 2, 3, 4, 5].filter(
-                (n) => n + numAIPlayers >= 2 && n + numAIPlayers <= 5,
-              ).map((nPlayers: number) => (
+              {[2, 3, 4, 5].map((nPlayers: number) => (
                 <FormControlLabel
                   key={`nPlayers-${nPlayers}`}
                   value={nPlayers}
@@ -86,9 +87,7 @@ function StartGameForm(): JSX.Element {
                 setNumAIPlayers(Number(event.target.value));
               }}
             >
-              {[0, 1, 2, 3, 4].filter(
-                (n) => n + numPlayers >= 2 && n + numPlayers <= 5,
-              ).map((nAIs: number) => (
+              {[0, 1, 2, 3, 4].filter((n) => n < numPlayers).map((nAIs: number) => (
                 <FormControlLabel
                   key={`nAIs-${nAIs}`}
                   value={nAIs}
@@ -135,7 +134,6 @@ function StartGameForm(): JSX.Element {
             variant="contained"
             size="large"
             aria-label="game action buttons"
-            disabled={numAIPlayers + numPlayers > 5 || numAIPlayers + numPlayers < 2}
           >
             <Button
               color="primary"
