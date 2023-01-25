@@ -163,7 +163,8 @@ function PlayersInfo({
           >
             {gameLog.map((entry: string, idx: number) => (
               <ListItem
-                key={entry}
+                // eslint-disable-next-line react/no-array-index-key
+                key={`${entry}-${idx}`}
                 secondaryAction={(
                   <Badge badgeContent={idx + 1} color="primary" max={999}>
                     <Update color="action" />
