@@ -1,5 +1,6 @@
 import logging
 import pprint
+import resource
 import time
 from typing import (
     Callable,
@@ -162,11 +163,9 @@ def oracle_search(
     if debug:
         logger.info("Beginning oracle search...")
     if debug:
-        cache_size = scoring_utils.get_size(value_state.cache)
+        mem_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         logger.info(f"Total unique states already explored: {len(value_state.cache)}")
-        logger.info(
-            f"Size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})"
-        )
+        logger.info(f"Total mem: {scoring_utils.sizeof_fmt(mem_used)} ({mem_used})")
     start_time = time.time()
     metrics = default_metrics()
     internal_search_fn = oracle_search_stack if optimize else oracle_search_internal
@@ -177,16 +176,13 @@ def oracle_search(
         depth=0,
     )
     action = _get_best_action(game_state.get_current_player(), action_values)
-    if debug:
-        cache_size = scoring_utils.get_size(value_state.cache)
-        logger.info(
-            f"Size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})"
-        )
+    mem_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    logger.info(f"Total mem: {scoring_utils.sizeof_fmt(mem_used)} ({mem_used})")
     logger.info(f"Total unique states explored: {len(value_state.cache)}")
     logger.info(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
     logger.info(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
-    if len(value_state.cache) > 50e6:
-        # Reset the cache to empty when above threshold.
+    if mem_used > 200 * 1000:
+        # Reset when mem_used (kB) goes above 200mb.
         value_state.cache = {}
     return action
 
