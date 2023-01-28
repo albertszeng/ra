@@ -15,10 +15,13 @@ import jwt
 import quart  # pyre-ignore[21]
 import quart_cors
 import socketio  # pyre-ignore[21]
+from psycopg2cffi import compat
 from sqlalchemy.sql import expression
 from typing_extensions import ParamSpec
 
 from backend import config, routes, util
+
+compat.register()
 
 logger: logging.Logger = logging.getLogger("uvicorn.info")
 
