@@ -1,3 +1,5 @@
+import quart.flask_patch  # pyre-ignore[21]: Manually patched. # isort: skip
+
 import asyncio
 import base64
 import copy
