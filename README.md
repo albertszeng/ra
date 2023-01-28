@@ -24,6 +24,9 @@ On Mac, make sure you have [Homebrew](https://brew.sh/) installed. You can insta
 ```sh
 brew install pipenv
 brew install pyenv
+# This is required by our backend database. If you do not install,
+# you will receive errors when installing the Python deps.
+brew install postgresql@14
 ````
 
 After installing, you navigate to the root of the project directory, and run:
