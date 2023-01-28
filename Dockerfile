@@ -1,4 +1,4 @@
-FROM pypy:3.9-slim
+FROM pypy:3.9
 
 RUN apt-get update -y && apt-get upgrade -y && apt-get -y install curl bash git
 
@@ -9,7 +9,6 @@ COPY . $HOME/app
 WORKDIR $HOME/app
 
 RUN pip install --upgrade pip && pip install pipenv
-RUN pipenv lock && pipenv --clear && pipenv --rm
 RUN pipenv install --deploy --system --ignore-pipfile
 
 # Only one workers to save resources for now.
