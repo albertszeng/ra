@@ -4,6 +4,7 @@ RUN apt-get update -y && apt-get upgrade -y && apt-get -y install curl bash git
 
 ENV PYENV_ROOT $HOME/.pyenv
 ENV DATABASE_URL postgresql://postgres:cWmiSFOpWIAzkDa@ra-db.internal:5432
+ENV DEBUG false
 
 COPY . $HOME/app
 WORKDIR $HOME/app

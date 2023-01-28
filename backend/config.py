@@ -18,7 +18,7 @@ class Config:
         self.RESET_USERS = os.environ.get("DROP_USERS", "false").lower() in _VALID_TRUE
         self.RESET_GAMES = os.environ.get("DROP_GAMES", "false").lower() in _VALID_TRUE
 
-        assert self.SECRET_KEY
+        assert self.SECRET_KEY is not None
 
     def __str__(self) -> str:
         return pprint.pformat(vars(self))
