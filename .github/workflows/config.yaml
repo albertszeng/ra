@@ -54,6 +54,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
+          pipenv lock
           pipenv install --deploy --dev
       
       - name: Lint with flake8
