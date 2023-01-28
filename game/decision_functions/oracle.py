@@ -181,7 +181,7 @@ def oracle_search(
     logger.info(f"Total unique states explored: {len(value_state.cache)}")
     logger.info(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
     logger.info(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
-    if mem_used > 200 * 1000:
+    if mem_used > 500 * 1000:
         # Reset when mem_used (kB) goes above 200mb.
         value_state.cache = {}
     return action
