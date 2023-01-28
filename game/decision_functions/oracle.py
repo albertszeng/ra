@@ -177,12 +177,15 @@ def oracle_search(
         depth=0,
     )
     action = _get_best_action(game_state.get_current_player(), action_values)
-    cache_size = scoring_utils.get_size(value_state.cache)
+    if debug:
+        cache_size = scoring_utils.get_size(value_state.cache)
+        logger.info(
+            f"Size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})"
+        )
     logger.info(f"Total unique states explored: {len(value_state.cache)}")
     logger.info(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
     logger.info(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
-    logger.info(f"Size of cache: {scoring_utils.sizeof_fmt(cache_size)} ({cache_size})")
-    if cache_size > 48 * 1e6:
+    if len(value_state.cache) > 50e6:
         # Reset the cache to empty when above threshold.
         value_state.cache = {}
     return action
