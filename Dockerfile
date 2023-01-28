@@ -1,6 +1,6 @@
 FROM pypy:3.9-slim
 
-RUN apt-get update -y && apt-get upgrade -y && apt-get -y install curl bash git
+RUN apt-get update -y && apt-get upgrade -y && apt-get -y install curl bash git postgresql
 
 ENV PYENV_ROOT $HOME/.pyenv
 ENV DATABASE_URL postgresql://postgres:cWmiSFOpWIAzkDa@ra-db.internal:5432
