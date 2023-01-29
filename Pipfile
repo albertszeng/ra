@@ -11,7 +11,8 @@ python-socketio = "*"
 quart-cors = "*"
 quart = {editable = true, git = "https://github.com/kandluis/quart.git"}
 pyjwt = "*"
-psycopg2-binary= "*"
+psycopg2cffi = "*"
+setuptools-rust = "*"
 
 [dev-packages]
 pyre-check = "*"
@@ -21,7 +22,6 @@ black = "*"
 pre-commit = "*"
 isort = "*"
 autoflake = "*"
-memray = "*"
 
 [requires]
 python_version = "3.9"

@@ -1,6 +1,5 @@
 import logging
 import pprint
-import resource
 import time
 from typing import (
     Callable,
@@ -19,7 +18,7 @@ from typing_extensions import ParamSpec
 
 from game import encoding
 from game import info as gi
-from game import ra, scoring_utils
+from game import ra
 from game import state as gs
 from game.decision_functions import evaluate_game_state as e
 from game.decision_functions import search as s
@@ -27,7 +26,6 @@ from game.proxy import copy
 
 logger: logging.Logger = logging.getLogger("uvicorn.info")
 
-DEFAULT_SEARCH_AUCTION_THRESHOLD: int = 2
 _MAX_RAS: int = max(gi.NUM_RAS_PER_ROUND.values())
 
 
@@ -162,27 +160,20 @@ def oracle_search(
     """
     if debug:
         logger.info("Beginning oracle search...")
-    if debug:
-        mem_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        logger.info(f"Total unique states already explored: {len(value_state.cache)}")
-        logger.info(f"Total mem: {scoring_utils.sizeof_fmt(mem_used)} ({mem_used})")
     start_time = time.time()
     metrics = default_metrics()
     internal_search_fn = oracle_search_stack if optimize else oracle_search_internal
     action_values = internal_search_fn(
         game_state,
         metrics,
-        num_auctions_allowed or max(2, 4 - game_state.num_players),
+        num_auctions_allowed or max(2, 5 - game_state.num_players),
         depth=0,
     )
     action = _get_best_action(game_state.get_current_player(), action_values)
-    mem_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    logger.info(f"Total mem: {scoring_utils.sizeof_fmt(mem_used)} ({mem_used})")
     logger.info(f"Total unique states explored: {len(value_state.cache)}")
     logger.info(f"Collected metrics: {pprint.pformat(finalizeMetrics(metrics))}")
     logger.info(f"Search ended. Time elapsed: {(time.time() - start_time)} s")
-    if mem_used > 500 * 1000:
-        # Reset when mem_used (kB) goes above 200mb.
+    if len(value_state.cache) > 1e6:
         value_state.cache = {}
     return action
 

@@ -13,6 +13,39 @@ from game import state as gs
 from game.decision_functions import oracle as o
 
 
+def run_custom_search() -> None:
+    import logging
+    import sys
+
+    random.seed(10)
+
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
+
+    # These are reasonable values for players.
+    # 5 Player ==> 2 auctions takes 10s, 11mib
+    # 4 Player ==> 2 auctions takes 3s, 5mib
+    # 3 Player ==> 2 auctions takes 2s, 3.5mib
+    # 2 Player ==> 3 auctions takes 2s, 12.8mib
+
+    optimize = False
+    auctionsToSearch = 3
+    nPlayers = 2
+
+    game_state = gs.GameState([f"P{i + 1}" for i in range(nPlayers)])
+
+    print(f"\n==== Searching for {auctionsToSearch} auctions. ====")
+    print(f"==== optimize={optimize} and players={nPlayers} ====")
+    _ = o.oracle_search(game_state, auctionsToSearch, optimize=optimize)
+
+
 class OracleSearchTest(unittest.TestCase):
     def setUp(self) -> None:
         # Required since tile bags are randomly ordered is used.
@@ -108,43 +141,9 @@ class OracleSearchTest(unittest.TestCase):
             best_move = o.oracle_search(game_state)
             self.assertEqual(best_move, gi.DRAW)
 
-    # def test_oracle_search_vary_auctions_allowed(self) -> None:
-    #     import logging
-    #     import sys
-
-    #     root = logging.getLogger()
-    #     root.setLevel(logging.DEBUG)
-    #     handler = logging.StreamHandler(sys.stdout)
-    #     handler.setLevel(logging.DEBUG)
-    #     formatter = logging.Formatter(
-    #         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    #     )
-    #     handler.setFormatter(formatter)
-    #     root.addHandler(handler)
-
-    #     # These are reasonable values for players.
-    #     # 5 Player ==> 2 auctions takes 10s, 11mib
-    #     # 4 Player ==> 2 auctions takes 3s, 5mib
-    #     # 3 Player ==> 2 auctions takes 2s, 3.5mib
-    #     # 2 Player ==> 3 auctions takes 7s, 12.8mib
-
-    #     optimize = False
-    #     auctionsToSearch = 3
-    #     nPlayers = 2
-
-    #     game_state = gs.GameState([f"P{i + 1}" for i in range(nPlayers)])
-
-    #     print(f"\n==== Searching for {auctionsToSearch} auctions. ====")
-    #     print(f"==== optimize={optimize} and players={nPlayers} ====")
-    #     best_move = o.oracle_search(game_state, auctionsToSearch, optimize=optimize)
-    #     # print("best_move:", best_move)
-    #     # print("resulting_valuations:", resulting_valuations)
-    #     # print("draw order:", game_state.get_tile_bag().get_draw_order())
-    #     self.assertEqual(best_move, gi.DRAW)
-
 
 if __name__ == "__main__":
     # import cProfile
 
     # cProfile.run("unittest.main()")
-    unittest.main()
+    run_custom_search()
