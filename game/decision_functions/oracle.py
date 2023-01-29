@@ -166,7 +166,7 @@ def oracle_search(
     action_values = internal_search_fn(
         game_state,
         metrics,
-        num_auctions_allowed or max(2, 5 - game_state.num_players),
+        num_auctions_allowed or max(2, 4 - game_state.num_players),
         depth=0,
     )
     action = _get_best_action(game_state.get_current_player(), action_values)
